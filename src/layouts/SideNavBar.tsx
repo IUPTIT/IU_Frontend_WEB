@@ -65,7 +65,7 @@ function SideNavBar({ role, activeId, onSelect }: Props) {
   };
 
   return (
-    <aside className="hidden lg:flex w-64 shrink-0 flex-col bg-background p-6 shadow-extruded rounded-card">
+    <aside className="hidden lg:flex w-64 shrink-0 flex-col bg-background p-6 shadow-extruded rounded-card sticky top-4 sm:top-6 self-start max-h-[calc(100vh-3rem)] overflow-y-auto">
       <div className="flex items-center gap-3 rounded-2xl bg-background p-3 shadow-extruded-sm">
         <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-accent/20 text-accent font-display font-extrabold text-lg shadow-inset-sm">
           {brand.initial}
