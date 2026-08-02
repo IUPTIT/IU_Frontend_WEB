@@ -164,4 +164,21 @@ Quy tắc thêm:
 - Mỗi commit một việc — không gộp feat + fix + format chung.
 - Build pass (`npm run build`) trước khi push.
 - Thay đổi lớn: viết body giải thích **lý do** (cách title một dòng trống).
-- Nhánh: `feature/<ten-tinh-nang>`, `fix/<ten-bug>`; không commit thẳng `main`, mở PR để review.
+### Quy trình nhánh (bắt buộc)
+
+```
+feature/<ten>  ──merge──▶  development  ──PR──▶  main
+fix/<ten>      ──merge──▶
+```
+
+1. Tạo nhánh từ `development`: `git switch development && git switch -c feature/<ten-tinh-nang>`
+2. Commit trên nhánh feature/fix, push nhánh đó lên remote.
+3. Merge vào `development` (qua PR hoặc merge local rồi push `development`).
+4. Khi `development` ổn định → mở **PR từ `development` → `main`**. KHÔNG bao giờ push/commit thẳng lên `main`.
+
+> **Quy tắc được enforce tự động** bởi hooks trong `.githooks/` (tự kích hoạt sau `npm install` qua script `prepare`):
+> - `commit-msg` — chặn commit message sai format, in lỗi cụ thể.
+> - `pre-commit` — chặn commit trực tiếp trên `main`.
+> - `pre-push` — chặn push trực tiếp lên `main`.
+>
+> Trên GitHub nên bật thêm Branch protection cho `main` (require PR) để chặn cả người chưa cài hook.

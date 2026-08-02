@@ -126,7 +126,7 @@ Quy tắc thêm:
 - Mỗi commit một việc — không gộp feat + fix + format vào một commit.
 - Commit phải build pass (`npm run build`) trước khi push.
 - Thay đổi lớn thì viết thêm body (cách title một dòng trống) giải thích **lý do**, không tả lại diff.
-- Nhánh: `feature/<ten-tinh-nang>`, `fix/<ten-bug>`; không commit thẳng lên `main` — mở PR để review.
+- Nhánh — flow bắt buộc: `feature/<ten>` hoặc `fix/<ten>` → merge vào `development` → PR từ `development` vào `main`. CẤM commit/push trực tiếp lên `main` (hooks `pre-commit`/`pre-push` trong `.githooks/` sẽ chặn). Tạo nhánh mới luôn xuất phát từ `development`.
 
 ## Responsive
 

@@ -1,0 +1,24 @@
+#!/bin/sh
+# Chặn push trực tiếp lên main — flow: feature/* → development → main (qua PR).
+# Trường hợp khẩn cấp: ALLOW_MAIN_PUSH=1 git push ...
+
+if [ "$ALLOW_MAIN_PUSH" = "1" ]; then
+  exit 0
+fi
+
+while read local_ref local_sha remote_ref remote_sha; do
+  case "$remote_ref" in
+    refs/heads/main|refs/heads/master)
+      echo ""
+      echo "✖ CẤM push trực tiếp lên main."
+      echo ""
+      echo "  Flow đúng (README.md mục 5):"
+      echo "    1. Làm việc trên nhánh feature/<ten> hoặc fix/<ten>"
+      echo "    2. Merge vào development"
+      echo "    3. Mở PR từ development → main"
+      echo ""
+      exit 1
+      ;;
+  esac
+done
+exit 0
