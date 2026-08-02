@@ -1,0 +1,71 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-display font-bold tracking-tight text-foreground;
+  }
+
+  ::placeholder {
+    @apply text-placeholder;
+  }
+}
+
+@layer components {
+  /* Buttons — always have depth, never flat */
+  .neu-btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl px-6 h-12
+      font-medium bg-background text-foreground shadow-extruded
+      transition-all duration-300 ease-out
+      hover:-translate-y-px hover:shadow-extruded-hover
+      active:translate-y-[0.5px] active:shadow-inset-sm
+      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
+      focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+
+  .neu-btn-primary {
+    @apply neu-btn bg-accent text-white
+      active:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.2),inset_-4px_-4px_8px_rgba(255,255,255,0.15)];
+  }
+
+  /* Cards — molded from the same surface as the page */
+  .neu-card {
+    @apply rounded-card bg-background p-8 shadow-extruded
+      transition-all duration-300 ease-out;
+  }
+
+  .neu-card-hover {
+    @apply hover:-translate-y-0.5 hover:shadow-extruded-hover;
+  }
+
+  /* Inputs — carved wells */
+  .neu-input {
+    @apply w-full rounded-2xl bg-background px-5 h-12 text-foreground
+      shadow-inset border-0 transition-all duration-300 ease-out
+      focus:outline-none focus:shadow-inset-deep focus:ring-2 focus:ring-accent
+      focus:ring-offset-2 focus:ring-offset-background;
+  }
+
+  /* Icon wells — drilled into the card */
+  .neu-well {
+    @apply flex items-center justify-center rounded-2xl bg-background shadow-inset-deep;
+  }
+
+  .neu-well-sm {
+    @apply flex items-center justify-center rounded-xl bg-background shadow-inset;
+  }
+}
