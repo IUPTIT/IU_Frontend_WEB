@@ -51,7 +51,16 @@ export const SIDEBAR_CONFIG: Record<Role, SidebarConfig> = {
               },
             ],
           },
-          { id: "settings", label: "Cài đặt", icon: "settings", path: ROUTES.admin.settings },
+          {
+            id: "settings",
+            label: "Cài đặt",
+            icon: "settings",
+            path: ROUTES.admin.settings,
+            children: [
+              { id: "settings-general", label: "Cài đặt chung", path: ROUTES.admin.settings },
+              { id: "settings-email", label: "Email Configuration", path: ROUTES.admin.email },
+            ],
+          },
           {
             id: "permissions",
             label: "Phân quyền",

@@ -78,7 +78,7 @@ function RecruitmentOpenPage() {
 
   const handleEdit = () => {
     setMode("wizard");
-    showToast("Mở wizard chỉnh sửa (mock — dùng form tạo mới).");
+    showToast("Mở wizard chỉnh sửa — dùng form tạo mới.");
   };
 
   const handleWizardDone = async (draft: CampaignDraft, saveMode: "draft" | "publish") => {

@@ -306,7 +306,7 @@ function TrainingTeamsPage() {
             className="!h-11"
             onClick={async () => {
               const res = await notifyTrainingGroups(groups.map((g) => g.id));
-              showToast(`Đã gửi thông báo tới ${res.sent} đội (mock).`);
+              showToast(`Đã gửi thông báo tới ${res.sent} đội.`);
             }}
             leftIcon={<Icon icon={Volume2} size={16} />}
           >

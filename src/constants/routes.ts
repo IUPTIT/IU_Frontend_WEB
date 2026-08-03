@@ -17,6 +17,7 @@ export const ROUTES = {
       review: "/admin/training/review",
     },
     settings: "/admin/settings",
+    email: "/admin/settings/email",
     permissions: "/admin/permissions",
     help: "/admin/help",
   },

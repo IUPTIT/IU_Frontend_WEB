@@ -12,9 +12,10 @@ type Props = {
 };
 
 function searchPlaceholderForPath(path: string): string {
+  if (path.includes("/settings/email")) return "Tìm template, SMTP...";
+  if (path.includes("/settings")) return "Tìm trong cài đặt...";
   if (path.includes("/permissions")) return "Tìm kiếm tài khoản, email...";
   if (path.includes("/members")) return "Tìm kiếm thành viên CLB...";
-  if (path.includes("/settings")) return "Tìm trong cài đặt...";
   if (path.includes("/training/teams")) return "Tìm kiếm theo tên đội training...";
   if (path.includes("/training/roadmap")) return "Tìm kiếm lộ trình, nhóm...";
   if (path.includes("/training/review")) return "Tìm kiếm học viên...";

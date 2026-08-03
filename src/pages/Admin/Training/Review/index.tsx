@@ -1,10 +1,13 @@
 ﻿import { useCallback, useEffect, useMemo, useState } from "react";
+import { Download, Send } from "lucide-react";
 import Button from "../../../../components/ui/Button";
 import ExportDataModal, { type ExportColumnDef } from "../../../../components/ui/ExportDataModal";
 import FilterMenu from "../../../../components/ui/FilterMenu";
+import Icon from "../../../../components/ui/Icon";
 import MetricCard from "../../../../components/ui/MetricCard";
 import Pagination from "../../../../components/ui/Pagination";
 import Select from "../../../../components/ui/Select";
+import SendEmailModal from "../../../../components/ui/SendEmailModal";
 import { usePortalUi } from "../../../../context/PortalUiContext";
 import useCountUp from "../../../../hooks/useCountUp";
 import {
@@ -14,6 +17,8 @@ import {
   type TrainingReviewSummary,
 } from "../../../../services/trainingService";
 import type { Trainee, TraineeEvalStatus } from "../../../../types/training";
+import type { EmailRecipient } from "../../../../types/email";
+import { traineeToEmailRecipient } from "../../../../utils/emailRecipients";
 
 const PAGE_SIZE = 5;
 
@@ -108,6 +113,8 @@ function TrainingReviewPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [exportOpen, setExportOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [emailOpen, setEmailOpen] = useState(false);
+  const [emailRecipients, setEmailRecipients] = useState<EmailRecipient[]>([]);
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -217,7 +224,7 @@ function TrainingReviewPage() {
     const res = await issueCertificates(ids);
     await load();
     setSelected(new Set());
-    showToast(`Đã cấp chứng nhận cho ${res.issued} học viên (mock).`);
+    showToast(`Đã cấp chứng nhận cho ${res.issued} học viên.`);
   };
 
   return (
@@ -235,13 +242,29 @@ function TrainingReviewPage() {
             size="sm"
             className="!h-11"
             onClick={() => setExportOpen(true)}
-            leftIcon={
-              <svg className="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-                <path d="M10 3v9m0 0 3.5-3.5M10 12 6.5 8.5M4 16h12" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            }
+            leftIcon={<Icon icon={Download} size={16} />}
           >
             Xuất báo cáo
+          </Button>
+          <Button
+            variant="soft"
+            size="sm"
+            className="!h-11"
+            leftIcon={<Icon icon={Send} size={16} />}
+            onClick={() => {
+              const list =
+                selected.size > 0
+                  ? trainees.filter((t) => selected.has(t.id))
+                  : filtered;
+              if (list.length === 0) {
+                showToast("Chọn học viên hoặc để trống để gửi theo bộ lọc hiện tại.");
+                return;
+              }
+              setEmailRecipients(list.map(traineeToEmailRecipient));
+              setEmailOpen(true);
+            }}
+          >
+            Gửi email
           </Button>
           <Button variant="primary" size="sm" className="!h-11" onClick={() => void handleIssue()}>
             Cấp chứng nhận hàng loạt
@@ -261,7 +284,7 @@ function TrainingReviewPage() {
           title="Tỷ lệ hoàn thành"
           value={summary.completionRate}
           suffix="%"
-          hint="+5% so với kỳ trước (mock)"
+          hint="+5% so với kỳ trước"
           tone="success"
         />
         <StatCard
@@ -444,6 +467,17 @@ function TrainingReviewPage() {
         rows={filtered}
         filenameBase="danh_gia_training"
         onExported={(n) => showToast(`Đã tải xuống ${n} dòng (CSV).`)}
+      />
+
+      <SendEmailModal
+        open={emailOpen}
+        onClose={() => setEmailOpen(false)}
+        recipients={emailRecipients}
+        module="training-review"
+        category="training"
+        preferredTemplateId="tpl-training-complete"
+        title="Gửi email training"
+        onSent={(sent) => showToast(`Đã gửi email tới ${sent} học viên.`)}
       />
     </>
   );

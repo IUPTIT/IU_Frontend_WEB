@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Send } from "lucide-react";
 import Button from "../../../../components/ui/Button";
+import Icon from "../../../../components/ui/Icon";
+import SendEmailModal from "../../../../components/ui/SendEmailModal";
 import { useAuth } from "../../../../context/AuthContext";
 import { usePortalUi } from "../../../../context/PortalUiContext";
 import { ROUTES } from "../../../../constants/routes";
@@ -17,6 +20,7 @@ import type {
   ApplicationAttachment,
   ScreeningCriterion,
 } from "../../../../types/recruitment";
+import { applicationToEmailRecipient } from "../../../../utils/emailRecipients";
 
 type Props = {
   applicationId: string;
@@ -65,6 +69,7 @@ function ApplicationDetailPage({ applicationId }: Props) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [emailOpen, setEmailOpen] = useState(false);
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -211,20 +216,24 @@ function ApplicationDetailPage({ applicationId }: Props) {
           </h1>
         </div>
 
-        <Button
-          variant="primary"
-          size="md"
-          disabled={saving}
-          onClick={() => void handleSave()}
-          leftIcon={
-            <svg className="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-              <path d="M4 4.5h10.5L16 6v9.5H4V4.5Z" strokeLinejoin="round" />
-              <path d="M6.5 4.5v4h7v-4M6.5 15.5v-4h7v4" strokeLinejoin="round" />
-            </svg>
-          }
-        >
-          Lưu đánh giá
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="soft"
+            size="md"
+            leftIcon={<Icon icon={Send} size={16} />}
+            onClick={() => setEmailOpen(true)}
+          >
+            Gửi email
+          </Button>
+          <Button
+            variant="primary"
+            size="md"
+            disabled={saving}
+            onClick={() => void handleSave()}
+          >
+            Lưu đánh giá
+          </Button>
+        </div>
       </header>
 
       {toast && (
@@ -331,7 +340,7 @@ function ApplicationDetailPage({ applicationId }: Props) {
             <h3 className="font-display text-lg font-bold">Câu trả lời Form đăng ký</h3>
 
             {answers.length === 0 ? (
-              <p className="text-sm text-muted">Chưa có câu trả lời (mock).</p>
+              <p className="text-sm text-muted">Chưa có câu trả lời.</p>
             ) : (
               <div className="space-y-3">
                 {answers.map((ans) => (
@@ -435,6 +444,17 @@ function ApplicationDetailPage({ applicationId }: Props) {
           </section>
         </div>
       </div>
+
+      <SendEmailModal
+        open={emailOpen}
+        onClose={() => setEmailOpen(false)}
+        recipients={[applicationToEmailRecipient(app)]}
+        module="recruitment-screening"
+        category="recruitment"
+        preferredTemplateId="tpl-screening"
+        title={`Gửi email — ${app.fullName}`}
+        onSent={(sent) => showToast(`Đã gửi ${sent} email.`)}
+      />
     </div>
   );
 }

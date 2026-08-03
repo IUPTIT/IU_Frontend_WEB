@@ -1,11 +1,13 @@
 ﻿import { useCallback, useEffect, useMemo, useState } from "react";
-import { FileText, MessageSquare, UserCheck } from "lucide-react";
+import { FileText, MessageSquare, Send, UserCheck, UserPlus } from "lucide-react";
 import Button from "../../../../components/ui/Button";
 import ExportDataModal, { type ExportColumnDef } from "../../../../components/ui/ExportDataModal";
 import FilterMenu from "../../../../components/ui/FilterMenu";
+import Icon from "../../../../components/ui/Icon";
 import MetricCard from "../../../../components/ui/MetricCard";
 import Pagination from "../../../../components/ui/Pagination";
 import Select from "../../../../components/ui/Select";
+import SendEmailModal from "../../../../components/ui/SendEmailModal";
 import { usePortalUi } from "../../../../context/PortalUiContext";
 import useCountUp from "../../../../hooks/useCountUp";
 import {
@@ -17,6 +19,8 @@ import {
   type CampaignResultSummary,
 } from "../../../../services/recruitmentService";
 import type { Application, RecruitmentCampaign } from "../../../../types/recruitment";
+import type { EmailRecipient } from "../../../../types/email";
+import { applicationToEmailRecipient } from "../../../../utils/emailRecipients";
 import { formatDate } from "../../../../utils/formatDate";
 
 const PAGE_SIZE = 6;
@@ -160,10 +164,25 @@ function RecruitmentResultsPage() {
   const [menuId, setMenuId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [emailOpen, setEmailOpen] = useState(false);
+  const [emailRecipients, setEmailRecipients] = useState<EmailRecipient[]>([]);
+  const [emailTemplateId, setEmailTemplateId] = useState<string | undefined>("tpl-passed");
 
   const showToast = (msg: string) => {
     setToast(msg);
     window.setTimeout(() => setToast(null), 2800);
+  };
+
+  const openEmailForIds = (ids: string[], preferredTemplateId?: string) => {
+    const apps = applications.filter((a) => ids.includes(a.id) && a.resultNotifyStatus !== "converted");
+    if (apps.length === 0) {
+      showToast("Không có ứng viên phù hợp để gửi email.");
+      return;
+    }
+    setEmailRecipients(apps.map((a) => applicationToEmailRecipient(a)));
+    setEmailTemplateId(preferredTemplateId ?? "tpl-passed");
+    setEmailOpen(true);
+    setMenuId(null);
   };
 
   const loadCampaigns = useCallback(async () => {
@@ -280,23 +299,8 @@ function RecruitmentResultsPage() {
     return filtered.map((a) => a.id);
   };
 
-  const handleNotify = async () => {
-    const ids = targetIds().filter((id) => {
-      const app = applications.find((a) => a.id === id);
-      return app && app.resultNotifyStatus !== "converted";
-    });
-    if (ids.length === 0) {
-      showToast("Không có ứng viên phù hợp để gửi thông báo.");
-      return;
-    }
-    setBusy(true);
-    try {
-      const res = await notifyFinalResults(ids);
-      await reload(campaignId);
-      showToast(`Đã gửi thông báo hàng loạt tới ${res.sent} ứng viên (mock).`);
-    } finally {
-      setBusy(false);
-    }
+  const handleNotify = () => {
+    openEmailForIds(targetIds());
   };
 
   const handleConvert = async () => {
@@ -314,7 +318,7 @@ function RecruitmentResultsPage() {
     try {
       const res = await convertAcceptedToMembers(ids);
       await reload(campaignId);
-      showToast(`Đã chuyển ${res.converted} ứng viên thành Member (mock).`);
+      showToast(`Đã chuyển ${res.converted} ứng viên thành Member.`);
     } finally {
       setBusy(false);
     }
@@ -347,14 +351,10 @@ function RecruitmentResultsPage() {
             size="sm"
             className="!h-11"
             disabled={busy}
-            onClick={() => void handleNotify()}
-            leftIcon={
-              <svg className="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-                <path d="M3 10.5 17 4l-3.5 12-3-4.5L3 10.5Z" strokeLinejoin="round" />
-              </svg>
-            }
+            onClick={() => handleNotify()}
+            leftIcon={<Icon icon={Send} size={16} />}
           >
-            Gửi thông báo hàng loạt
+            Gửi email hàng loạt
           </Button>
           <Button
             variant="primary"
@@ -362,12 +362,7 @@ function RecruitmentResultsPage() {
             className="!h-11"
             disabled={busy}
             onClick={() => void handleConvert()}
-            leftIcon={
-              <svg className="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-                <circle cx="8" cy="7" r="3" />
-                <path d="M2.5 16.5a5.5 5.5 0 0 1 11 0M14.5 6v5M12 8.5h5" strokeLinecap="round" />
-              </svg>
-            }
+            leftIcon={<Icon icon={UserPlus} size={16} />}
           >
             Chuyển đổi thành Member
           </Button>
@@ -567,14 +562,9 @@ function RecruitmentResultsPage() {
                               <button
                                 type="button"
                                 className="block w-full rounded-xl px-3 py-2 text-sm hover:bg-accent/10"
-                                onClick={async () => {
-                                  setMenuId(null);
-                                  await notifyFinalResults([app.id]);
-                                  await reload(campaignId);
-                                  showToast(`Đã gửi email tới ${app.fullName}.`);
-                                }}
+                                onClick={() => openEmailForIds([app.id])}
                               >
-                                Gửi thông báo
+                                Gửi email
                               </button>
                               <button
                                 type="button"
@@ -614,6 +604,22 @@ function RecruitmentResultsPage() {
         rows={filtered}
         filenameBase={`trung_tuyen_${campaignId || "dot"}`}
         onExported={(n) => showToast(`Đã tải xuống ${n} dòng (CSV).`)}
+      />
+
+      <SendEmailModal
+        open={emailOpen}
+        onClose={() => setEmailOpen(false)}
+        recipients={emailRecipients}
+        module="recruitment-results"
+        category="recruitment"
+        preferredTemplateId={emailTemplateId}
+        title="Gửi email kết quả tuyển"
+        onSent={async (sent) => {
+          const ids = emailRecipients.map((r) => r.id);
+          await notifyFinalResults(ids);
+          await reload(campaignId);
+          showToast(`Đã gửi email tới ${sent} ứng viên.`);
+        }}
       />
     </>
   );

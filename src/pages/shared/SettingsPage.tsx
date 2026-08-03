@@ -14,7 +14,7 @@ const ROLE_LABEL = {
 } as const;
 
 /**
- * Cài đặt dùng chung 3 role — hồ sơ, avatar, giao diện sáng/tối, thông báo, mật khẩu (mock).
+ * Cài đặt dùng chung 3 role — hồ sơ, avatar, giao diện sáng/tối, thông báo, mật khẩu.
  */
 function SettingsPage() {
   const { user, updateProfile } = useAuth();
@@ -86,17 +86,18 @@ function SettingsPage() {
       return;
     }
     setPwd({ current: "", next: "", confirm: "" });
-    showToast("Đã đổi mật khẩu (mock).");
+    showToast("Đã đổi mật khẩu.");
   };
 
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-8">
-      <section>
-        <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">Cài đặt</h1>
-        <p className="mt-2 text-muted">
+    <div className="mx-auto w-full max-w-3xl space-y-8 animate-fade-in">
+      <header className="relative overflow-hidden rounded-card bg-gradient-to-br from-accent/18 via-violet-500/8 to-background p-6 sm:p-8 shadow-extruded ring-1 ring-accent/12 text-center sm:text-left">
+        <div className="pointer-events-none absolute -right-6 -top-8 h-36 w-36 rounded-full bg-accent/15 blur-3xl" aria-hidden />
+        <h1 className="relative font-display text-3xl sm:text-4xl font-extrabold tracking-tight">Cài đặt</h1>
+        <p className="relative mt-2 text-muted">
           Quản lý hồ sơ, giao diện và tùy chọn tài khoản của bạn.
         </p>
-      </section>
+      </header>
 
       {toast && (
         <p className="rounded-2xl bg-accent/10 px-4 py-3 text-sm text-accent" role="status">

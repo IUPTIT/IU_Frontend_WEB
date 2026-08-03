@@ -12,6 +12,7 @@ import AdminTrainingRoadmapPage from "../pages/Admin/Training/Roadmap";
 import AdminTrainingTeamsPage from "../pages/Admin/Training/Teams";
 import AdminTrainingReviewPage from "../pages/Admin/Training/Review";
 import AdminSettingsPage from "../pages/Admin/Settings";
+import AdminEmailConfigPage from "../pages/Admin/Settings/Email";
 import AdminPermissionsPage from "../pages/Admin/Permissions";
 import AdminHelpPage from "../pages/Admin/Help";
 
@@ -41,6 +42,7 @@ const PAGE_MAP: Record<string, ReactNode> = {
   [ROUTES.admin.training.teams]: <AdminTrainingTeamsPage />,
   [ROUTES.admin.training.review]: <AdminTrainingReviewPage />,
   [ROUTES.admin.settings]: <AdminSettingsPage />,
+  [ROUTES.admin.email]: <AdminEmailConfigPage />,
   [ROUTES.admin.permissions]: <AdminPermissionsPage />,
   [ROUTES.admin.help]: <AdminHelpPage />,
 

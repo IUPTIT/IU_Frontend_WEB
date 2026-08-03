@@ -1,7 +1,10 @@
 ﻿import { useCallback, useEffect, useMemo, useState } from "react";
+import { Plus, Send } from "lucide-react";
 import Button from "../../../../components/ui/Button";
 import FilterMenu from "../../../../components/ui/FilterMenu";
+import Icon from "../../../../components/ui/Icon";
 import Select from "../../../../components/ui/Select";
+import SendEmailModal from "../../../../components/ui/SendEmailModal";
 import { useAuth } from "../../../../context/AuthContext";
 import {
   assignInterviewersToSlot,
@@ -24,6 +27,8 @@ import type {
   InterviewerRef,
   RecruitmentCampaign,
 } from "../../../../types/recruitment";
+import type { EmailRecipient } from "../../../../types/email";
+import { applicationToEmailRecipient } from "../../../../utils/emailRecipients";
 import { formatDate } from "../../../../utils/formatDate";
 import AssignInterviewersModal from "./components/AssignInterviewersModal";
 import BatchScheduleModal from "./components/BatchScheduleModal";
@@ -58,6 +63,9 @@ function RecruitmentInterviewsPage() {
   const [draftStatus, setDraftStatus] = useState(statusFilter);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<string | null>(null);
+  const [emailOpen, setEmailOpen] = useState(false);
+  const [emailRecipients, setEmailRecipients] = useState<EmailRecipient[]>([]);
+  const [emailTpl, setEmailTpl] = useState("tpl-interview");
 
   const [batchOpen, setBatchOpen] = useState(false);
   const [assignSlot, setAssignSlot] = useState<InterviewSlot | null>(null);
@@ -232,13 +240,43 @@ function RecruitmentInterviewsPage() {
                 size="sm"
                 className="!h-11"
                 onClick={() => setBatchOpen(true)}
-                leftIcon={
-                  <svg className="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-                    <path d="M4 10h12M10 4v12" strokeLinecap="round" />
-                  </svg>
-                }
+                leftIcon={<Icon icon={Plus} size={16} />}
               >
                 Xếp lịch hàng loạt
+              </Button>
+              <Button
+                variant="soft"
+                size="sm"
+                className="!h-11"
+                leftIcon={<Icon icon={Send} size={16} />}
+                onClick={() => {
+                  const rows = daySlots
+                    .map((slot) => ({
+                      slot,
+                      app: candidates.find((c) => c.id === slot.applicationId),
+                    }))
+                    .filter((r): r is { slot: InterviewSlot; app: Application } => !!r.app);
+                  if (rows.length === 0) {
+                    showToast("Chưa có ứng viên trong lịch ngày này để gửi thư mời.");
+                    return;
+                  }
+                  setEmailRecipients(
+                    rows.map(({ slot, app }) =>
+                      applicationToEmailRecipient(app, {
+                        interview_date: formatDate(slot.date),
+                        interview_time: slot.startTime,
+                        location: slot.locationOrLink,
+                        meeting_link: slot.locationOrLink.startsWith("http")
+                          ? slot.locationOrLink
+                          : "https://meet.google.com/iu-club",
+                      }),
+                    ),
+                  );
+                  setEmailTpl("tpl-interview");
+                  setEmailOpen(true);
+                }}
+              >
+                Gửi thư mời PV
               </Button>
             </>
           )}
@@ -248,20 +286,33 @@ function RecruitmentInterviewsPage() {
               variant="soft"
               size="sm"
               className="!h-11"
-              onClick={async () => {
-                const ids = resultRows
-                  .map((r) => r.app)
-                  .filter((a): a is Application => !!a && (a.interviewResult === "pass" || a.interviewResult === "fail"))
-                  .map((a) => a.id);
-                if (ids.length === 0) {
-                  showToast("Chưa có ứng viên đã duyệt kết quả PV để gửi thông báo.");
+              leftIcon={<Icon icon={Send} size={16} />}
+              onClick={() => {
+                const rows = resultRows.filter(
+                  (r): r is { slot: InterviewSlot; app: Application } =>
+                    !!r.app && (r.app.interviewResult === "pass" || r.app.interviewResult === "fail"),
+                );
+                if (rows.length === 0) {
+                  showToast("Chưa có ứng viên đã duyệt kết quả PV để gửi email.");
                   return;
                 }
-                const res = await notifyInterviewResults(ids);
-                showToast(`Đã gửi thông báo kết quả PV tới ${res.sent} ứng viên (mock).`);
+                setEmailRecipients(
+                  rows.map(({ slot, app }) =>
+                    applicationToEmailRecipient(app, {
+                      interview_date: formatDate(slot.date),
+                      interview_time: slot.startTime,
+                      location: slot.locationOrLink,
+                      meeting_link: slot.locationOrLink.startsWith("http")
+                        ? slot.locationOrLink
+                        : "https://meet.google.com/iu-club",
+                    }),
+                  ),
+                );
+                setEmailTpl("tpl-passed");
+                setEmailOpen(true);
               }}
             >
-              Gửi thông báo kết quả
+              Gửi email kết quả
             </Button>
           )}
         </div>
@@ -452,6 +503,20 @@ function RecruitmentInterviewsPage() {
           await setInterviewDecision(scoreSlot.applicationId, result);
           await reloadSlots(campaignId);
           showToast(result === "pass" ? "Đã đánh dấu Đạt vòng PV." : "Đã đánh dấu Không đạt.");
+        }}
+      />
+
+      <SendEmailModal
+        open={emailOpen}
+        onClose={() => setEmailOpen(false)}
+        recipients={emailRecipients}
+        module="recruitment-interviews"
+        category="recruitment"
+        preferredTemplateId={emailTpl}
+        title="Gửi email phỏng vấn"
+        onSent={async (sent) => {
+          await notifyInterviewResults(emailRecipients.map((r) => r.id));
+          showToast(`Đã gửi email tới ${sent} ứng viên.`);
         }}
       />
     </>
