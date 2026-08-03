@@ -1,39 +1,90 @@
+import { useAuth } from "../context/AuthContext";
+import { usePortalUi } from "../context/PortalUiContext";
+import { usePreferences } from "../context/PreferencesContext";
+import { ROUTES } from "../constants/routes";
+import type { Role } from "../types/navigation";
+import Icon from "../components/ui/Icon";
+import Avatar from "../components/ui/Avatar";
+import { Bell, Menu, Moon, Search, Sun } from "lucide-react";
+
 type Props = {
   search: string;
   onSearchChange: (value: string) => void;
+  onOpenMobileNav?: () => void;
+  searchPlaceholder?: string;
+  role: Role;
 };
 
-function TopBar({ search, onSearchChange }: Props) {
+function settingsPath(role: Role) {
+  if (role === "leader") return ROUTES.leader.settings;
+  if (role === "member") return ROUTES.member.settings;
+  return ROUTES.admin.settings;
+}
+
+function TopBar({
+  search,
+  onSearchChange,
+  onOpenMobileNav,
+  searchPlaceholder = "Tìm kiếm...",
+  role,
+}: Props) {
+  const { user } = useAuth();
+  const { navigate } = usePortalUi();
+  const { theme, toggleTheme } = usePreferences();
+
   return (
     <header className="sticky top-4 sm:top-6 z-10">
-      <div className="flex items-center gap-4 rounded-card bg-background/80 backdrop-blur px-6 py-4 shadow-extruded">
+      <div className="flex items-center gap-3 sm:gap-4 rounded-card bg-background/80 backdrop-blur px-4 sm:px-6 py-4 shadow-extruded">
+        <button
+          type="button"
+          className="neu-btn h-12 w-12 !px-0 rounded-full shrink-0 md:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          aria-label="Mở menu"
+          aria-controls="sidebar-nav"
+          onClick={onOpenMobileNav}
+        >
+          <Icon icon={Menu} size={20} />
+        </button>
+
         <label className="relative flex-1 max-w-xl">
           <span className="absolute left-4 top-1/2 -translate-y-1/2 text-placeholder" aria-hidden>
-            <svg className="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="9" cy="9" r="6" />
-              <path d="m14 14 4 4" strokeLinecap="round" />
-            </svg>
+            <Icon icon={Search} size={20} />
           </span>
           <input
             className="neu-input pl-12"
-            placeholder="Tìm kiếm đợt tuyển..."
+            placeholder={searchPlaceholder}
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
           />
         </label>
 
-        <div className="ml-auto flex items-center gap-4">
-          <button className="neu-btn h-12 w-12 !px-0 rounded-full" aria-label="Thông báo">
-            <svg className="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8">
-              <path d="M10 2.5a5 5 0 0 0-5 5v3l-1.5 3h13L15 10.5v-3a5 5 0 0 0-5-5Z" strokeLinejoin="round" />
-              <path d="M8 16.5a2 2 0 0 0 4 0" />
-            </svg>
+        <div className="ml-auto flex items-center gap-2.5 sm:gap-3">
+          <button
+            type="button"
+            className="neu-btn h-12 w-12 !px-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            aria-label={theme === "dark" ? "Chuyển sang giao diện sáng" : "Chuyển sang giao diện tối"}
+            title={theme === "dark" ? "Chế độ sáng" : "Chế độ tối"}
+            onClick={toggleTheme}
+          >
+            <Icon icon={theme === "dark" ? Sun : Moon} size={20} />
           </button>
-          <button className="neu-btn h-12 w-12 !px-0 rounded-full" aria-label="Tài khoản">
-            <svg className="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8">
-              <circle cx="10" cy="7" r="3.5" />
-              <path d="M3.5 17a6.5 6.5 0 0 1 13 0" strokeLinecap="round" />
-            </svg>
+          <button
+            type="button"
+            className="neu-btn h-12 w-12 !px-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            aria-label="Thông báo"
+          >
+            <Icon icon={Bell} size={20} />
+          </button>
+          <button
+            type="button"
+            className="neu-btn h-12 w-12 !px-0 rounded-full overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            aria-label="Mở cài đặt tài khoản"
+            onClick={() => navigate(settingsPath(role))}
+          >
+            {user ? (
+              <Avatar name={user.name} src={user.avatarDataUrl} size="md" className="!h-full !w-full !rounded-none" />
+            ) : (
+              <span className="text-xs font-bold text-accent">?</span>
+            )}
           </button>
         </div>
       </div>
