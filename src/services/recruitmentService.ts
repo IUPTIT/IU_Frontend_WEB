@@ -640,6 +640,7 @@ function toUiSlot(s: BackendSlot, booking: BackendBooking | null): InterviewSlot
     startTime: s.startTime,
     durationMinutes: Math.max(minutesBetween(s.startTime, s.endTime), 0),
     locationOrLink: s.location,
+    capacity: s.capacity,
     applicationId: app?._id,
     candidateName: app?.fullName,
     candidateDepartment: preferred,
@@ -721,17 +722,40 @@ export async function assignInterviewersToSlot(
   return toUiSlot(slot, null);
 }
 
+export type EditSlotPatch = {
+  date: string;
+  startTime: string;
+  durationMinutes?: number;
+  locationOrLink?: string;
+  capacity?: number;
+};
+
+// Sửa ca: giờ/ngày/địa điểm/sức chứa — không gửi duration thì backend tự giữ thời lượng cũ
 export async function rescheduleInterviewSlot(
   rowId: string,
-  patch: { date: string; startTime: string; reason?: string },
+  patch: EditSlotPatch,
 ): Promise<InterviewSlot | undefined> {
   const { slotId } = parseRowId(rowId);
-  // Không gửi endTime — backend tự dời endTime giữ nguyên thời lượng ca
-  const { slot } = await api.patch<{ slot: BackendSlot }>(`/recruitment/slots/${slotId}`, {
+  const body: Record<string, unknown> = {
     date: patch.date,
     startTime: patch.startTime,
-  });
+  };
+  if (patch.durationMinutes != null) {
+    body.endTime = addMinutes(patch.startTime, patch.durationMinutes);
+  }
+  if (patch.locationOrLink) body.location = patch.locationOrLink;
+  if (patch.capacity != null) body.capacity = patch.capacity;
+  const { slot } = await api.patch<{ slot: BackendSlot }>(
+    `/recruitment/slots/${slotId}`,
+    body,
+  );
   return toUiSlot(slot, null);
+}
+
+// Xoá ca — backend chặn nếu đã có ứng viên đặt lịch
+export async function deleteInterviewSlot(rowId: string): Promise<void> {
+  const { slotId } = parseRowId(rowId);
+  await api.delete(`/recruitment/slots/${slotId}`);
 }
 
 export async function getInterviewCriteria(): Promise<InterviewCriterion[]> {

@@ -14,6 +14,7 @@ import {
   getInterviewDatesWithSlots,
   getInterviewSlots,
   getInterviewers,
+  deleteInterviewSlot,
   getPassedScreeningApplications,
   notifyInterviewResults,
   rescheduleInterviewSlot,
@@ -33,6 +34,7 @@ import { formatDate } from "../../../../utils/formatDate";
 import AssignInterviewersModal from "./components/AssignInterviewersModal";
 import BatchScheduleModal from "./components/BatchScheduleModal";
 import DaySummaryCard from "./components/DaySummaryCard";
+import ConfirmDialog from "../../../../components/ui/ConfirmDialog";
 import InterviewCalendar from "../../../../components/InterviewCalendar";
 import InterviewScoreModal from "./components/InterviewScoreModal";
 import InterviewSlotCard from "./components/InterviewSlotCard";
@@ -74,6 +76,8 @@ function RecruitmentInterviewsPage() {
   const [assignSlot, setAssignSlot] = useState<InterviewSlot | null>(null);
   const [rescheduleSlot, setRescheduleSlot] = useState<InterviewSlot | null>(null);
   const [scoreSlot, setScoreSlot] = useState<InterviewSlot | null>(null);
+  const [deleteSlotTarget, setDeleteSlotTarget] = useState<InterviewSlot | null>(null);
+  const [deletingSlot, setDeletingSlot] = useState(false);
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -389,6 +393,7 @@ function RecruitmentInterviewsPage() {
                     onAssign={setAssignSlot}
                     onReschedule={setRescheduleSlot}
                     onScore={setScoreSlot}
+                    onDelete={setDeleteSlotTarget}
                   />
                 ))}
               </div>
@@ -479,12 +484,39 @@ function RecruitmentInterviewsPage() {
         open={!!rescheduleSlot}
         slot={rescheduleSlot}
         onClose={() => setRescheduleSlot(null)}
-        onSubmit={async (slotId, date, startTime) => {
-          await rescheduleInterviewSlot(slotId, { date, startTime });
+        onSubmit={async (slotId, patch) => {
+          await rescheduleInterviewSlot(slotId, patch);
           await reloadSlots(campaignId);
-          setSelectedDate(date);
-          showToast("Đã đổi lịch phỏng vấn.");
+          setSelectedDate(patch.date);
+          showToast("Đã cập nhật ca phỏng vấn.");
         }}
+      />
+
+      <ConfirmDialog
+        open={deleteSlotTarget !== null}
+        title="Xoá ca phỏng vấn"
+        message={
+          deleteSlotTarget
+            ? `Xoá ca ${deleteSlotTarget.startTime} ngày ${formatDate(deleteSlotTarget.date)} tại ${deleteSlotTarget.locationOrLink}?`
+            : ""
+        }
+        confirmLabel="Xoá ca"
+        loading={deletingSlot}
+        onConfirm={async () => {
+          if (!deleteSlotTarget) return;
+          setDeletingSlot(true);
+          try {
+            await deleteInterviewSlot(deleteSlotTarget.id);
+            await reloadSlots(campaignId);
+            showToast("Đã xoá ca phỏng vấn.");
+            setDeleteSlotTarget(null);
+          } catch (err) {
+            showToast(err instanceof Error ? err.message : "Xoá ca thất bại.");
+          } finally {
+            setDeletingSlot(false);
+          }
+        }}
+        onClose={() => setDeleteSlotTarget(null)}
       />
 
       <InterviewScoreModal

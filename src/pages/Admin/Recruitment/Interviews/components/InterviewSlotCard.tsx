@@ -7,6 +7,7 @@ type Props = {
   onAssign: (slot: InterviewSlot) => void;
   onReschedule: (slot: InterviewSlot) => void;
   onScore: (slot: InterviewSlot) => void;
+  onDelete: (slot: InterviewSlot) => void;
 };
 
 function initials(name: string) {
@@ -14,7 +15,7 @@ function initials(name: string) {
   return ((p[0]?.[0] ?? "") + (p[p.length - 1]?.[0] ?? "")).toUpperCase();
 }
 
-function InterviewSlotCard({ slot, onAssign, onReschedule, onScore }: Props) {
+function InterviewSlotCard({ slot, onAssign, onReschedule, onScore, onDelete }: Props) {
   const filled = slot.interviewers.length;
   const need = slot.requiredInterviewers;
   const missing = filled < need;
@@ -105,7 +106,7 @@ function InterviewSlotCard({ slot, onAssign, onReschedule, onScore }: Props) {
               className="text-xs font-medium text-muted hover:text-accent"
               onClick={() => onReschedule(slot)}
             >
-              Đổi lịch
+              Sửa
             </button>
             <span className="text-muted/40">·</span>
             <button
@@ -114,6 +115,14 @@ function InterviewSlotCard({ slot, onAssign, onReschedule, onScore }: Props) {
               onClick={() => onScore(slot)}
             >
               Chấm điểm
+            </button>
+            <span className="text-muted/40">·</span>
+            <button
+              type="button"
+              className="text-xs font-medium text-rose-500 hover:text-rose-600"
+              onClick={() => onDelete(slot)}
+            >
+              Xoá
             </button>
           </div>
         </div>

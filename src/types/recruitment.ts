@@ -141,6 +141,8 @@ export type InterviewSlot = {
   startTime: string; // HH:mm
   durationMinutes: number;
   locationOrLink: string;
+  /** Số ứng viên tối đa của ca */
+  capacity?: number;
   applicationId?: string;
   candidateName?: string;
   candidateDepartment?: string;
