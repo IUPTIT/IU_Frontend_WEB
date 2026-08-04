@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Plus, Shield, Trash2, UserCog, UserRound, Users } from "lucide-react";
 import Button from "../../../components/ui/Button";
+import ConfirmDialog from "../../../components/ui/ConfirmDialog";
 import {
   DataTableCell,
   DataTableHead,
@@ -239,6 +240,8 @@ function AdminPermissionsPage() {
   const [draftRole, setDraftRole] = useState<AccountRole | "">("");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [revokeTarget, setRevokeTarget] = useState<ManagedAccount | null>(null);
+  const [revoking, setRevoking] = useState(false);
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -410,12 +413,7 @@ function AdminPermissionsPage() {
                       variant="danger-icon"
                       size="sm"
                       aria-label={`Thu hồi ${a.fullName}`}
-                      onClick={async () => {
-                        if (!window.confirm(`Thu hồi tài khoản ${a.fullName}?`)) return;
-                        await deactivateAccount(a.id);
-                        await load();
-                        showToast("Đã thu hồi tài khoản.");
-                      }}
+                      onClick={() => setRevokeTarget(a)}
                     >
                       <Icon icon={Trash2} size={16} />
                     </Button>
@@ -430,6 +428,34 @@ function AdminPermissionsPage() {
       <div className="flex justify-end">
         <Pagination page={safePage} totalPages={totalPages} onChange={setPage} />
       </div>
+
+      <ConfirmDialog
+        open={revokeTarget !== null}
+        title="Thu hồi tài khoản"
+        message={
+          revokeTarget ? (
+            <>
+              Thu hồi tài khoản <b>{revokeTarget.fullName}</b>? Người này sẽ không đăng nhập được nữa.
+            </>
+          ) : undefined
+        }
+        confirmLabel="Thu hồi"
+        tone="danger"
+        loading={revoking}
+        onConfirm={async () => {
+          if (!revokeTarget) return;
+          setRevoking(true);
+          try {
+            await deactivateAccount(revokeTarget.id);
+            await load();
+            showToast("Đã thu hồi tài khoản.");
+          } finally {
+            setRevoking(false);
+            setRevokeTarget(null);
+          }
+        }}
+        onClose={() => setRevokeTarget(null)}
+      />
 
       <CreateAccountDrawer
         open={drawerOpen}

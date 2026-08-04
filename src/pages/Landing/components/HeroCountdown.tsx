@@ -6,7 +6,7 @@ type CountdownState =
   | { kind: "loading" }
   | { kind: "not_started" }
   | { kind: "ended" }
-  | { kind: "running"; days: number; hours: number; minutes: number };
+  | { kind: "running"; days: number; hours: number; minutes: number; seconds: number };
 
 function computeState(campaign: PublicCampaign | null): CountdownState {
   // Không có đợt nào đang mở → coi như chưa đến thời gian đăng ký
@@ -20,6 +20,7 @@ function computeState(campaign: PublicCampaign | null): CountdownState {
     days: Math.floor(diff / 86_400_000),
     hours: Math.floor((diff % 86_400_000) / 3_600_000),
     minutes: Math.floor((diff % 3_600_000) / 60_000),
+    seconds: Math.floor((diff % 60_000) / 1000),
   };
 }
 
@@ -38,7 +39,7 @@ function HeroCountdown() {
 
   useEffect(() => {
     if (state.kind === "loading") return;
-    const timer = window.setInterval(() => setState(computeState(campaign)), 60_000);
+    const timer = window.setInterval(() => setState(computeState(campaign)), 1000);
     return () => window.clearInterval(timer);
   }, [campaign, state.kind]);
 
@@ -60,6 +61,7 @@ function HeroCountdown() {
         { value: state.days, unit: "ngày" },
         { value: state.hours, unit: "giờ" },
         { value: state.minutes, unit: "phút" },
+        { value: state.seconds, unit: "giây" },
       ].map(({ value, unit }) => (
         <div key={unit} className="rounded-xl bg-white/[0.07] px-3.5 py-2 text-center">
           <p className="landing-display text-xl font-semibold text-[hsl(var(--landing-foreground))]">

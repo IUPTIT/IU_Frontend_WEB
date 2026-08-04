@@ -17,6 +17,7 @@ function remaining(target: string) {
     days: Math.floor(diff / 86_400_000),
     hours: Math.floor((diff % 86_400_000) / 3_600_000),
     minutes: Math.floor((diff % 3_600_000) / 60_000),
+    seconds: Math.floor((diff % 60_000) / 1000),
   };
 }
 
@@ -40,7 +41,7 @@ function CampaignHeader({ campaign }: { campaign: PublicCampaign }) {
     const timer = window.setInterval(() => {
       setPhase(getPhase(campaign));
       setLeft(remaining(phase === "before_open" ? campaign.openAt : campaign.closeAt));
-    }, 30_000);
+    }, 1000);
     return () => window.clearInterval(timer);
   }, [campaign, phase]);
 
@@ -69,6 +70,7 @@ function CampaignHeader({ campaign }: { campaign: PublicCampaign }) {
             { value: left.days, unit: "ngày" },
             { value: left.hours, unit: "giờ" },
             { value: left.minutes, unit: "phút" },
+            { value: left.seconds, unit: "giây" },
           ].map(({ value, unit }) => (
             <div key={unit} className="liquid-glass landing-card-solid rounded-2xl px-4 py-3 text-center">
               <p className="landing-headline text-2xl font-semibold text-[hsl(var(--landing-foreground))]">

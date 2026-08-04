@@ -1,6 +1,7 @@
 ﻿import { useCallback, useEffect, useMemo, useState } from "react";
 import { FileText, MessageSquare, Send, UserCheck, UserPlus } from "lucide-react";
 import Button from "../../../../components/ui/Button";
+import ConfirmDialog from "../../../../components/ui/ConfirmDialog";
 import ExportDataModal, { type ExportColumnDef } from "../../../../components/ui/ExportDataModal";
 import FilterMenu from "../../../../components/ui/FilterMenu";
 import Icon from "../../../../components/ui/Icon";
@@ -164,6 +165,7 @@ function RecruitmentResultsPage() {
   const [menuId, setMenuId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [convertIds, setConvertIds] = useState<string[] | null>(null);
   const [emailOpen, setEmailOpen] = useState(false);
   const [emailRecipients, setEmailRecipients] = useState<EmailRecipient[]>([]);
   const [emailTemplateId, setEmailTemplateId] = useState<string | undefined>("tpl-passed");
@@ -312,20 +314,33 @@ function RecruitmentResultsPage() {
       showToast("Chọn ít nhất một ứng viên trúng tuyển để chuyển đổi.");
       return;
     }
-    const ok = window.confirm(`Chuyển ${ids.length} ứng viên thành Member?`);
-    if (!ok) return;
+    setConvertIds(ids);
+  };
+
+  const confirmConvert = async () => {
+    if (!convertIds) return;
     setBusy(true);
     try {
-      const res = await convertAcceptedToMembers(ids);
+      const res = await convertAcceptedToMembers(convertIds);
       await reload(campaignId);
       showToast(`Đã chuyển ${res.converted} ứng viên thành Member.`);
     } finally {
       setBusy(false);
+      setConvertIds(null);
     }
   };
 
   return (
     <>
+      <ConfirmDialog
+        open={convertIds !== null}
+        title="Chuyển thành Member"
+        message={`Chuyển ${convertIds?.length ?? 0} ứng viên trúng tuyển thành thành viên chính thức?`}
+        confirmLabel="Chuyển đổi"
+        loading={busy}
+        onConfirm={confirmConvert}
+        onClose={() => setConvertIds(null)}
+      />
       <section className="flex flex-wrap items-end justify-between gap-4">
         <div className="min-w-0 space-y-3">
           <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">

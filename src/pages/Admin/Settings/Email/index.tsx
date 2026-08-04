@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import Badge from "../../../../components/ui/Badge";
 import Button from "../../../../components/ui/Button";
+import ConfirmDialog from "../../../../components/ui/ConfirmDialog";
 import Icon from "../../../../components/ui/Icon";
 import Modal from "../../../../components/ui/Modal";
 import Select from "../../../../components/ui/Select";
@@ -344,6 +345,7 @@ function SmtpPanel({ onToast }: { onToast: (m: string) => void }) {
 
 function TemplatesPanel({ onToast }: { onToast: (m: string) => void }) {
   const [list, setList] = useState<EmailTemplate[]>([]);
+  const [deleteTarget, setDeleteTarget] = useState<EmailTemplate | null>(null);
   const [loading, setLoading] = useState(true);
   const [editor, setEditor] = useState<null | { mode: "create" | "edit"; draft: typeof EMPTY_TPL; id?: string }>(null);
   const [preview, setPreview] = useState<{ subject: string; bodyHtml: string } | null>(null);
@@ -396,6 +398,28 @@ function TemplatesPanel({ onToast }: { onToast: (m: string) => void }) {
 
   return (
     <section className="space-y-5">
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        title="Xóa template"
+        message={
+          deleteTarget ? (
+            <>
+              Xóa template <b>"{deleteTarget.name}"</b>? Hành động này không thể hoàn tác.
+            </>
+          ) : undefined
+        }
+        confirmLabel="Xóa template"
+        tone="danger"
+        onConfirm={async () => {
+          if (!deleteTarget) return;
+          await deleteEmailTemplate(deleteTarget.id);
+          onToast("Đã xóa template.");
+          setDeleteTarget(null);
+          void load();
+        }}
+        onClose={() => setDeleteTarget(null)}
+      />
+
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Select
           value={filterCat}
@@ -472,12 +496,7 @@ function TemplatesPanel({ onToast }: { onToast: (m: string) => void }) {
                   variant="danger-icon"
                   size="sm"
                   aria-label="Xóa"
-                  onClick={async () => {
-                    if (!window.confirm(`Xóa template “${t.name}”?`)) return;
-                    await deleteEmailTemplate(t.id);
-                    onToast("Đã xóa template.");
-                    void load();
-                  }}
+                  onClick={() => setDeleteTarget(t)}
                 >
                   <Icon icon={Trash2} size={16} />
                 </Button>

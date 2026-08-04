@@ -9,11 +9,13 @@ import { createEmptyDraft } from "../wizard/types";
 type Props = {
   onCancel: () => void;
   onPublished: (draft: CampaignDraft, mode: "draft" | "publish") => void;
+  /** Sửa đợt tuyển có sẵn — prefill draft thay vì form trống */
+  initialDraft?: CampaignDraft;
 };
 
-function CampaignWizard({ onCancel, onPublished }: Props) {
+function CampaignWizard({ onCancel, onPublished, initialDraft }: Props) {
   const [step, setStep] = useState<WizardStepId>(1);
-  const [draft, setDraft] = useState<CampaignDraft>(() => createEmptyDraft());
+  const [draft, setDraft] = useState<CampaignDraft>(() => initialDraft ?? createEmptyDraft());
   const [error, setError] = useState<string | null>(null);
 
   const patchDraft = (patch: Partial<CampaignDraft>) => {

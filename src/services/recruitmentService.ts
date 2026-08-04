@@ -239,6 +239,47 @@ export async function createCampaign(input: CreateCampaignInput): Promise<Recrui
   return toCampaign(campaign);
 }
 
+export type UpdateCampaignInput = {
+  name?: string;
+  description?: string;
+  openAt?: string | null;
+  closeAt?: string | null;
+  quotas?: { departmentId: string; departmentName: string; quota: number }[];
+  customQuestions?: CreateCampaignQuestion[];
+};
+
+// Sửa đợt tuyển. Đợt đã publish: backend chỉ nhận closeAt/quotas/description
+// (+ customQuestions khi chưa có hồ sơ) — caller tự lọc field trước khi gọi.
+export async function updateCampaign(
+  id: string,
+  input: UpdateCampaignInput,
+): Promise<RecruitmentCampaign> {
+  const body: Record<string, unknown> = {};
+  if (input.name !== undefined) body.name = input.name;
+  if (input.description !== undefined) body.description = input.description;
+  if (input.openAt != null) body.openAt = input.openAt;
+  if (input.closeAt != null) body.closeAt = input.closeAt;
+  if (input.quotas) {
+    body.quotas = input.quotas
+      .filter((q) => q.quota > 0)
+      .map((q) => ({ team: q.departmentName, count: q.quota }));
+  }
+  if (input.customQuestions) {
+    body.customQuestions = input.customQuestions.map((q) => ({
+      label: q.label,
+      type: QUESTION_TYPE_TO_BACKEND[q.type],
+      options: q.options?.length ? q.options : undefined,
+      required: q.required,
+      order: q.order,
+    }));
+  }
+  const { campaign } = await api.patch<{ campaign: BackendCampaign }>(
+    `/recruitment/campaigns/${id}`,
+    body,
+  );
+  return toCampaign(campaign);
+}
+
 export async function getFormQuestions(campaignId: string): Promise<FormQuestion[]> {
   const { campaign } = await api.get<{ campaign: BackendCampaign }>(
     `/recruitment/campaigns/${campaignId}`,

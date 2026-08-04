@@ -8,12 +8,16 @@ import {
   createCampaign,
   deleteCampaign,
   getCampaigns,
+  getFormQuestions,
   setCampaignActive,
+  updateCampaign,
 } from "../../../../services/recruitmentService";
 import type { RecruitmentCampaign } from "../../../../types/recruitment";
+import ConfirmDialog from "../../../../components/ui/ConfirmDialog";
 import CampaignTable from "./components/CampaignTable";
 import CampaignWizard from "./components/CampaignWizard";
-import type { CampaignDraft } from "./wizard/types";
+import type { CampaignDraft, QuestionDraft } from "./wizard/types";
+import { DEFAULT_QUOTAS, uid } from "./wizard/types";
 
 const PAGE_SIZE = 5;
 
@@ -24,6 +28,9 @@ function RecruitmentOpenPage() {
   const [page, setPage] = useState(1);
   const [toast, setToast] = useState<string | null>(null);
   const [mode, setMode] = useState<"list" | "wizard">("list");
+  // Đợt đang sửa (null = tạo mới) + draft prefill cho wizard
+  const [editing, setEditing] = useState<RecruitmentCampaign | null>(null);
+  const [editDraft, setEditDraft] = useState<CampaignDraft | null>(null);
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -68,26 +75,91 @@ function RecruitmentOpenPage() {
     }
   };
 
-  const handleDelete = async (campaign: RecruitmentCampaign) => {
+  const [deleteTarget, setDeleteTarget] = useState<RecruitmentCampaign | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDelete = (campaign: RecruitmentCampaign) => {
     if (campaign.isActive) {
       showToast("Không thể xóa đợt đang kích hoạt.");
       return;
     }
-    const ok = window.confirm(`Xóa đợt "${campaign.name}"?`);
-    if (!ok) return;
+    setDeleteTarget(campaign);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
     try {
-      await deleteCampaign(campaign.id);
+      await deleteCampaign(deleteTarget.id);
       await load();
       showToast("Đã xóa đợt tuyển.");
+      setDeleteTarget(null);
     } catch (err) {
       // VD: backend chặn xoá đợt đã có hồ sơ nộp
       showToast(err instanceof Error ? err.message : "Xóa đợt tuyển thất bại.");
+      setDeleteTarget(null);
+    } finally {
+      setDeleting(false);
     }
   };
 
-  const handleEdit = () => {
-    setMode("wizard");
-    showToast("Mở wizard chỉnh sửa — dùng form tạo mới.");
+  // ISO → giá trị datetime-local theo giờ địa phương ("YYYY-MM-DDTHH:mm")
+  const toLocalInput = (iso: string | null) => {
+    if (!iso) return "";
+    const d = new Date(iso);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  };
+
+  const handleEdit = async (campaign: RecruitmentCampaign) => {
+    try {
+      const questions = await getFormQuestions(campaign.id);
+      const draftQuestions: QuestionDraft[] = questions.map((q) => ({
+        id: q.id,
+        content: q.content,
+        // QuestionDraft chưa hỗ trợ multi_choice/rating — quy về loại gần nhất
+        type:
+          q.type === "multi_choice"
+            ? "single_choice"
+            : q.type === "rating"
+              ? "short_text"
+              : q.type,
+        required: q.required,
+        options: q.options?.map((o) => ({ id: o.id, label: o.label })) ?? [],
+      }));
+
+      setEditing(campaign);
+      setEditDraft({
+        name: campaign.name,
+        dateRangeLabel: "",
+        openAt: toLocalInput(campaign.openAt),
+        closeAt: toLocalInput(campaign.closeAt),
+        description: campaign.description ?? "",
+        // Ghép chỉ tiêu thật vào 4 ban mặc định (giữ icon/tông màu), ban lạ thêm cuối
+        quotas: [
+          ...DEFAULT_QUOTAS.map((base) => ({
+            ...base,
+            quota:
+              campaign.quotas.find((q) => q.departmentName === base.departmentName)?.quota ?? 0,
+          })),
+          ...campaign.quotas
+            .filter((q) => !DEFAULT_QUOTAS.some((b) => b.departmentName === q.departmentName))
+            .map((q) => ({
+              departmentId: uid("dept"),
+              departmentName: q.departmentName,
+              icon: "code" as const,
+              tone: "blue" as const,
+              quota: q.quota,
+            })),
+        ],
+        questions: draftQuestions,
+        activateOnPublish: campaign.isActive,
+        notifyOnPublish: false,
+      });
+      setMode("wizard");
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Không tải được đợt tuyển để sửa.");
+    }
   };
 
   const handleWizardDone = async (draft: CampaignDraft, saveMode: "draft" | "publish") => {
@@ -97,38 +169,60 @@ function RecruitmentOpenPage() {
     const toCloseIso = (v: string) =>
       v ? new Date(v.includes("T") ? v : `${v}T23:59:59`).toISOString() : null;
 
+    const quotas = draft.quotas.map((q) => ({
+      departmentId: q.departmentId,
+      departmentName: q.departmentName,
+      quota: q.quota,
+    }));
+    const customQuestions = draft.questions.map((q, index) => ({
+      label: q.content,
+      type: q.type,
+      options: q.options.map((o) => o.label),
+      required: q.required,
+      order: index,
+    }));
+
     try {
-      await createCampaign({
-        name: draft.name.trim() || "Đợt tuyển chưa đặt tên",
-        description: draft.description,
-        openAt: toOpenIso(draft.openAt),
-        closeAt: toCloseIso(draft.closeAt),
-        quotas: draft.quotas.map((q) => ({
-          departmentId: q.departmentId,
-          departmentName: q.departmentName,
-          quota: q.quota,
-        })),
-        customQuestions: draft.questions.map((q, index) => ({
-          label: q.content,
-          type: q.type,
-          options: q.options.map((o) => o.label),
-          required: q.required,
-          order: index,
-        })),
-        status: saveMode === "publish" ? "published" : "draft",
-        isActive: saveMode === "publish" && draft.activateOnPublish,
-      });
+      if (editing) {
+        // Đợt đã publish: backend chỉ cho sửa closeAt/chỉ tiêu/mô tả (+ câu hỏi khi chưa có hồ sơ)
+        const published = editing.status !== "draft";
+        await updateCampaign(editing.id, {
+          ...(published ? {} : { name: draft.name.trim(), openAt: toOpenIso(draft.openAt) }),
+          description: draft.description,
+          closeAt: toCloseIso(draft.closeAt),
+          quotas,
+          customQuestions,
+        });
+        if (!published && saveMode === "publish") {
+          await setCampaignActive(editing.id, true);
+        }
+      } else {
+        await createCampaign({
+          name: draft.name.trim() || "Đợt tuyển chưa đặt tên",
+          description: draft.description,
+          openAt: toOpenIso(draft.openAt),
+          closeAt: toCloseIso(draft.closeAt),
+          quotas,
+          customQuestions,
+          status: saveMode === "publish" ? "published" : "draft",
+          isActive: saveMode === "publish" && draft.activateOnPublish,
+        });
+      }
     } catch (err) {
-      showToast(err instanceof Error ? err.message : "Tạo đợt tuyển thất bại.");
+      showToast(err instanceof Error ? err.message : "Lưu đợt tuyển thất bại.");
       return; // giữ nguyên wizard để sửa lại
     }
 
     await load();
     setMode("list");
+    setEditing(null);
+    setEditDraft(null);
     showToast(
-      saveMode === "publish"
-        ? "Đã xuất bản đợt tuyển thành công."
-        : "Đã lưu nháp đợt tuyển.",
+      editing
+        ? "Đã cập nhật đợt tuyển."
+        : saveMode === "publish"
+          ? "Đã xuất bản đợt tuyển thành công."
+          : "Đã lưu nháp đợt tuyển.",
     );
   };
 
@@ -141,7 +235,13 @@ function RecruitmentOpenPage() {
           </p>
         )}
         <CampaignWizard
-          onCancel={() => setMode("list")}
+          key={editing?.id ?? "new"}
+          initialDraft={editDraft ?? undefined}
+          onCancel={() => {
+            setMode("list");
+            setEditing(null);
+            setEditDraft(null);
+          }}
           onPublished={handleWizardDone}
         />
       </>
@@ -190,6 +290,23 @@ function RecruitmentOpenPage() {
           <Pagination page={safePage} totalPages={totalPages} onChange={setPage} />
         </>
       )}
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        title="Xóa đợt tuyển"
+        message={
+          deleteTarget ? (
+            <>
+              Xóa đợt <b>"{deleteTarget.name}"</b>? Hành động này không thể hoàn tác.
+            </>
+          ) : undefined
+        }
+        confirmLabel="Xóa đợt tuyển"
+        tone="danger"
+        loading={deleting}
+        onConfirm={confirmDelete}
+        onClose={() => setDeleteTarget(null)}
+      />
     </>
   );
 }
