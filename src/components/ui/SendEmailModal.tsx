@@ -66,7 +66,6 @@ function SendEmailModal({
   }, [recipients]);
 
   const loadMeta = useCallback(async () => {
-    setLoading(true);
     try {
       const [tpls, ph] = await Promise.all([
         getEmailTemplates(category || undefined),
@@ -93,12 +92,21 @@ function SendEmailModal({
     }
   }, [category, preferredTemplateId]);
 
+  // Reset trạng thái mỗi lần mở modal (adjust state during render)
+  const [prevOpen, setPrevOpen] = useState(open);
+  if (open !== prevOpen) {
+    setPrevOpen(open);
+    if (open) {
+      setError(null);
+      setToast(null);
+      setPreviewHtml(null);
+      setShowTest(false);
+      setLoading(true);
+    }
+  }
+
   useEffect(() => {
     if (!open) return;
-    setError(null);
-    setToast(null);
-    setPreviewHtml(null);
-    setShowTest(false);
     void loadMeta();
   }, [open, loadMeta]);
 

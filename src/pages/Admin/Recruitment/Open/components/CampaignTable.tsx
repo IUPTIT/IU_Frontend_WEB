@@ -11,9 +11,9 @@ import {
   DataTableCell,
   DataTableHead,
   DataTableShell,
-  useColumnWidths,
   type DataTableColumn,
 } from "../../../../../components/ui/DataTable";
+import { useColumnWidths } from "../../../../../components/ui/useColumnWidths";
 import Icon from "../../../../../components/ui/Icon";
 import Toggle from "../../../../../components/ui/Toggle";
 import CampaignStatusBadge from "./CampaignStatusBadge";

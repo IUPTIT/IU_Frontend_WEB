@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import type { Role } from "../types/navigation";
 import {
@@ -8,17 +8,7 @@ import {
   type AuthUser,
 } from "../services/authService";
 
-type ProfilePatch = Partial<Pick<AuthUser, "name" | "phone" | "bio" | "avatarDataUrl">>;
-
-type AuthContextValue = {
-  user: AuthUser | null;
-  isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
-  updateProfile: (patch: ProfilePatch) => void;
-};
-
-const AuthContext = createContext<AuthContextValue | null>(null);
+import { AuthContext, type ProfilePatch } from "./auth-context";
 
 const STORAGE_KEY = "iuclub_auth_user";
 
@@ -89,12 +79,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
-
-export function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth phải dùng bên trong <AuthProvider>");
-  return ctx;
 }
 
 export type { AuthUser, Role };

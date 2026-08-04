@@ -132,7 +132,10 @@ export type InterviewerRef = {
 export type InterviewSlotStatus = "scheduled" | "missing_interviewers" | "done";
 
 export type InterviewSlot = {
+  /** Row id tổng hợp — service tự parse, UI chỉ dùng làm key/tham chiếu */
   id: string;
+  /** ID booking backend (có khi slot đã gán ứng viên) */
+  bookingId?: string;
   campaignId: string;
   date: string; // YYYY-MM-DD
   startTime: string; // HH:mm

@@ -6,7 +6,7 @@ import Badge from "../../../../components/ui/Badge";
 import Icon from "../../../../components/ui/Icon";
 import Avatar from "../../../../components/ui/Avatar";
 import Select from "../../../../components/ui/Select";
-import { usePortalUi } from "../../../../context/PortalUiContext";
+import { usePortalUi } from "../../../../context/usePortalUi";
 import {
   createTrainingGroup,
   getMentors,

@@ -3,8 +3,8 @@ import { Send } from "lucide-react";
 import Button from "../../../../components/ui/Button";
 import Icon from "../../../../components/ui/Icon";
 import SendEmailModal from "../../../../components/ui/SendEmailModal";
-import { useAuth } from "../../../../context/AuthContext";
-import { usePortalUi } from "../../../../context/PortalUiContext";
+import { useAuth } from "../../../../context/useAuth";
+import { usePortalUi } from "../../../../context/usePortalUi";
 import { ROUTES } from "../../../../constants/routes";
 import {
   getApplicationAnswers,

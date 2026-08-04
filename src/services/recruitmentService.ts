@@ -408,12 +408,9 @@ export async function getRecruitmentStats(campaignId: string): Promise<Recruitme
   };
 }
 
-// ---- Chấm điểm vòng đơn / phỏng vấn — CHƯA có API, lưu in-memory (rỗng) ----
-// TODO: nối API khi backend có module screening/interview (Phần 2-4 spec)
-
-let scoresStore: ApplicationScore[] = [];
-let interviewSlotsStore: InterviewSlot[] = [];
-let interviewScoresStore: InterviewScore[] = [];
+// ---- Chấm điểm vòng đơn / phỏng vấn (API thật — Phần 2-4) ----
+// Backend chấm theo thang 0-100 với trọng số tổng 100; UI dùng thang 0-maxScore.
+// Các hàm dưới chuyển đổi 2 chiều để giữ nguyên giao diện.
 
 const SCREENING_CRITERIA: ScreeningCriterion[] = [
   { id: "sc-1", name: "Học lực", maxScore: 10 },
@@ -427,6 +424,72 @@ const INTERVIEW_CRITERIA: InterviewCriterion[] = [
   { id: "ic-3", name: "Giao tiếp", maxScore: 10 },
 ];
 
+type BackendCriterionScore = { criterion: string; weight: number; score: number };
+
+type BackendScore = {
+  _id: string;
+  applicationId: string;
+  round: "cv" | "interview";
+  scoredBy: { _id: string; name: string } | string;
+  criteriaScores: BackendCriterionScore[];
+  totalScore: number;
+  comment: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type BackendScoreSummary = {
+  average: number;
+  maxDiffPercent: number;
+  count: number;
+  scores: BackendScore[];
+};
+
+// UI (0..maxScore) → backend (0..100, trọng số chia đều tổng 100)
+function toBackendCriteria(
+  criteriaScores: { criteriaName: string; score: number; maxScore: number }[],
+): BackendCriterionScore[] {
+  const n = criteriaScores.length;
+  return criteriaScores.map((c, i) => ({
+    criterion: c.criteriaName,
+    // Chia đều, dồn phần dư vào tiêu chí cuối để tổng đúng 100
+    weight: i === n - 1 ? 100 - Math.floor(100 / n) * (n - 1) : Math.floor(100 / n),
+    score: c.maxScore > 0 ? (c.score / c.maxScore) * 100 : 0,
+  }));
+}
+
+function fromBackendCriteria(
+  criteriaScores: BackendCriterionScore[],
+  template: { id: string; name: string; maxScore: number }[],
+) {
+  return criteriaScores.map((c, i) => {
+    const t = template.find((x) => x.name === c.criterion) ?? template[i];
+    const maxScore = t?.maxScore ?? 10;
+    return {
+      criteriaId: t?.id ?? c.criterion,
+      criteriaName: c.criterion,
+      score: Number(((c.score / 100) * maxScore).toFixed(1)),
+      maxScore,
+    };
+  });
+}
+
+function scorerOf(s: BackendScore): { id: string; name: string } {
+  return typeof s.scoredBy === "string"
+    ? { id: s.scoredBy, name: "" }
+    : { id: s.scoredBy._id, name: s.scoredBy.name };
+}
+
+async function fetchScoreSummary(
+  applicationId: string,
+  round: "cv" | "interview",
+): Promise<BackendScoreSummary> {
+  const { summary } = await api.get<{ summary: BackendScoreSummary }>(
+    `/recruitment/applications/${applicationId}/scores?round=${round}`,
+  );
+  return summary;
+}
+
 export async function getScreeningCriteria(): Promise<ScreeningCriterion[]> {
   return [...SCREENING_CRITERIA];
 }
@@ -434,7 +497,20 @@ export async function getScreeningCriteria(): Promise<ScreeningCriterion[]> {
 export async function getApplicationScore(
   applicationId: string,
 ): Promise<ApplicationScore | undefined> {
-  return scoresStore.find((s) => s.applicationId === applicationId);
+  const summary = await fetchScoreSummary(applicationId, "cv");
+  const s = summary.scores[0];
+  if (!s) return undefined;
+  const scorer = scorerOf(s);
+  return {
+    id: s._id,
+    applicationId,
+    reviewerId: scorer.id,
+    reviewerName: scorer.name,
+    criteriaScores: fromBackendCriteria(s.criteriaScores, SCREENING_CRITERIA),
+    comment: s.comment,
+    createdAt: s.createdAt,
+    updatedAt: s.updatedAt,
+  };
 }
 
 export type SaveScreeningScoreInput = {
@@ -448,53 +524,142 @@ export type SaveScreeningScoreInput = {
 export async function saveApplicationScore(
   input: SaveScreeningScoreInput,
 ): Promise<ApplicationScore> {
-  const now = new Date().toISOString();
-  const existing = scoresStore.find((s) => s.applicationId === input.applicationId);
-  const next: ApplicationScore = {
-    id: existing?.id ?? `score-${Date.now()}`,
+  const { score } = await api.post<{ score: BackendScore }>(
+    `/recruitment/applications/${input.applicationId}/score`,
+    {
+      applicationId: input.applicationId,
+      round: "cv",
+      criteriaScores: toBackendCriteria(input.criteriaScores),
+      comment: input.comment,
+    },
+  );
+  const scorer = scorerOf(score);
+  return {
+    id: score._id,
     applicationId: input.applicationId,
-    reviewerId: input.reviewerId,
-    reviewerName: input.reviewerName,
+    reviewerId: scorer.id || input.reviewerId,
+    reviewerName: scorer.name || input.reviewerName,
     criteriaScores: input.criteriaScores,
     comment: input.comment,
-    createdAt: existing?.createdAt ?? now,
-    updatedAt: now,
+    createdAt: score.createdAt,
+    updatedAt: score.updatedAt,
   };
-  scoresStore = existing
-    ? scoresStore.map((s) => (s.applicationId === input.applicationId ? next : s))
-    : [...scoresStore, next];
-  return next;
 }
 
 export async function setScreeningDecision(
   applicationId: string,
-  _result: Extract<PassFail, "pass" | "fail">,
+  result: Extract<PassFail, "pass" | "fail">,
 ): Promise<Application | undefined> {
-  // TODO: gọi POST /recruitment/applications/:id/decide khi backend có endpoint
+  await api.post(`/recruitment/applications/${applicationId}/decide`, {
+    status: result === "pass" ? "passed_cv" : "failed_cv",
+  });
   return getApplicationById(applicationId);
 }
 
 export async function getInterviewers(): Promise<InterviewerRef[]> {
-  return [];
+  const { interviewers } = await api.get<{
+    interviewers: { _id: string; name: string }[];
+  }>("/recruitment/interviewers");
+  return interviewers.map((u) => ({ id: u._id, name: u.name }));
+}
+
+// ---- Slot phỏng vấn (API thật) ----
+// Row id = "<slotId>::<bookingId>::<applicationId>" — các hàm dưới tự parse.
+
+type BackendSlot = {
+  _id: string;
+  campaignId: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  location: string;
+  interviewerIds: { _id: string; name: string }[];
+  capacity: number;
+  bookedCount: number;
+};
+
+type BackendBooking = {
+  _id: string;
+  slotId: string;
+  status: "booked" | "changed" | "no_show" | "completed";
+  applicationId: {
+    _id: string;
+    fullName: string;
+    departmentPreferences: { department: string; priority: number }[];
+  } | null;
+};
+
+function parseRowId(rowId: string) {
+  const [slotId, bookingId, applicationId] = rowId.split("::");
+  return { slotId, bookingId: bookingId || undefined, applicationId: applicationId || undefined };
+}
+
+function minutesBetween(start: string, end: string) {
+  const [h1, m1] = start.split(":").map(Number);
+  const [h2, m2] = end.split(":").map(Number);
+  return h2 * 60 + m2 - (h1 * 60 + m1);
+}
+
+function addMinutes(start: string, minutes: number) {
+  const [h, m] = start.split(":").map(Number);
+  const total = h * 60 + m + minutes;
+  return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
+}
+
+function toUiSlot(s: BackendSlot, booking: BackendBooking | null): InterviewSlot {
+  const app = booking?.applicationId ?? null;
+  const preferred = app
+    ? [...(app.departmentPreferences ?? [])].sort((x, y) => x.priority - y.priority)[0]?.department
+    : undefined;
+  const interviewers = (s.interviewerIds ?? []).map((u) => ({ id: u._id, name: u.name }));
+  const done = booking?.status === "completed" || booking?.status === "no_show";
+  return {
+    id: `${s._id}::${booking?._id ?? ""}::${app?._id ?? ""}`,
+    bookingId: booking?._id,
+    campaignId: s.campaignId,
+    date: s.date.slice(0, 10),
+    startTime: s.startTime,
+    durationMinutes: Math.max(minutesBetween(s.startTime, s.endTime), 0),
+    locationOrLink: s.location,
+    applicationId: app?._id,
+    candidateName: app?.fullName,
+    candidateDepartment: preferred,
+    interviewers,
+    requiredInterviewers: 2,
+    status: done ? "done" : interviewers.length < 2 ? "missing_interviewers" : "scheduled",
+  };
+}
+
+async function fetchSlots(campaignId: string): Promise<InterviewSlot[]> {
+  const { slots, bookings } = await api.get<{
+    slots: BackendSlot[];
+    bookings: BackendBooking[];
+  }>(`/recruitment/campaigns/${campaignId}/slots`);
+  const bySlot = new Map<string, BackendBooking[]>();
+  for (const b of bookings) {
+    const list = bySlot.get(b.slotId) ?? [];
+    list.push(b);
+    bySlot.set(b.slotId, list);
+  }
+  return slots.flatMap((s) => {
+    const slotBookings = bySlot.get(s._id) ?? [];
+    if (!slotBookings.length) return [toUiSlot(s, null)];
+    return slotBookings.map((b) => toUiSlot(s, b));
+  });
 }
 
 export async function getInterviewSlots(
   campaignId?: string,
   date?: string,
 ): Promise<InterviewSlot[]> {
-  return interviewSlotsStore.filter((s) => {
-    if (campaignId && s.campaignId !== campaignId) return false;
-    if (date && s.date !== date) return false;
-    return true;
-  });
+  if (!campaignId) return [];
+  const rows = await fetchSlots(campaignId);
+  return date ? rows.filter((r) => r.date === date) : rows;
 }
 
 export async function getInterviewDatesWithSlots(campaignId: string): Promise<string[]> {
-  return [
-    ...new Set(
-      interviewSlotsStore.filter((s) => s.campaignId === campaignId).map((s) => s.date),
-    ),
-  ];
+  const rows = await fetchSlots(campaignId);
+  return [...new Set(rows.map((r) => r.date))];
 }
 
 export type BatchScheduleInput = {
@@ -507,68 +672,86 @@ export type BatchScheduleInput = {
   requiredInterviewers?: number;
 };
 
+// Tạo mỗi ứng viên 1 ca (capacity 1) rồi gán luôn ứng viên vào ca đó
 export async function createBatchInterviewSlots(input: BatchScheduleInput): Promise<InterviewSlot[]> {
-  const apps = await getApplications(input.campaignId);
-  const targets = apps.filter((a) => input.applicationIds.includes(a.id));
+  // Backend bắt buộc slot có >= 1 người phỏng vấn — mặc định lấy người đầu danh sách,
+  // phân công lại sau bằng nút "Phân công" trên từng ca
+  const interviewers = await getInterviewers();
+  if (!interviewers.length) {
+    throw new Error("Chưa có tài khoản BCN/Leader nào để phân công phỏng vấn");
+  }
+  const defaultInterviewer = interviewers[0].id;
   const times = input.startTimes.length
     ? input.startTimes
     : ["08:00", "09:00", "10:00", "11:00", "14:00", "15:00"];
 
-  const created: InterviewSlot[] = targets.map((app, i) => ({
-    id: `slot-${Date.now()}-${i}`,
-    campaignId: input.campaignId,
-    date: input.date,
-    startTime: times[i % times.length],
-    durationMinutes: input.durationMinutes,
-    locationOrLink: input.locationOrLink,
-    applicationId: app.id,
-    candidateName: app.fullName,
-    candidateDepartment: app.preferredDepartmentName,
-    interviewers: [],
-    requiredInterviewers: input.requiredInterviewers ?? 2,
-    status: "missing_interviewers",
-  }));
-
-  interviewSlotsStore = [...interviewSlotsStore, ...created];
+  const created: InterviewSlot[] = [];
+  for (const [i, applicationId] of input.applicationIds.entries()) {
+    const startTime = times[i % times.length];
+    const { slot } = await api.post<{ slot: BackendSlot }>("/recruitment/slots", {
+      campaignId: input.campaignId,
+      date: input.date,
+      startTime,
+      endTime: addMinutes(startTime, input.durationMinutes),
+      location: input.locationOrLink,
+      interviewerIds: [defaultInterviewer],
+      capacity: 1,
+    });
+    await api.post(`/recruitment/applications/${applicationId}/assign-slot`, {
+      slotId: slot._id,
+    });
+    created.push(toUiSlot(slot, null));
+  }
   return created;
 }
 
 export async function assignInterviewersToSlot(
-  slotId: string,
+  rowId: string,
   interviewers: InterviewerRef[],
 ): Promise<InterviewSlot | undefined> {
-  interviewSlotsStore = interviewSlotsStore.map((s) => {
-    if (s.id !== slotId) return s;
-    const next = { ...s, interviewers };
-    return {
-      ...next,
-      status:
-        next.status === "done"
-          ? "done"
-          : next.interviewers.length < next.requiredInterviewers
-            ? "missing_interviewers"
-            : "scheduled",
-    };
+  const { slotId } = parseRowId(rowId);
+  const { slot } = await api.patch<{ slot: BackendSlot }>(`/recruitment/slots/${slotId}`, {
+    interviewerIds: interviewers.map((i) => i.id),
   });
-  return interviewSlotsStore.find((s) => s.id === slotId);
+  return toUiSlot(slot, null);
 }
 
 export async function rescheduleInterviewSlot(
-  slotId: string,
+  rowId: string,
   patch: { date: string; startTime: string; reason?: string },
 ): Promise<InterviewSlot | undefined> {
-  interviewSlotsStore = interviewSlotsStore.map((s) =>
-    s.id === slotId ? { ...s, date: patch.date, startTime: patch.startTime } : s,
-  );
-  return interviewSlotsStore.find((s) => s.id === slotId);
+  const { slotId } = parseRowId(rowId);
+  // Không gửi endTime — backend tự dời endTime giữ nguyên thời lượng ca
+  const { slot } = await api.patch<{ slot: BackendSlot }>(`/recruitment/slots/${slotId}`, {
+    date: patch.date,
+    startTime: patch.startTime,
+  });
+  return toUiSlot(slot, null);
 }
 
 export async function getInterviewCriteria(): Promise<InterviewCriterion[]> {
   return [...INTERVIEW_CRITERIA];
 }
 
-export async function getInterviewScore(slotId: string): Promise<InterviewScore | undefined> {
-  return interviewScoresStore.find((s) => s.slotId === slotId);
+export async function getInterviewScore(rowId: string): Promise<InterviewScore | undefined> {
+  const { applicationId } = parseRowId(rowId);
+  if (!applicationId) return undefined;
+  const summary = await fetchScoreSummary(applicationId, "interview");
+  const s = summary.scores[0];
+  if (!s) return undefined;
+  const scorer = scorerOf(s);
+  return {
+    id: s._id,
+    applicationId,
+    slotId: rowId,
+    interviewerId: scorer.id,
+    interviewerName: scorer.name,
+    criteriaScores: fromBackendCriteria(s.criteriaScores, INTERVIEW_CRITERIA),
+    comment: s.comment,
+    result: "pending",
+    createdAt: s.createdAt,
+    updatedAt: s.updatedAt,
+  };
 }
 
 export type SaveInterviewScoreInput = {
@@ -582,34 +765,42 @@ export type SaveInterviewScoreInput = {
 };
 
 export async function saveInterviewScore(input: SaveInterviewScoreInput): Promise<InterviewScore> {
-  const now = new Date().toISOString();
-  const existing = interviewScoresStore.find((s) => s.slotId === input.slotId);
-  const next: InterviewScore = {
-    id: existing?.id ?? `iscore-${Date.now()}`,
+  const { bookingId } = parseRowId(input.slotId);
+  if (!bookingId) {
+    throw new Error("Ca này chưa có ứng viên đặt lịch — không chấm điểm được");
+  }
+  const { score } = await api.post<{ score: BackendScore }>(
+    `/recruitment/bookings/${bookingId}/score`,
+    {
+      applicationId: input.applicationId,
+      round: "interview",
+      criteriaScores: toBackendCriteria(input.criteriaScores),
+      comment: input.comment,
+      attendance: "present",
+    },
+  );
+  const scorer = scorerOf(score);
+  return {
+    id: score._id,
     applicationId: input.applicationId,
     slotId: input.slotId,
-    interviewerId: input.interviewerId,
-    interviewerName: input.interviewerName,
+    interviewerId: scorer.id || input.interviewerId,
+    interviewerName: scorer.name || input.interviewerName,
     criteriaScores: input.criteriaScores,
     comment: input.comment,
-    result: input.result ?? existing?.result ?? "pending",
-    createdAt: existing?.createdAt ?? now,
-    updatedAt: now,
+    result: input.result ?? "pending",
+    createdAt: score.createdAt,
+    updatedAt: score.updatedAt,
   };
-  interviewScoresStore = existing
-    ? interviewScoresStore.map((s) => (s.slotId === input.slotId ? next : s))
-    : [...interviewScoresStore, next];
-  return next;
 }
 
 export async function setInterviewDecision(
   applicationId: string,
-  _result: Extract<PassFail, "pass" | "fail">,
+  result: Extract<PassFail, "pass" | "fail">,
 ): Promise<Application | undefined> {
-  // TODO: gọi API cập nhật trạng thái khi backend có endpoint interview decision
-  interviewSlotsStore = interviewSlotsStore.map((s) =>
-    s.applicationId === applicationId ? { ...s, status: "done" } : s,
-  );
+  await api.post(`/recruitment/applications/${applicationId}/decide-interview`, {
+    status: result === "pass" ? "passed_interview" : "failed_interview",
+  });
   return getApplicationById(applicationId);
 }
 
@@ -621,11 +812,20 @@ export async function notifyFinalResults(applicationIds: string[]): Promise<{ se
   return { sent: applicationIds.length };
 }
 
+// Xác nhận trúng tuyển cuối — state machine tự enqueue job nâng role candidate → member
 export async function convertAcceptedToMembers(
   applicationIds: string[],
 ): Promise<{ converted: number }> {
-  // TODO: nối API chuyển Ứng viên → Member khi backend có endpoint
-  return { converted: applicationIds.length };
+  let converted = 0;
+  for (const id of applicationIds) {
+    try {
+      await api.post(`/recruitment/applications/${id}/confirm-final`, { status: "admitted" });
+      converted += 1;
+    } catch {
+      // hồ sơ chưa đủ điều kiện (chưa passed_interview) — bỏ qua
+    }
+  }
+  return { converted };
 }
 
 export async function getPassedScreeningApplications(campaignId: string): Promise<Application[]> {

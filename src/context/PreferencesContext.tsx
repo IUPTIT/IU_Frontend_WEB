@@ -1,27 +1,14 @@
 import {
-  createContext,
   useCallback,
-  useContext,
   useEffect,
   useMemo,
   useState,
   type ReactNode,
 } from "react";
 
-export type ThemeMode = "light" | "dark";
+import { PreferencesContext, type Preferences, type ThemeMode } from "./preferences-context";
 
-type Preferences = {
-  theme: ThemeMode;
-  emailNotifications: boolean;
-  inAppNotifications: boolean;
-};
-
-type PreferencesContextValue = Preferences & {
-  setTheme: (theme: ThemeMode) => void;
-  toggleTheme: () => void;
-  setEmailNotifications: (v: boolean) => void;
-  setInAppNotifications: (v: boolean) => void;
-};
+export type { ThemeMode };
 
 const STORAGE_KEY = "iuclub_preferences";
 
@@ -48,8 +35,6 @@ function writePrefs(p: Preferences) {
     /* ignore */
   }
 }
-
-const PreferencesContext = createContext<PreferencesContextValue | null>(null);
 
 export function PreferencesProvider({ children }: { children: ReactNode }) {
   const [prefs, setPrefs] = useState<Preferences>(() =>
@@ -92,10 +77,4 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
   return (
     <PreferencesContext.Provider value={value}>{children}</PreferencesContext.Provider>
   );
-}
-
-export function usePreferences() {
-  const ctx = useContext(PreferencesContext);
-  if (!ctx) throw new Error("usePreferences phải dùng trong PreferencesProvider");
-  return ctx;
 }

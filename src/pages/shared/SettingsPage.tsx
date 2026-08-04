@@ -4,8 +4,9 @@ import Button from "../../components/ui/Button";
 import Toggle from "../../components/ui/Toggle";
 import Avatar from "../../components/ui/Avatar";
 import Icon from "../../components/ui/Icon";
-import { useAuth } from "../../context/AuthContext";
-import { usePreferences, type ThemeMode } from "../../context/PreferencesContext";
+import { useAuth } from "../../context/useAuth";
+import { usePreferences } from "../../context/usePreferences";
+import type { ThemeMode } from "../../context/preferences-context";
 
 const ROLE_LABEL = {
   admin: "Ban Chủ nhiệm (Admin)",

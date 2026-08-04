@@ -128,9 +128,9 @@ export const EMAIL_PLACEHOLDERS: EmailPlaceholder[] = [
 
 const now = () => new Date().toISOString();
 
-export let smtpStore: SmtpConfig = { ...DEFAULT_SMTP };
+export const smtpStore: SmtpConfig = { ...DEFAULT_SMTP };
 
-export let templatesStore: EmailTemplate[] = [
+export const templatesStore: EmailTemplate[] = [
   {
     id: "tpl-interview",
     name: "Interview Invitation",
@@ -230,7 +230,7 @@ export let templatesStore: EmailTemplate[] = [
   },
 ];
 
-export let historyStore: EmailHistoryItem[] = [];
+export const historyStore: EmailHistoryItem[] = [];
 
 export function resetEmailMockStores() {
   Object.assign(smtpStore, DEFAULT_SMTP);

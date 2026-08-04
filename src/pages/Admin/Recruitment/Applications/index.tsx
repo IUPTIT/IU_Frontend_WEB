@@ -4,7 +4,7 @@ import ExportDataModal, { type ExportColumnDef } from "../../../../components/ui
 import Pagination from "../../../../components/ui/Pagination";
 import Select from "../../../../components/ui/Select";
 import { ROUTES } from "../../../../constants/routes";
-import { usePortalUi } from "../../../../context/PortalUiContext";
+import { usePortalUi } from "../../../../context/usePortalUi";
 import { getApplications, getCampaigns } from "../../../../services/recruitmentService";
 import type { Application, ApplicationStatus, RecruitmentCampaign } from "../../../../types/recruitment";
 import { formatDate } from "../../../../utils/formatDate";
@@ -12,7 +12,7 @@ import ApplicationFilterBar, {
   type ApplicationFilterDraft,
 } from "./components/ApplicationFilterBar";
 import ApplicationTable from "./components/ApplicationTable";
-import { getApplicationStatusLabel } from "./components/ApplicationStatusBadge";
+import { getApplicationStatusLabel } from "./components/applicationStatus";
 
 const PAGE_SIZE = 5;
 

@@ -8,7 +8,7 @@ import ReviewBanner from "./components/ReviewBanner";
 import { DASHBOARD_SEASONS } from "./mockData";
 import Button from "../../components/ui/Button";
 import ExportDataModal, { type ExportColumnDef } from "../../components/ui/ExportDataModal";
-import { usePortalUi } from "../../context/PortalUiContext";
+import { usePortalUi } from "../../context/usePortalUi";
 import { ROUTES } from "../../constants/routes";
 
 type ReportRow = {

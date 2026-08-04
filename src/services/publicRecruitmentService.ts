@@ -234,10 +234,88 @@ export async function getActiveCampaign(): Promise<PublicCampaign | null> {
   };
 }
 
-export function submitApplication(payload: SubmitApplicationPayload): Promise<PublicApplication> {
+/** Nộp đơn chính thức — có draftToken thì submit tiếp từ đơn nháp đã lưu */
+export function submitApplication(
+  payload: SubmitApplicationPayload,
+  draftToken?: string,
+): Promise<PublicApplication> {
+  const path = draftToken
+    ? `/public/applications/${encodeURIComponent(draftToken)}/submit`
+    : "/public/applications/submit";
   return api
-    .post<{ application: BackendApplication }>("/public/applications/submit", toSubmitBody(payload))
+    .post<{ application: BackendApplication }>(path, toSubmitBody(payload))
     .then((d) => toApplication(d.application));
+}
+
+export type SaveDraftPayload = {
+  campaignId: string;
+  email: string;
+  fullName?: string;
+  studentId?: string;
+  className?: string;
+  faculty?: string;
+  phone?: string;
+  dateOfBirth?: string;
+  wishes?: string[];
+  answers?: Record<string, string | string[]>;
+};
+
+/** Lưu đơn nháp — backend gửi link tiếp tục điền qua email */
+export function saveDraft(payload: SaveDraftPayload): Promise<void> {
+  const body: Record<string, unknown> = {
+    campaignId: payload.campaignId,
+    email: payload.email,
+  };
+  if (payload.fullName) body.fullName = payload.fullName;
+  if (payload.studentId) body.studentId = payload.studentId;
+  if (payload.className) body.className = payload.className;
+  if (payload.faculty) body.faculty = payload.faculty;
+  if (payload.phone) body.phone = payload.phone;
+  if (payload.dateOfBirth) body.dateOfBirth = payload.dateOfBirth;
+  if (payload.wishes?.filter(Boolean).length) {
+    body.departmentPreferences = payload.wishes
+      .filter(Boolean)
+      .map((department, i) => ({ department, priority: i + 1 }));
+  }
+  if (payload.answers && Object.keys(payload.answers).length) {
+    body.answers = Object.entries(payload.answers).map(([fieldId, value]) => ({ fieldId, value }));
+  }
+  return api.post("/public/applications/draft", body).then(() => undefined);
+}
+
+export type DraftApplication = {
+  campaignId: string;
+  email: string;
+  fullName: string;
+  studentId: string;
+  className: string;
+  faculty: string;
+  phone: string;
+  dateOfBirth: string;
+  wishes: string[];
+  answers: Record<string, string | string[]>;
+};
+
+/** Đọc đơn nháp từ link email (?token=) để điền tiếp */
+export function getDraft(token: string): Promise<DraftApplication> {
+  return api
+    .get<{ application: BackendApplication }>(
+      `/public/applications/draft/${encodeURIComponent(token)}`,
+    )
+    .then(({ application: a }) => ({
+      campaignId: typeof a.campaignId === "string" ? a.campaignId : a.campaignId._id,
+      email: a.email,
+      fullName: a.fullName ?? "",
+      studentId: a.studentId ?? "",
+      className: a.className ?? "",
+      faculty: a.faculty ?? "",
+      phone: a.phone ?? "",
+      dateOfBirth: a.dateOfBirth ?? "",
+      wishes: [...(a.departmentPreferences ?? [])]
+        .sort((x, y) => x.priority - y.priority)
+        .map((p) => p.department),
+      answers: Object.fromEntries((a.answers ?? []).map((ans) => [ans.fieldId, ans.value])),
+    }));
 }
 
 /** Tra cứu bằng mã hồ sơ (APP-...) hoặc email */

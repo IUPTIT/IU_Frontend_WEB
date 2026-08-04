@@ -20,8 +20,8 @@ import {
 } from "lucide-react";
 import type { NavChild, NavIcon, NavItem, Role } from "../types/navigation";
 import { SIDEBAR_CONFIG, findNavIdByPath } from "../constants/navigation";
-import { usePortalUi } from "../context/PortalUiContext";
-import { useAuth } from "../context/AuthContext";
+import { usePortalUi } from "../context/usePortalUi";
+import { useAuth } from "../context/useAuth";
 import Icon from "../components/ui/Icon";
 
 const icons: Record<NavIcon, LucideIcon> = {

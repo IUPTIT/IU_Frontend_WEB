@@ -3,7 +3,7 @@ import { Plus } from "lucide-react";
 import Button from "../../../../components/ui/Button";
 import Icon from "../../../../components/ui/Icon";
 import Pagination from "../../../../components/ui/Pagination";
-import { usePortalUi } from "../../../../context/PortalUiContext";
+import { usePortalUi } from "../../../../context/usePortalUi";
 import {
   createCampaign,
   deleteCampaign,

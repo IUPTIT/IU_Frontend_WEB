@@ -43,13 +43,13 @@ export async function loginWithCredentials(email: string, password: string): Pro
     return toAuthUser(user);
   } catch (err) {
     if (err instanceof ApiRequestError && (err.status === 401 || err.status === 400)) {
-      throw new Error("Email hoặc mật khẩu không đúng");
+      throw new Error("Email hoặc mật khẩu không đúng", { cause: err });
     }
     if (err instanceof ApiRequestError && err.status === 403) {
-      throw new Error(err.message); // tài khoản bị khoá / email chưa xác thực
+      throw new Error(err.message, { cause: err }); // tài khoản bị khoá / email chưa xác thực
     }
     if (err instanceof TypeError) {
-      throw new Error("Không kết nối được máy chủ — kiểm tra backend đã chạy chưa");
+      throw new Error("Không kết nối được máy chủ — kiểm tra backend đã chạy chưa", { cause: err });
     }
     throw err;
   }

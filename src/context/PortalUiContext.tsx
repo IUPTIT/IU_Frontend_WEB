@@ -1,26 +1,11 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
 const STORAGE_KEY = "sidebarCollapsed";
 const DESKTOP_MIN = 1200;
 const TABLET_MIN = 768;
 
-type PortalUiContextValue = {
-  search: string;
-  setSearch: (value: string) => void;
-  navigate: (path: string) => void;
-  activePath: string;
-  /** true = sidebar thu gọn (desktop/tablet rail) */
-  sidebarCollapsed: boolean;
-  toggleSidebarCollapsed: () => void;
-  setSidebarCollapsed: (value: boolean) => void;
-  /** Drawer mobile */
-  mobileNavOpen: boolean;
-  openMobileNav: () => void;
-  closeMobileNav: () => void;
-};
-
-const PortalUiContext = createContext<PortalUiContextValue | null>(null);
+import { PortalUiContext } from "./portal-ui-context";
 
 function readStoredCollapsed(): boolean | null {
   try {
@@ -136,10 +121,4 @@ export function PortalUiProvider({ activePath, onNavigate, children }: Props) {
   );
 
   return <PortalUiContext.Provider value={value}>{children}</PortalUiContext.Provider>;
-}
-
-export function usePortalUi() {
-  const ctx = useContext(PortalUiContext);
-  if (!ctx) throw new Error("usePortalUi phải dùng trong PortalUiProvider");
-  return ctx;
 }

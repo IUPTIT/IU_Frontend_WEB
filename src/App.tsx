@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import AdminLayout from "./layouts/AdminLayout";
 import LoginPage from "./pages/Login";
@@ -7,7 +7,7 @@ import RecruitmentPage from "./pages/Recruitment";
 import LookupPage from "./pages/Lookup";
 import { getDefaultPath } from "./constants/navigation";
 import { renderPortalPage } from "./routes/portalRoutes";
-import { useAuth } from "./context/AuthContext";
+import { useAuth } from "./context/useAuth";
 
 // Trang đăng nhập — đã đăng nhập rồi thì chuyển thẳng vào khu quản trị
 function LoginRoute() {
@@ -23,9 +23,12 @@ function AdminPortal() {
     user ? getDefaultPath(user.role) : "/admin",
   );
 
-  useEffect(() => {
+  // Reset activePath khi user đổi (adjust state during render)
+  const [prevUser, setPrevUser] = useState(user);
+  if (user !== prevUser) {
+    setPrevUser(user);
     if (user) setActivePath(getDefaultPath(user.role));
-  }, [user]);
+  }
 
   if (!isAuthenticated || !user) {
     return <Navigate to="/login" replace />;
