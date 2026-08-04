@@ -115,6 +115,7 @@ function RecruitmentApplicationsPage() {
   const loadApplications = useCallback(async (id: string) => {
     if (!id) {
       setApplications([]);
+      setLoading(false);
       return;
     }
     setLoading(true);

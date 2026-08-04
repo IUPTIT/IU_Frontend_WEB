@@ -98,6 +98,11 @@ function Select({
           aria-label={ariaLabel ?? label ?? placeholder}
           className="absolute z-30 mt-2 max-h-60 w-full overflow-auto rounded-2xl bg-background p-2 shadow-extruded ring-1 ring-black/5"
         >
+          {options.length === 0 && (
+            <li className="px-3 py-2.5 text-sm text-muted" role="presentation">
+              Không có lựa chọn
+            </li>
+          )}
           {options.map((opt) => {
             const isActive = opt.value === value;
             return (

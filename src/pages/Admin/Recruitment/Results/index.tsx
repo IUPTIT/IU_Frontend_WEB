@@ -201,6 +201,7 @@ function RecruitmentResultsPage() {
     if (!cid) {
       setApplications([]);
       setSummary({ totalApplications: 0, interviewed: 0, accepted: 0 });
+      setLoading(false);
       return;
     }
     setLoading(true);
