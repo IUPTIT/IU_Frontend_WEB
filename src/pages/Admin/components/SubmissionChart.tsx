@@ -10,31 +10,45 @@ const W = 640;
 const H = 280;
 const PAD = { top: 16, right: 16, bottom: 40, left: 40 };
 
-function SubmissionChart({ data }: { data: WeeklySubmission[] }) {
+type Props = {
+  weeklyData: WeeklySubmission[];
+  dailyData: WeeklySubmission[];
+  periodLabel: string;
+};
+
+function SubmissionChart({ weeklyData, dailyData, periodLabel }: Props) {
   const [range, setRange] = useState<"week" | "day">("week");
   const [hover, setHover] = useState<number | null>(null);
 
-  const max = 100; // trần trục y khớp design (max data 102 → gridline 100)
+  const data = range === "week" ? weeklyData : dailyData;
+  const max = Math.max(100, ...data.flatMap((d) => [d.received, d.passed]));
   const plotW = W - PAD.left - PAD.right;
   const plotH = H - PAD.top - PAD.bottom;
   const groupW = plotW / data.length;
   const barW = Math.min(22, groupW / 3);
   const y = (v: number) => PAD.top + plotH - (Math.min(v, max) / max) * plotH;
+  const gridSteps = [0, 0.25, 0.5, 0.75, 1].map((t) => Math.round(max * t));
 
   return (
     <article className="neu-card">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h3 className="text-lg">Tiến độ nộp hồ sơ</h3>
-          <p className="mt-1 text-sm text-muted">Theo tuần – Tháng 9/2023</p>
+          <p className="mt-1 text-sm text-muted">
+            Theo {range === "week" ? "tuần" : "ngày"} – {periodLabel}
+          </p>
         </div>
-        <div className="flex rounded-2xl shadow-inset-sm p-1">
+        <div className="flex rounded-2xl shadow-inset-sm p-1" role="group" aria-label="Bộ lọc thời gian biểu đồ">
           {(["week", "day"] as const).map((r) => (
             <button
               key={r}
-              onClick={() => setRange(r)}
+              type="button"
+              onClick={() => {
+                setRange(r);
+                setHover(null);
+              }}
               className={`rounded-xl px-4 py-1.5 text-sm font-medium transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
-                range === r ? "text-accent shadow-extruded-sm" : "text-muted"
+                range === r ? "text-accent shadow-extruded-sm" : "text-muted hover:text-foreground"
               }`}
             >
               {r === "week" ? "Tuần" : "Ngày"}
@@ -43,10 +57,23 @@ function SubmissionChart({ data }: { data: WeeklySubmission[] }) {
         </div>
       </div>
 
-      <svg viewBox={`0 0 ${W} ${H}`} className="mt-6 w-full" role="img" aria-label="Biểu đồ cột hồ sơ nhận và đạt vòng đơn theo tuần">
-        {[0, 25, 50, 75, 100].map((v) => (
+      <svg
+        viewBox={`0 0 ${W} ${H}`}
+        className="mt-6 w-full"
+        role="img"
+        aria-label="Biểu đồ cột hồ sơ nhận và đạt vòng đơn"
+      >
+        {gridSteps.map((v) => (
           <g key={v}>
-            <line x1={PAD.left} x2={W - PAD.right} y1={y(v)} y2={y(v)} stroke="#A3B1C6" strokeOpacity="0.35" strokeWidth="1" />
+            <line
+              x1={PAD.left}
+              x2={W - PAD.right}
+              y1={y(v)}
+              y2={y(v)}
+              stroke="#A3B1C6"
+              strokeOpacity="0.35"
+              strokeWidth="1"
+            />
             <text x={PAD.left - 8} y={y(v) + 4} textAnchor="end" className="fill-[#6B7280] text-[11px]">
               {v}
             </text>
@@ -57,16 +84,11 @@ function SubmissionChart({ data }: { data: WeeklySubmission[] }) {
           const cx = PAD.left + groupW * i + groupW / 2;
           const active = hover === i;
           return (
-            <g
-              key={d.week}
-              onMouseEnter={() => setHover(i)}
-              onMouseLeave={() => setHover(null)}
-            >
-              {/* hit target rộng hơn cột */}
+            <g key={`${d.week}-${i}`} onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)}>
               <rect x={PAD.left + groupW * i} y={PAD.top} width={groupW} height={plotH} fill="transparent" />
               {SERIES.map((s, si) => {
                 const v = d[s.key];
-                const x = cx - barW - 1 + si * (barW + 2); // 2px gap giữa 2 cột
+                const x = cx - barW - 1 + si * (barW + 2);
                 return (
                   <rect
                     key={s.key}

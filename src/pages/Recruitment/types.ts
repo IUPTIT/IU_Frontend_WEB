@@ -1,22 +1,4 @@
-export type RecruitmentCampaign = {
-  id: string;
-  name: string;
-  description: string;
-  openAt: string; // ISO — thời gian mở đơn
-  closeAt: string; // ISO — thời gian đóng đơn
-  teams: string[];
-};
-
-export type CustomQuestionType = "short_text" | "long_text" | "single_choice" | "multi_choice";
-
-export type CustomQuestion = {
-  id: string;
-  label: string;
-  type: CustomQuestionType;
-  options?: string[];
-  required: boolean;
-};
-
+// State form nộp đơn phía client — campaign/câu hỏi lấy từ API (publicRecruitmentService)
 export type ApplicationForm = {
   fullName: string;
   studentId: string;
@@ -24,11 +6,12 @@ export type ApplicationForm = {
   faculty: string;
   email: string;
   phone: string;
+  nationalId: string; // CCCD 12 số
   dateOfBirth: string;
   avatar: File | null;
   cv: File | null;
   wishes: string[]; // ban nguyện vọng theo thứ tự ưu tiên, tối đa 3
-  answers: Record<string, string | string[]>;
+  answers: Record<string, string | string[]>; // key = _id câu hỏi
 };
 
 export const EMPTY_APPLICATION: ApplicationForm = {
@@ -38,6 +21,7 @@ export const EMPTY_APPLICATION: ApplicationForm = {
   faculty: "",
   email: "",
   phone: "",
+  nationalId: "",
   dateOfBirth: "",
   avatar: null,
   cv: null,

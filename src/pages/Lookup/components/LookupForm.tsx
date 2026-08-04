@@ -4,9 +4,10 @@ import type { FormEvent } from "react";
 type Props = {
   onSearch: (query: string) => void;
   notFound: boolean;
+  searching?: boolean;
 };
 
-function LookupForm({ onSearch, notFound }: Props) {
+function LookupForm({ onSearch, notFound, searching }: Props) {
   const [query, setQuery] = useState("");
 
   const handleSubmit = (e: FormEvent) => {
@@ -26,8 +27,8 @@ function LookupForm({ onSearch, notFound }: Props) {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
-        <button type="submit" className="landing-btn-primary shrink-0 px-8 py-3">
-          Tra cứu
+        <button type="submit" disabled={searching} className="landing-btn-primary shrink-0 px-8 py-3 disabled:opacity-60">
+          {searching ? "Đang tìm..." : "Tra cứu"}
         </button>
       </div>
       {notFound && (

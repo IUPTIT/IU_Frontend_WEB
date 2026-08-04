@@ -2,11 +2,11 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import LandingSelect from "../../../components/LandingSelect";
 import LandingDatePicker from "../../../components/LandingDatePicker";
-import type { ApplicationForm, CustomQuestion, RecruitmentCampaign } from "../types";
+import type { ApplicationForm } from "../types";
+import type { PublicCampaign, PublicQuestion } from "../../../services/publicRecruitmentService";
 
 type Props = {
-  campaign: RecruitmentCampaign;
-  questions: CustomQuestion[];
+  campaign: PublicCampaign;
   value: ApplicationForm;
   onSubmit: (form: ApplicationForm) => void;
 };
@@ -16,7 +16,7 @@ const MAX_CV_MB = 5;
 const MAX_AVATAR_MB = 2;
 const MIN_AGE = 16;
 
-function validate(form: ApplicationForm, questions: CustomQuestion[]): Record<string, string> {
+function validate(form: ApplicationForm, questions: PublicQuestion[]): Record<string, string> {
   const errors: Record<string, string> = {};
 
   if (!form.fullName.trim()) errors.fullName = "Bắt buộc nhập họ và tên";
@@ -26,6 +26,7 @@ function validate(form: ApplicationForm, questions: CustomQuestion[]): Record<st
 
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errors.email = "Email không đúng định dạng";
   if (!/^0\d{9}$/.test(form.phone)) errors.phone = "Số điện thoại phải đủ 10 số";
+  if (!/^\d{12}$/.test(form.nationalId)) errors.nationalId = "CCCD phải đủ 12 số";
 
   if (!form.dateOfBirth) {
     errors.dateOfBirth = "Bắt buộc chọn ngày sinh";
@@ -60,9 +61,9 @@ function validate(form: ApplicationForm, questions: CustomQuestion[]): Record<st
 
   for (const q of questions) {
     if (!q.required) continue;
-    const answer = form.answers[q.id];
+    const answer = form.answers[q._id];
     const empty = answer == null || (typeof answer === "string" ? !answer.trim() : answer.length === 0);
-    if (empty) errors[q.id] = "Câu hỏi bắt buộc";
+    if (empty) errors[q._id] = "Câu hỏi bắt buộc";
   }
 
   return errors;
@@ -73,9 +74,12 @@ function FieldError({ message }: { message?: string }) {
   return <p className="mt-1 text-sm text-red-400">{message}</p>;
 }
 
-function ApplicationFormStep({ campaign, questions, value, onSubmit }: Props) {
+function ApplicationFormStep({ campaign, value, onSubmit }: Props) {
   const [form, setForm] = useState<ApplicationForm>(value);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const teams = campaign.quotas.map((q) => q.team);
+  const questions = [...campaign.customQuestions].sort((a, b) => a.order - b.order);
 
   const set = <K extends keyof ApplicationForm>(field: K, fieldValue: ApplicationForm[K]) =>
     setForm((f) => ({ ...f, [field]: fieldValue }));
@@ -138,6 +142,17 @@ function ApplicationFormStep({ campaign, questions, value, onSubmit }: Props) {
             <FieldError message={errors.phone} />
           </div>
           <div>
+            <label className={labelClass}>Số CCCD *</label>
+            <input
+              className="landing-input"
+              inputMode="numeric"
+              maxLength={12}
+              value={form.nationalId}
+              onChange={(e) => set("nationalId", e.target.value.replace(/\D/g, ""))}
+            />
+            <FieldError message={errors.nationalId} />
+          </div>
+          <div>
             <label className={labelClass}>Ngày sinh *</label>
             <LandingDatePicker
               value={form.dateOfBirth}
@@ -193,7 +208,7 @@ function ApplicationFormStep({ campaign, questions, value, onSubmit }: Props) {
                 Nguyện vọng {i + 1} {i === 0 ? "*" : "(tuỳ chọn)"}
               </label>
               <LandingSelect
-                options={campaign.teams}
+                options={teams}
                 value={form.wishes[i] ?? ""}
                 onChange={(team) => setWish(i, team)}
                 placeholder="— Không chọn —"
@@ -212,22 +227,22 @@ function ApplicationFormStep({ campaign, questions, value, onSubmit }: Props) {
         </h2>
         <div className="space-y-5">
           {questions.map((q) => (
-            <div key={q.id}>
+            <div key={q._id}>
               <label className={labelClass}>
                 {q.label} {q.required && "*"}
               </label>
               {q.type === "short_text" && (
                 <input
                   className="landing-input"
-                  value={(form.answers[q.id] as string) ?? ""}
-                  onChange={(e) => set("answers", { ...form.answers, [q.id]: e.target.value })}
+                  value={(form.answers[q._id] as string) ?? ""}
+                  onChange={(e) => set("answers", { ...form.answers, [q._id]: e.target.value })}
                 />
               )}
               {q.type === "long_text" && (
                 <textarea
                   className="landing-input min-h-28 resize-y"
-                  value={(form.answers[q.id] as string) ?? ""}
-                  onChange={(e) => set("answers", { ...form.answers, [q.id]: e.target.value })}
+                  value={(form.answers[q._id] as string) ?? ""}
+                  onChange={(e) => set("answers", { ...form.answers, [q._id]: e.target.value })}
                 />
               )}
               {q.type === "single_choice" && (
@@ -236,15 +251,15 @@ function ApplicationFormStep({ campaign, questions, value, onSubmit }: Props) {
                     <label
                       key={option}
                       className={`landing-input w-auto cursor-pointer px-4 py-2 text-sm ${
-                        form.answers[q.id] === option ? "!border-purple-400 !bg-purple-500/20" : ""
+                        form.answers[q._id] === option ? "!border-purple-400 !bg-purple-500/20" : ""
                       }`}
                     >
                       <input
                         type="radio"
-                        name={q.id}
+                        name={q._id}
                         className="sr-only"
-                        checked={form.answers[q.id] === option}
-                        onChange={() => set("answers", { ...form.answers, [q.id]: option })}
+                        checked={form.answers[q._id] === option}
+                        onChange={() => set("answers", { ...form.answers, [q._id]: option })}
                       />
                       {option}
                     </label>
@@ -254,7 +269,7 @@ function ApplicationFormStep({ campaign, questions, value, onSubmit }: Props) {
               {q.type === "multi_choice" && (
                 <div className="flex flex-wrap gap-3">
                   {q.options?.map((option) => {
-                    const selected = ((form.answers[q.id] as string[]) ?? []).includes(option);
+                    const selected = ((form.answers[q._id] as string[]) ?? []).includes(option);
                     return (
                       <label
                         key={option}
@@ -267,9 +282,9 @@ function ApplicationFormStep({ campaign, questions, value, onSubmit }: Props) {
                           className="sr-only"
                           checked={selected}
                           onChange={() => {
-                            const current = (form.answers[q.id] as string[]) ?? [];
+                            const current = (form.answers[q._id] as string[]) ?? [];
                             const next = selected ? current.filter((o) => o !== option) : [...current, option];
-                            set("answers", { ...form.answers, [q.id]: next });
+                            set("answers", { ...form.answers, [q._id]: next });
                           }}
                         />
                         {option}
@@ -278,7 +293,7 @@ function ApplicationFormStep({ campaign, questions, value, onSubmit }: Props) {
                   })}
                 </div>
               )}
-              <FieldError message={errors[q.id]} />
+              <FieldError message={errors[q._id]} />
             </div>
           ))}
         </div>

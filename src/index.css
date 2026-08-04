@@ -60,6 +60,11 @@
       focus:ring-offset-2 focus:ring-offset-background;
   }
 
+  /* Select / filter field label inside panels */
+  .neu-field-label {
+    @apply mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted;
+  }
+
   /* Icon wells — drilled into the card */
   .neu-well {
     @apply flex items-center justify-center rounded-2xl bg-background shadow-inset-deep;
@@ -68,4 +73,277 @@
   .neu-well-sm {
     @apply flex items-center justify-center rounded-xl bg-background shadow-inset;
   }
+
+  /* Enterprise Soft UI data table */
+  .data-table thead tr {
+    background-image: linear-gradient(
+      to right,
+      rgba(108, 99, 255, 0.2),
+      rgba(108, 99, 255, 0.12),
+      rgba(108, 99, 255, 0.08)
+    );
+    color: #6c63ff;
+  }
+
+  .data-table-th {
+    @apply border-r border-accent/20 font-semibold;
+  }
+
+  .data-table-th:last-child {
+    @apply border-r-0;
+  }
+
+  .data-table-td {
+    @apply border-b border-black/5 align-middle;
+  }
+
+  .data-table tbody tr:last-child .data-table-td {
+    @apply border-b-0;
+  }
+
+  .data-table tbody tr {
+    @apply transition-colors duration-200;
+  }
+
+  .data-table tbody tr:hover {
+    background-color: rgba(108, 99, 255, 0.05);
+  }
+
+  .data-table-resize {
+    @apply border-0 bg-transparent p-0;
+  }
+
+  .data-table-resize::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 0.5rem;
+    bottom: 0.5rem;
+    width: 1px;
+    transform: translateX(-50%);
+    background-color: rgba(108, 99, 255, 0.35);
+  }
+
+  .data-table-resize:hover::after,
+  .data-table-resize:focus-visible::after {
+    width: 2px;
+    background-color: #6c63ff;
+  }
+
+  /* Login — input neumorphism theo mockup */
+  .login-input {
+    @apply w-full h-12 rounded-2xl bg-[#EEF1F5] px-5 text-foreground border-0
+      shadow-[inset_4px_4px_8px_rgba(163,177,198,0.45),inset_-4px_-4px_8px_rgba(255,255,255,0.9)]
+      transition-all duration-300 ease-out
+      placeholder:text-placeholder
+      focus:outline-none
+      focus:shadow-[inset_6px_6px_12px_rgba(163,177,198,0.55),inset_-6px_-6px_12px_rgba(255,255,255,1),0_0_0_3px_rgba(74,144,226,0.2)]
+      focus:bg-[#F4F6F9];
+  }
+
+  /* Chrome autofill đè nền/chữ — ép về đúng style login-input */
+  .login-input:-webkit-autofill,
+  .login-input:-webkit-autofill:hover,
+  .login-input:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0 1000px #eef1f5 inset;
+    -webkit-text-fill-color: #3d4852;
+    caret-color: #3d4852;
+    transition: background-color 9999s ease-out;
+  }
+
+  .login-btn {
+    @apply inline-flex h-12 items-center justify-center gap-2 rounded-full px-8
+      font-medium text-white
+      bg-gradient-to-r from-[#4A90E2] to-[#6BA8F0]
+      shadow-[0_10px_24px_rgba(74,144,226,0.35)]
+      transition-all duration-300 ease-out
+      hover:-translate-y-0.5 hover:shadow-[0_14px_28px_rgba(74,144,226,0.45)]
+      hover:from-[#3F84D6] hover:to-[#5C9DE8]
+      active:translate-y-0 active:shadow-[0_6px_16px_rgba(74,144,226,0.3)]
+      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4A90E2]
+      focus-visible:ring-offset-2
+      disabled:opacity-60 disabled:pointer-events-none disabled:translate-y-0;
+  }
+}
+
+/* Dark Soft UI — elevated surfaces, clear hierarchy, soft highlights */
+html.dark {
+  color-scheme: dark;
+  --dark-page: #12141a;
+  --dark-chrome: #1a1d26;
+  --dark-surface: #222733;
+  --dark-elevated: #2a303d;
+  --dark-well: #151820;
+  --dark-fg: #eef1f6;
+  --dark-muted: #9aa3b5;
+  --dark-line: rgba(255, 255, 255, 0.08);
+  --dark-glow: rgba(108, 99, 255, 0.18);
+}
+
+html.dark body {
+  background-color: var(--dark-page);
+  color: var(--dark-fg);
+}
+
+html.dark .bg-background {
+  background-color: var(--dark-page) !important;
+}
+
+/* Ambient glow on portal canvas only — keeps chrome/cards solid */
+html.dark .portal-shell {
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(108, 99, 255, 0.16), transparent 55%),
+    radial-gradient(ellipse 55% 35% at 100% 0%, rgba(56, 178, 172, 0.08), transparent 45%);
+  background-attachment: fixed;
+}
+
+/* Sidebar sits above the page canvas */
+html.dark aside.bg-background {
+  background-color: var(--dark-surface) !important;
+}
+
+html.dark .neu-card {
+  background-color: var(--dark-surface) !important;
+  box-shadow:
+    10px 10px 22px rgba(0, 0, 0, 0.5),
+    -5px -5px 14px rgba(255, 255, 255, 0.055),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07) !important;
+}
+
+html.dark .neu-btn {
+  background-color: var(--dark-elevated) !important;
+  color: var(--dark-fg);
+}
+
+html.dark .neu-input,
+html.dark .neu-well,
+html.dark .neu-well-sm {
+  background-color: var(--dark-well) !important;
+}
+
+html.dark .text-foreground {
+  color: var(--dark-fg) !important;
+}
+
+html.dark .text-muted,
+html.dark .text-placeholder {
+  color: var(--dark-muted) !important;
+}
+
+html.dark .shadow-extruded,
+html.dark .neu-btn {
+  box-shadow:
+    7px 7px 16px rgba(0, 0, 0, 0.45),
+    -5px -5px 12px rgba(255, 255, 255, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+}
+
+html.dark .shadow-extruded-sm,
+html.dark .shadow-extruded-hover {
+  box-shadow:
+    5px 5px 12px rgba(0, 0, 0, 0.4),
+    -4px -4px 10px rgba(255, 255, 255, 0.055),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+}
+
+html.dark .shadow-inset,
+html.dark .shadow-inset-sm,
+html.dark .shadow-inset-deep,
+html.dark .neu-input {
+  box-shadow:
+    inset 5px 5px 12px rgba(0, 0, 0, 0.55),
+    inset -3px -3px 8px rgba(255, 255, 255, 0.04),
+    0 0 0 1px var(--dark-line) !important;
+}
+
+html.dark .neu-input:focus {
+  box-shadow:
+    inset 5px 5px 12px rgba(0, 0, 0, 0.55),
+    inset -3px -3px 8px rgba(255, 255, 255, 0.04),
+    0 0 0 2px rgba(108, 99, 255, 0.45),
+    0 0 20px var(--dark-glow) !important;
+}
+
+html.dark .bg-white,
+html.dark .bg-white\/80 {
+  background-color: var(--dark-surface) !important;
+}
+
+html.dark .bg-background\/80 {
+  background-color: rgba(26, 29, 38, 0.82) !important;
+}
+
+html.dark .border-black\/5 {
+  border-color: var(--dark-line) !important;
+}
+
+html.dark .ring-black\/5 {
+  --tw-ring-color: var(--dark-line) !important;
+}
+
+html.dark .ring-offset-background {
+  --tw-ring-offset-color: var(--dark-page) !important;
+}
+
+/* Accent chips / soft fills read clearer on dark */
+html.dark .bg-accent\/10,
+html.dark .bg-accent\/15,
+html.dark .bg-accent\/20 {
+  background-color: rgba(108, 99, 255, 0.22) !important;
+}
+
+html.dark .text-accent {
+  color: #a8a3ff !important;
+}
+
+/* Soft tonal chips — keep readable if any *-100 leftovers remain */
+html.dark .bg-emerald-100 {
+  background-color: rgba(16, 185, 129, 0.18) !important;
+}
+html.dark .bg-amber-100 {
+  background-color: rgba(245, 158, 11, 0.18) !important;
+}
+html.dark .bg-sky-100 {
+  background-color: rgba(14, 165, 233, 0.18) !important;
+}
+html.dark .bg-rose-100 {
+  background-color: rgba(244, 63, 94, 0.18) !important;
+}
+html.dark .bg-violet-100 {
+  background-color: rgba(139, 92, 246, 0.2) !important;
+}
+html.dark .text-emerald-700,
+html.dark .text-emerald-600 {
+  color: #6ee7b7 !important;
+}
+html.dark .text-amber-700 {
+  color: #fcd34d !important;
+}
+html.dark .text-sky-700,
+html.dark .text-sky-600 {
+  color: #7dd3fc !important;
+}
+html.dark .text-rose-600,
+html.dark .text-rose-700 {
+  color: #fda4af !important;
+}
+html.dark .data-table thead tr {
+  background-image: linear-gradient(
+    to right,
+    rgba(108, 99, 255, 0.28),
+    rgba(108, 99, 255, 0.14),
+    rgba(108, 99, 255, 0.08)
+  ) !important;
+}
+
+html.dark .data-table-th {
+  border-color: rgba(168, 163, 255, 0.22) !important;
+}
+
+html.dark .data-table-td {
+  border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+html.dark .data-table-resize::after {
+  background-color: rgba(168, 163, 255, 0.45) !important;
 }

@@ -1,23 +1,22 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
 import { STATUS_LABEL } from "../types";
-import type { ApplicationRecord, ApplicationStatus } from "../types";
+import type { PublicApplication, PublicApplicationStatus } from "../../../services/publicRecruitmentService";
 
 type Props = {
-  application: ApplicationRecord;
-  closeAt: string; // hạn đóng đơn của đợt tuyển
+  application: PublicApplication;
+  withdrawing: boolean;
   onWithdraw: () => void;
 };
 
-const POSITIVE: ApplicationStatus[] = ["dat_vong_don", "dat_phong_van", "trung_tuyen"];
-const NEGATIVE: ApplicationStatus[] = [
-  "khong_dat_vong_don",
-  "khong_dat_phong_van",
-  "khong_trung_tuyen",
-  "da_rut_don",
+const POSITIVE: PublicApplicationStatus[] = ["passed_screening", "passed_interview", "accepted"];
+const NEGATIVE: PublicApplicationStatus[] = [
+  "failed_screening",
+  "failed_interview",
+  "rejected",
+  "withdrawn",
 ];
 
-function statusColor(status: ApplicationStatus) {
+function statusColor(status: PublicApplicationStatus) {
   if (POSITIVE.includes(status)) return "border-emerald-400/50 bg-emerald-500/15 text-emerald-300";
   if (NEGATIVE.includes(status)) return "border-red-400/50 bg-red-500/15 text-red-300";
   return "border-amber-400/50 bg-amber-500/15 text-amber-300";
@@ -32,12 +31,12 @@ function Row({ label, value }: { label: string; value: string }) {
   );
 }
 
-function ApplicationStatusCard({ application, closeAt, onWithdraw }: Props) {
+function ApplicationStatusCard({ application, withdrawing, onWithdraw }: Props) {
   const [confirmingWithdraw, setConfirmingWithdraw] = useState(false);
 
-  const beforeDeadline = Date.now() < new Date(closeAt).getTime();
-  // Chỉ sửa/rút được khi còn "Chờ xét duyệt" và còn hạn nộp (mục 1.5 nghiệp vụ)
-  const editable = application.status === "cho_xet_duyet" && beforeDeadline;
+  const beforeDeadline = Date.now() < new Date(application.campaign.closeAt).getTime();
+  // Chỉ rút được khi còn "Chờ xét duyệt" và còn hạn nộp (mục 1.5 nghiệp vụ)
+  const editable = application.status === "pending" && beforeDeadline;
 
   return (
     <div className="liquid-glass landing-card-solid rounded-3xl p-6 md:p-8">
@@ -46,7 +45,7 @@ function ApplicationStatusCard({ application, closeAt, onWithdraw }: Props) {
           <h2 className="landing-headline text-xl font-semibold text-[hsl(var(--landing-foreground))]">
             {application.fullName}
           </h2>
-          <p className="mt-1 text-sm text-[hsl(var(--landing-foreground)/0.6)]">{application.campaignName}</p>
+          <p className="mt-1 text-sm text-[hsl(var(--landing-foreground)/0.6)]">{application.campaign.name}</p>
         </div>
         <span className={`rounded-full border px-4 py-1.5 text-sm font-medium ${statusColor(application.status)}`}>
           {STATUS_LABEL[application.status]}
@@ -56,7 +55,7 @@ function ApplicationStatusCard({ application, closeAt, onWithdraw }: Props) {
       <div className="mt-6">
         <Row label="Mã hồ sơ" value={application.code} />
         <Row label="Email" value={application.email} />
-        <Row label="Nộp lúc" value={new Date(application.submittedAt).toLocaleString("vi-VN")} />
+        <Row label="Nộp lúc" value={new Date(application.createdAt).toLocaleString("vi-VN")} />
         <Row label="Ban nguyện vọng" value={application.wishes.map((w, i) => `NV${i + 1}: ${w}`).join(" · ")} />
       </div>
 
@@ -68,22 +67,18 @@ function ApplicationStatusCard({ application, closeAt, onWithdraw }: Props) {
 
       {editable ? (
         <div className="mt-6 flex flex-col gap-3 md:flex-row">
-          <Link
-            to="/tuyen-thanh-vien"
-            className="landing-btn-secondary liquid-glass flex-1 rounded-full py-3 text-center"
-          >
-            Sửa hồ sơ
-          </Link>
           {confirmingWithdraw ? (
             <div className="flex flex-1 gap-2">
               <button
                 onClick={onWithdraw}
-                className="flex-1 rounded-full border border-red-400/60 bg-red-500/20 py-3 font-medium text-red-300 transition-colors hover:bg-red-500/30"
+                disabled={withdrawing}
+                className="flex-1 rounded-full border border-red-400/60 bg-red-500/20 py-3 font-medium text-red-300 transition-colors hover:bg-red-500/30 disabled:opacity-50"
               >
-                Xác nhận rút đơn
+                {withdrawing ? "Đang rút đơn..." : "Xác nhận rút đơn"}
               </button>
               <button
                 onClick={() => setConfirmingWithdraw(false)}
+                disabled={withdrawing}
                 className="landing-btn-secondary liquid-glass rounded-full px-5"
               >
                 Huỷ
@@ -99,7 +94,7 @@ function ApplicationStatusCard({ application, closeAt, onWithdraw }: Props) {
           )}
         </div>
       ) : (
-        application.status === "cho_xet_duyet" && (
+        application.status === "pending" && (
           <p className="mt-5 text-sm text-[hsl(var(--landing-foreground)/0.5)]">
             Đã hết hạn đóng đơn — không thể sửa hoặc rút hồ sơ nữa.
           </p>
