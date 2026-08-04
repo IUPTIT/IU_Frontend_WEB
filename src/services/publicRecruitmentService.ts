@@ -1,6 +1,22 @@
 // Luồng tuyển thành viên CÔNG KHAI (Guest) — gọi API thật /api/v1/recruitment.
-// Phần quản trị BCN vẫn dùng recruitmentService (mock) — sẽ nối API sau.
 import { api } from "../api/client";
+
+const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3456/api/v1";
+
+/** Upload avatar/CV lên Cloudinary qua backend — trả về URL công khai */
+export async function uploadRecruitmentFile(kind: "avatar" | "cv", file: File): Promise<string> {
+  const form = new FormData();
+  form.append("kind", kind);
+  form.append("file", file);
+  const res = await fetch(`${BASE_URL}/recruitment/uploads`, { method: "POST", body: form });
+  const body = (await res.json().catch(() => null)) as
+    | { success: boolean; message: string; data?: { url: string } }
+    | null;
+  if (!res.ok || !body?.data?.url) {
+    throw new Error(body?.message ?? "Upload file thất bại — thử lại sau");
+  }
+  return body.data.url;
+}
 
 export type PublicQuestion = {
   _id: string;

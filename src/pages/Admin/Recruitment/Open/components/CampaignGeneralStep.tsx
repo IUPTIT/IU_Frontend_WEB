@@ -136,11 +136,15 @@ function CampaignGeneralStep({ draft, onChange, onCancel, onNext, lockNameAndOpe
                 </div>
                 <p className="text-sm font-medium">{q.departmentName}</p>
                 <input
-                  type="number"
-                  min={0}
+                  type="text"
+                  inputMode="numeric"
                   className="neu-input text-center !h-10"
-                  value={q.quota}
-                  onChange={(e) => setQuota(q.departmentId, Number(e.target.value) || 0)}
+                  value={String(q.quota)}
+                  onChange={(e) => {
+                    // Chỉ giữ chữ số, bỏ số 0 thừa đằng trước (010 → 10)
+                    const digits = e.target.value.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
+                    setQuota(q.departmentId, Number(digits || 0));
+                  }}
                   aria-label={`Chỉ tiêu ${q.departmentName}`}
                 />
               </article>
