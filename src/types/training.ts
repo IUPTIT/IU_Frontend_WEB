@@ -55,6 +55,8 @@ export type TrainingProgram = {
   name: string; // Tên lộ trình *
   departmentId: string; // Ban áp dụng *
   departmentName: string;
+  /** User id của người tạo (mentor) — dùng lọc "lộ trình của tôi" */
+  createdById?: string;
   stages: TrainingStage[];
   lessons: TrainingLesson[];
   createdAt: string;

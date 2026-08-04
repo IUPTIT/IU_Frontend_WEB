@@ -1,13 +1,14 @@
 ﻿import { useCallback, useEffect, useMemo, useState } from "react";
-import { Code2, Handshake, Megaphone, Plus, ChevronRight, Volume2 } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { Plus, ChevronRight, Volume2 } from "lucide-react";
 import Button from "../../../../components/ui/Button";
 import Badge from "../../../../components/ui/Badge";
 import Icon from "../../../../components/ui/Icon";
 import Avatar from "../../../../components/ui/Avatar";
 import Select from "../../../../components/ui/Select";
 import { usePortalUi } from "../../../../context/usePortalUi";
+import MentorManageModal from "./components/MentorManageModal";
 import {
+  autoAssignTeams,
   createTrainingGroup,
   getMentors,
   getTrainees,
@@ -17,10 +18,11 @@ import {
 } from "../../../../services/trainingService";
 import type { Trainee, TrainingGroup, TrainingMentor, TrainingProgram } from "../../../../types/training";
 
-const DEPT_CARDS: { id: string; name: string; icon: LucideIcon }[] = [
-  { id: "dept-tech", name: "Tech", icon: Code2 },
-  { id: "dept-media", name: "Media", icon: Megaphone },
-  { id: "dept-hr", name: "HR", icon: Handshake },
+// Fallback khi chưa có trainee nào — bình thường danh sách ban suy từ trainee thực tế
+const DEFAULT_DEPTS: { id: string; name: string }[] = [
+  { id: "Ban Chuyên môn", name: "Ban Chuyên môn" },
+  { id: "Ban Truyền thông", name: "Ban Truyền thông" },
+  { id: "Ban Nhân sự", name: "Ban Nhân sự" },
 ];
 
 function CreateGroupDrawer({
@@ -39,7 +41,12 @@ function CreateGroupDrawer({
   onSaved: () => void;
 }) {
   const [name, setName] = useState("Team Alpha");
-  const [deptId, setDeptId] = useState("dept-tech");
+  // Ban suy từ trainee thực tế (tên ban = id, đồng bộ module tuyển)
+  const depts = useMemo(() => {
+    const unique = [...new Set(trainees.map((t) => t.departmentName))];
+    return unique.length ? unique.map((n) => ({ id: n, name: n })) : DEFAULT_DEPTS;
+  }, [trainees]);
+  const [deptId, setDeptId] = useState("");
   const [mentorId, setMentorId] = useState("");
   const [programId, setProgramId] = useState("");
   const [memberIds, setMemberIds] = useState<string[]>([]);
@@ -53,7 +60,7 @@ function CreateGroupDrawer({
     setPrevOpen(open);
     if (open) {
       setName("Team Alpha");
-      setDeptId("dept-tech");
+      setDeptId(depts[0]?.id ?? "");
       setMentorId(mentors[0]?.id ?? "");
       setProgramId(programs[0]?.id ?? "");
       setMemberIds([]);
@@ -62,7 +69,8 @@ function CreateGroupDrawer({
     }
   }
 
-  const deptMentors = mentors.filter((m) => m.departmentId === deptId);
+  // Mentor không gắn ban cụ thể (member/leader nào cũng nhận team được)
+  const deptMentors = mentors;
   const unassigned = trainees.filter(
     (t) => t.departmentId === deptId && (!t.groupId || memberIds.includes(t.id)),
   );
@@ -73,7 +81,7 @@ function CreateGroupDrawer({
   });
 
   const mentor = mentors.find((m) => m.id === mentorId);
-  const dept = DEPT_CARDS.find((d) => d.id === deptId);
+  const dept = depts.find((d) => d.id === deptId);
 
   if (!open) return null;
 
@@ -90,14 +98,22 @@ function CreateGroupDrawer({
       setError("Chọn mentor phụ trách.");
       return;
     }
+    if (!programId && !programs[0]?.id) {
+      setError("Chưa có lộ trình đào tạo — tạo lộ trình trước khi chia đội.");
+      return;
+    }
+    if (memberIds.length === 0) {
+      setError("Chọn ít nhất một tân binh vào đội.");
+      return;
+    }
     setSaving(true);
     try {
       await createTrainingGroup({
         name: name.trim(),
-        programId: programId || programs[0]?.id || "prog-1",
+        programId: programId || programs[0].id,
         departmentId: deptId,
-        departmentName: dept?.name ? `Ban ${dept.name}` : deptId,
-        specialtyLabel: `Chuyên môn: ${dept?.name ?? ""}`,
+        departmentName: dept?.name ?? deptId,
+        specialtyLabel: dept?.name ?? "",
         mentorId,
         mentorName: mentor?.name,
         memberIds,
@@ -149,12 +165,10 @@ function CreateGroupDrawer({
               <Select
                 width="full"
                 value={deptId}
-                options={DEPT_CARDS.map((d) => ({ value: d.id, label: d.name }))}
+                options={depts.map((d) => ({ value: d.id, label: d.name }))}
                 onChange={(id) => {
                   setDeptId(id);
                   setMemberIds([]);
-                  const m = mentors.find((x) => x.departmentId === id);
-                  setMentorId(m?.id ?? "");
                 }}
               />
             </div>
@@ -221,7 +235,7 @@ function CreateGroupDrawer({
             <p className="font-bold text-accent">{name || "Nhóm mới"}</p>
             <p className="text-xs text-muted">
               <span className="inline-flex items-center gap-1.5">
-                {dept ? <Icon icon={dept.icon} size={14} /> : null} Ban {dept?.name} · Mentor: {mentor?.name ?? "—"}
+                {dept?.name ?? "—"} · Mentor: {mentor?.name ?? "—"}
               </span>            </p>
             <p className="text-xs text-muted">Thành viên: {memberIds.length}</p>
           </div>
@@ -250,6 +264,8 @@ function TrainingTeamsPage() {
   const [trainees, setTrainees] = useState<Trainee[]>([]);
   const [loading, setLoading] = useState(true);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [mentorModalOpen, setMentorModalOpen] = useState(false);
+  const [autoAssigning, setAutoAssigning] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
@@ -304,6 +320,36 @@ function TrainingTeamsPage() {
           <p className="mt-2 text-muted">Quản lý nhóm tân binh và mentor phụ trách.</p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Button
+            variant="secondary"
+            size="sm"
+            className="!h-11"
+            onClick={() => setMentorModalOpen(true)}
+          >
+            Quản lý mentor
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            className="!h-11"
+            disabled={autoAssigning}
+            onClick={async () => {
+              setAutoAssigning(true);
+              try {
+                const res = await autoAssignTeams(programs[0]?.id);
+                showToast(
+                  `Đã random chia ${res.assigned} tân binh cho ${res.mentors} mentor.`,
+                );
+                await load();
+              } catch (err) {
+                showToast(err instanceof Error ? err.message : "Chia team thất bại.");
+              } finally {
+                setAutoAssigning(false);
+              }
+            }}
+          >
+            {autoAssigning ? "Đang chia..." : "Chia team tự động"}
+          </Button>
           <Button
             variant="secondary"
             size="sm"
@@ -390,6 +436,12 @@ function TrainingTeamsPage() {
           </button>
         </div>
       )}
+
+      <MentorManageModal
+        open={mentorModalOpen}
+        onClose={() => setMentorModalOpen(false)}
+        onChanged={() => void load()}
+      />
 
       <CreateGroupDrawer
         open={drawerOpen}

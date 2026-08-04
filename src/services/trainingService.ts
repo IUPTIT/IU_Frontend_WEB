@@ -1,4 +1,7 @@
-// TODO: MOCK — thay bằng API thật khi có backend
+// Training (Đào tạo) — programs/teams/trainees gọi API thật (/api/v1/training).
+// Phần tasks/submissions/progress (portal Leader & Member) backend CHƯA có
+// endpoint — vẫn dùng mock, sẽ nối API ở PR sau.
+import { api } from "../api/client";
 import type {
   Trainee,
   TrainingGroup,
@@ -7,44 +10,200 @@ import type {
   TrainingProgress,
   TrainingTask,
   TrainingTaskSubmission,
-  TraineeEvalStatus,
 } from "../types/training";
 import {
-  mockMentors,
   mockTaskSubmissions,
-  mockTrainees,
-  mockTrainingGroups,
-  mockTrainingPrograms,
   mockTrainingProgress,
   mockTrainingTasks,
 } from "../mocks/training.mock";
 
-const delay = (ms = 350) => new Promise((r) => setTimeout(r, ms));
+// ---- Kiểu backend ----
 
-let programsStore = [...mockTrainingPrograms];
-let groupsStore = [...mockTrainingGroups];
-let traineesStore = [...mockTrainees];
+type BackendTrainee = {
+  _id: string;
+  userId: string;
+  fullName: string;
+  email: string;
+  department: string;
+  campaignId: string | null;
+  status: Trainee["status"];
+  evalStatus: NonNullable<Trainee["evalStatus"]>;
+  groupId: { _id: string; name: string; mentorId: { _id: string; name: string } | null } | null;
+  cohortLabel: string;
+};
+
+type BackendStage = {
+  stageId: string;
+  name: string;
+  order: number;
+  weekLabel?: string;
+  durationWeeks?: number | null;
+};
+
+type BackendLesson = {
+  lessonId: string;
+  stageId: string;
+  title: string;
+  content?: string;
+  attachmentUrl?: string;
+  kind?: TrainingProgram["lessons"][number]["kind"] | null;
+  durationLabel?: string;
+};
+
+type BackendProgram = {
+  _id: string;
+  name: string;
+  department: string;
+  stages: BackendStage[];
+  lessons: BackendLesson[];
+  createdBy?: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type BackendGroup = {
+  _id: string;
+  name: string;
+  programId: string;
+  department: string;
+  specialtyLabel: string;
+  mentorId: { _id: string; name: string } | null;
+  memberIds: string[];
+  mentorAccepted: boolean;
+};
+
+// ---- Map backend → UI (departmentId = departmentName = tên ban) ----
+
+function toTrainee(t: BackendTrainee): Trainee {
+  return {
+    id: t._id,
+    userId: t.userId,
+    fullName: t.fullName,
+    email: t.email,
+    departmentId: t.department,
+    departmentName: t.department,
+    campaignId: t.campaignId ?? "",
+    status: t.status,
+    groupId: t.groupId?._id,
+    mentorId: t.groupId?.mentorId?._id,
+    mentorName: t.groupId?.mentorId?.name,
+    evalStatus: t.evalStatus,
+    cohortLabel: t.cohortLabel || undefined,
+  };
+}
+
+function toProgram(p: BackendProgram): TrainingProgram {
+  return {
+    id: p._id,
+    name: p.name,
+    departmentId: p.department,
+    departmentName: p.department,
+    createdById: p.createdBy ?? undefined,
+    stages: p.stages.map((s) => ({
+      id: s.stageId,
+      name: s.name,
+      order: s.order,
+      weekLabel: s.weekLabel || undefined,
+      durationWeeks: s.durationWeeks ?? undefined,
+    })),
+    lessons: p.lessons.map((l) => ({
+      id: l.lessonId,
+      stageId: l.stageId,
+      title: l.title,
+      content: l.content || undefined,
+      attachmentUrl: l.attachmentUrl || undefined,
+      kind: l.kind ?? undefined,
+      durationLabel: l.durationLabel || undefined,
+    })),
+    createdAt: p.createdAt,
+    updatedAt: p.updatedAt,
+  };
+}
+
+function toGroup(g: BackendGroup): TrainingGroup {
+  return {
+    id: g._id,
+    name: g.name,
+    programId: g.programId,
+    departmentId: g.department,
+    departmentName: g.department,
+    specialtyLabel: g.specialtyLabel || undefined,
+    memberIds: g.memberIds,
+    mentorId: g.mentorId?._id,
+    mentorName: g.mentorId?.name,
+    mentorAccepted: g.mentorAccepted,
+  };
+}
+
+// ---- Trainees / Mentors ----
 
 export async function getTrainees(departmentId?: string): Promise<Trainee[]> {
-  await delay();
-  if (!departmentId) return [...traineesStore];
-  return traineesStore.filter((t) => t.departmentId === departmentId);
+  const query = departmentId ? `?department=${encodeURIComponent(departmentId)}` : "";
+  const { trainees } = await api.get<{ trainees: BackendTrainee[] }>(
+    `/training/trainees${query}`,
+  );
+  return trainees.map(toTrainee);
 }
 
-export async function getMentors(departmentId?: string): Promise<TrainingMentor[]> {
-  await delay(150);
-  if (!departmentId) return [...mockMentors];
-  return mockMentors.filter((m) => m.departmentId === departmentId);
+/** Mentor tiềm năng = member/leader đang hoạt động — không gắn ban cụ thể nên bỏ qua tham số lọc ban */
+export async function getMentors(): Promise<TrainingMentor[]> {
+  const { mentors } = await api.get<{
+    mentors: { _id: string; name: string; role: string }[];
+  }>("/training/mentors");
+  return mentors.map((m) => ({
+    id: m._id,
+    name: m.name,
+    roleLabel: m.role === "leader" ? "Leader" : "Member",
+    departmentId: "",
+  }));
 }
+
+export type MentorCandidate = {
+  id: string;
+  name: string;
+  email: string;
+  roleLabel: string;
+  isMentor: boolean;
+};
+
+/** Toàn bộ member/leader active kèm cờ mentor — cho BCN đẩy/gỡ quyền */
+export async function getMentorCandidates(): Promise<MentorCandidate[]> {
+  const { candidates } = await api.get<{
+    candidates: { _id: string; name: string; email: string; role: string; isMentor?: boolean }[];
+  }>("/training/mentor-candidates");
+  return candidates.map((c) => ({
+    id: c._id,
+    name: c.name,
+    email: c.email,
+    roleLabel: c.role === "leader" ? "Leader" : "Member",
+    isMentor: c.isMentor ?? false,
+  }));
+}
+
+/** Đẩy / gỡ quyền mentor cho member */
+export async function setMentorFlag(userId: string, isMentor: boolean): Promise<void> {
+  await api.patch(`/training/mentors/${userId}`, { isMentor });
+}
+
+/** Random chia đều tân binh chưa có team cho các mentor (mỗi team dùng lộ trình riêng của mentor) */
+export async function autoAssignTeams(
+  fallbackProgramId?: string,
+): Promise<{ assigned: number; mentors: number; groups: unknown[] }> {
+  return api.post("/training/groups/auto-assign", {
+    programId: fallbackProgramId || null,
+  });
+}
+
+// ---- Programs ----
 
 export async function getTrainingPrograms(): Promise<TrainingProgram[]> {
-  await delay();
-  return [...programsStore];
+  const { programs } = await api.get<{ programs: BackendProgram[] }>("/training/programs");
+  return programs.map(toProgram);
 }
 
 export async function getTrainingProgramById(id: string): Promise<TrainingProgram | undefined> {
-  await delay();
-  return programsStore.find((p) => p.id === id);
+  const { program } = await api.get<{ program: BackendProgram }>(`/training/programs/${id}`);
+  return toProgram(program);
 }
 
 export type SaveProgramInput = {
@@ -56,26 +215,39 @@ export type SaveProgramInput = {
 };
 
 export async function createTrainingProgram(input: SaveProgramInput): Promise<TrainingProgram> {
-  await delay(400);
-  const now = new Date().toISOString();
-  const created: TrainingProgram = {
-    id: `prog-${Date.now()}`,
-    ...input,
-    createdAt: now,
-    updatedAt: now,
-  };
-  programsStore = [created, ...programsStore];
-  return created;
+  const { program } = await api.post<{ program: BackendProgram }>("/training/programs", {
+    name: input.name,
+    department: input.departmentName || input.departmentId,
+    stages: input.stages.map((s) => ({
+      stageId: s.id,
+      name: s.name,
+      order: s.order,
+      weekLabel: s.weekLabel ?? "",
+      durationWeeks: s.durationWeeks ?? null,
+    })),
+    lessons: input.lessons.map((l) => ({
+      lessonId: l.id,
+      stageId: l.stageId,
+      title: l.title,
+      content: l.content ?? "",
+      attachmentUrl: l.attachmentUrl ?? "",
+      kind: l.kind ?? null,
+      durationLabel: l.durationLabel ?? "",
+    })),
+  });
+  return toProgram(program);
 }
 
+// ---- Groups ----
+
 export async function getTrainingGroups(): Promise<TrainingGroup[]> {
-  await delay();
-  return [...groupsStore];
+  const { groups } = await api.get<{ groups: BackendGroup[] }>("/training/groups");
+  return groups.map(toGroup);
 }
 
 export async function getTrainingGroupById(id: string): Promise<TrainingGroup | undefined> {
-  await delay();
-  return groupsStore.find((g) => g.id === id);
+  const groups = await getTrainingGroups();
+  return groups.find((g) => g.id === id);
 }
 
 export type CreateGroupInput = {
@@ -90,44 +262,18 @@ export type CreateGroupInput = {
 };
 
 export async function createTrainingGroup(input: CreateGroupInput): Promise<TrainingGroup> {
-  await delay(400);
-  const created: TrainingGroup = {
-    id: `grp-${Date.now()}`,
+  const { group } = await api.post<{ group: BackendGroup }>("/training/groups", {
     name: input.name,
     programId: input.programId,
-    departmentId: input.departmentId,
-    departmentName: input.departmentName,
-    specialtyLabel: input.specialtyLabel,
-    mentorId: input.mentorId,
-    mentorName: input.mentorName,
-    mentorAccepted: Boolean(input.mentorId),
+    department: input.departmentName || input.departmentId,
+    specialtyLabel: input.specialtyLabel ?? "",
+    mentorId: input.mentorId || null,
     memberIds: input.memberIds,
-  };
-  groupsStore = [created, ...groupsStore];
-  traineesStore = traineesStore.map((t) =>
-    input.memberIds.includes(t.id)
-      ? { ...t, groupId: created.id, mentorId: input.mentorId, mentorName: input.mentorName }
-      : t,
-  );
-  return created;
+  });
+  return toGroup(group);
 }
 
-export async function getTrainingTasks(groupId?: string): Promise<TrainingTask[]> {
-  await delay();
-  if (!groupId) return mockTrainingTasks;
-  return mockTrainingTasks.filter((t) => t.groupId === groupId);
-}
-
-export async function getTaskSubmissions(taskId?: string): Promise<TrainingTaskSubmission[]> {
-  await delay();
-  if (!taskId) return mockTaskSubmissions;
-  return mockTaskSubmissions.filter((s) => s.taskId === taskId);
-}
-
-export async function getMyTrainingProgress(traineeId: string): Promise<TrainingProgress> {
-  await delay();
-  return { ...mockTrainingProgress, traineeId };
-}
+// ---- Đánh giá tổng kết ----
 
 export type TrainingReviewSummary = {
   totalTrainees: number;
@@ -136,32 +282,41 @@ export type TrainingReviewSummary = {
 };
 
 export async function getTrainingReviewSummary(): Promise<TrainingReviewSummary> {
-  await delay(200);
-  const total = traineesStore.length;
-  const done = traineesStore.filter(
-    (t) => t.evalStatus === "qualified" || t.evalStatus === "certified" || t.status === "completed",
-  ).length;
-  const needs = traineesStore.filter((t) => t.evalStatus === "failed").length;
-  return {
-    totalTrainees: total,
-    completionRate: total ? Math.round((done / total) * 100) : 0,
-    needsAction: needs,
-  };
+  const { summary } = await api.get<{ summary: TrainingReviewSummary }>(
+    "/training/review-summary",
+  );
+  return summary;
+}
+
+export async function setTraineeEvalStatus(
+  traineeId: string,
+  evalStatus: NonNullable<Trainee["evalStatus"]>,
+): Promise<void> {
+  await api.patch(`/training/trainees/${traineeId}/eval`, { evalStatus });
 }
 
 export async function issueCertificates(traineeIds: string[]): Promise<{ issued: number }> {
-  await delay(400);
-  let issued = 0;
-  traineesStore = traineesStore.map((t) => {
-    if (!traineeIds.includes(t.id)) return t;
-    if (t.evalStatus !== "qualified" && t.evalStatus !== "certified") return t;
-    issued += 1;
-    return { ...t, evalStatus: "certified" as TraineeEvalStatus, status: "completed" };
-  });
-  return { issued };
+  return api.post<{ issued: number }>("/training/certificates", { traineeIds });
 }
 
 export async function notifyTrainingGroups(groupIds: string[]): Promise<{ sent: number }> {
-  await delay(400);
+  // Email gửi qua module email (SendEmailModal) — hàm này chỉ trả số lượng
   return { sent: groupIds.length };
+}
+
+// ---- Tasks / submissions / progress — CHƯA có backend, vẫn mock ----
+// TODO: nối API khi backend có module training tasks
+
+export async function getTrainingTasks(groupId?: string): Promise<TrainingTask[]> {
+  if (!groupId) return mockTrainingTasks;
+  return mockTrainingTasks.filter((t) => t.groupId === groupId);
+}
+
+export async function getTaskSubmissions(taskId?: string): Promise<TrainingTaskSubmission[]> {
+  if (!taskId) return mockTaskSubmissions;
+  return mockTaskSubmissions.filter((s) => s.taskId === taskId);
+}
+
+export async function getMyTrainingProgress(traineeId: string): Promise<TrainingProgress> {
+  return { ...mockTrainingProgress, traineeId };
 }

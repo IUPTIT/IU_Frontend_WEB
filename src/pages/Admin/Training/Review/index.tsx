@@ -14,6 +14,7 @@ import {
   getTrainees,
   getTrainingReviewSummary,
   issueCertificates,
+  setTraineeEvalStatus,
   type TrainingReviewSummary,
 } from "../../../../services/trainingService";
 import type { Trainee, TraineeEvalStatus } from "../../../../types/training";
@@ -227,8 +228,19 @@ function TrainingReviewPage() {
     }
     const res = await issueCertificates(ids);
     await load();
+    await load();
     setSelected(new Set());
     showToast(`Đã cấp chứng nhận cho ${res.issued} học viên.`);
+  };
+
+  const handleEval = async (traineeId: string, evalStatus: "qualified" | "failed") => {
+    try {
+      await setTraineeEvalStatus(traineeId, evalStatus);
+      showToast(evalStatus === "qualified" ? "Đã đánh dấu Đạt." : "Đã đánh dấu Chưa đạt.");
+      await load();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Cập nhật thất bại.");
+    }
   };
 
   return (
@@ -440,9 +452,30 @@ function TrainingReviewPage() {
                           <EvalBadge status={t.evalStatus} />
                         </td>
                         <td className="px-3 py-4 text-center">
-                          <button type="button" className="text-sm font-medium text-accent hover:underline">
-                            Xem hồ sơ
-                          </button>
+                          {t.evalStatus === "studying" || t.evalStatus === "failed" ? (
+                            <button
+                              type="button"
+                              className="text-sm font-medium text-emerald-600 hover:underline"
+                              onClick={() => void handleEval(t.id, "qualified")}
+                            >
+                              Đạt
+                            </button>
+                          ) : null}
+                          {(t.evalStatus === "studying" || t.evalStatus === "qualified") && (
+                            <>
+                              {t.evalStatus === "studying" && <span className="text-muted/40"> · </span>}
+                              <button
+                                type="button"
+                                className="text-sm font-medium text-rose-500 hover:underline"
+                                onClick={() => void handleEval(t.id, "failed")}
+                              >
+                                Chưa đạt
+                              </button>
+                            </>
+                          )}
+                          {t.evalStatus === "certified" && (
+                            <span className="text-sm text-muted">Đã cấp CN</span>
+                          )}
                         </td>
                       </tr>
                     );

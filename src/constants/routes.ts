@@ -14,10 +14,10 @@ export const ROUTES = {
     },
     members: "/admin/members",
     training: {
-      roadmap: "/admin/training/roadmap",
       teams: "/admin/training/teams",
       review: "/admin/training/review",
     },
+    clubTraining: "/admin/club-training",
     settings: "/admin/settings",
     email: "/admin/settings/email",
     permissions: "/admin/permissions",
@@ -39,6 +39,7 @@ export const ROUTES = {
   },
   member: {
     overview: "/member",
+    mentorRoadmap: "/member/mentor/roadmap",
     training: {
       roadmap: "/member/training/roadmap",
       tasks: "/member/training/tasks",

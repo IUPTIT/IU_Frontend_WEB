@@ -29,27 +29,22 @@ export const SIDEBAR_CONFIG: Record<Role, SidebarConfig> = {
                 path: ROUTES.admin.recruitment.interviews,
               },
               { id: "recruitment-results", label: "Kết quả", path: ROUTES.admin.recruitment.results },
-            ],
-          },
-          { id: "members", label: "Quản lý thành viên", icon: "members", path: ROUTES.admin.members },
-          {
-            id: "training",
-            label: "Đào tạo",
-            icon: "training",
-            path: ROUTES.admin.training.roadmap,
-            children: [
-              {
-                id: "training-roadmap",
-                label: "Lộ trình training",
-                path: ROUTES.admin.training.roadmap,
-              },
-              { id: "training-teams", label: "Chia đội", path: ROUTES.admin.training.teams },
+              // Vòng training — admin chỉ chia đội + đánh giá; lộ trình do mentor tự tạo
+              { id: "training-teams", label: "Chia đội training", path: ROUTES.admin.training.teams },
               {
                 id: "training-review",
-                label: "Đánh giá tổng kết",
+                label: "Tổng kết training",
                 path: ROUTES.admin.training.review,
               },
             ],
+          },
+          { id: "members", label: "Quản lý thành viên", icon: "members", path: ROUTES.admin.members },
+          // Đào tạo CLB (bồi dưỡng thành viên chính thức) — khác với Vòng training tuyển chọn
+          {
+            id: "club-training",
+            label: "Đào tạo",
+            icon: "training",
+            path: ROUTES.admin.clubTraining,
           },
           {
             id: "settings",
@@ -161,6 +156,13 @@ export const SIDEBAR_CONFIG: Record<Role, SidebarConfig> = {
         id: "main",
         items: [
           { id: "overview", label: "Tổng quan", icon: "dashboard", path: ROUTES.member.overview },
+        // Trang mentor — member được đẩy quyền sẽ tạo lộ trình training riêng ở đây
+        {
+          id: "mentor-roadmap",
+          label: "Lộ trình mentor",
+          icon: "roadmap",
+          path: ROUTES.member.mentorRoadmap,
+        },
         ],
       },
       {

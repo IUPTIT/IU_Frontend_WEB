@@ -14,6 +14,8 @@ export type AuthUser = {
   requirePasswordChange?: boolean;
   /** ID hồ sơ ứng tuyển gắn với tài khoản candidate */
   sourceApplicationId?: string;
+  /** Member được đẩy quyền mentor dẫn team vòng training */
+  isMentor?: boolean;
 };
 
 // Backend dùng role "bcn" cho Ban Chủ nhiệm — frontend gọi là "admin"
@@ -27,6 +29,7 @@ type BackendUser = {
   avatar?: string;
   requirePasswordChange?: boolean;
   sourceApplicationId?: string | null;
+  isMentor?: boolean;
 };
 
 function toAuthUser(u: BackendUser): AuthUser {
@@ -38,6 +41,7 @@ function toAuthUser(u: BackendUser): AuthUser {
     avatarDataUrl: u.avatar || undefined,
     requirePasswordChange: u.requirePasswordChange ?? false,
     sourceApplicationId: u.sourceApplicationId ?? undefined,
+    isMentor: u.isMentor ?? false,
   };
 }
 

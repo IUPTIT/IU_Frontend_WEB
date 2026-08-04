@@ -10,7 +10,7 @@ import AdminInterviewSlotDetailPage from "../pages/Admin/Recruitment/Interviews/
 import AdminInterviewNotePage from "../pages/Admin/Recruitment/Interviews/CandidateNote";
 import AdminRecruitmentResultsPage from "../pages/Admin/Recruitment/Results";
 import AdminMembersPage from "../pages/Admin/Members";
-import AdminTrainingRoadmapPage from "../pages/Admin/Training/Roadmap";
+import AdminClubTrainingPage from "../pages/Admin/ClubTraining";
 import AdminTrainingTeamsPage from "../pages/Admin/Training/Teams";
 import AdminTrainingReviewPage from "../pages/Admin/Training/Review";
 import AdminSettingsPage from "../pages/Admin/Settings";
@@ -30,6 +30,7 @@ import CandidateProfilePage from "../pages/Candidate/Profile";
 
 import MemberOverviewPage from "../pages/Member";
 import MemberTrainingRoadmapPage from "../pages/Member/Training/Roadmap";
+import MemberMentorRoadmapPage from "../pages/Member/MentorRoadmap";
 import MemberTrainingTasksPage from "../pages/Member/Training/Tasks";
 import MemberTrainingProgressPage from "../pages/Member/Training/Progress";
 import MemberSettingsPage from "../pages/Member/Settings";
@@ -43,7 +44,7 @@ const PAGE_MAP: Record<string, ReactNode> = {
   [ROUTES.admin.recruitment.interviews]: <AdminRecruitmentInterviewsPage />,
   [ROUTES.admin.recruitment.results]: <AdminRecruitmentResultsPage />,
   [ROUTES.admin.members]: <AdminMembersPage />,
-  [ROUTES.admin.training.roadmap]: <AdminTrainingRoadmapPage />,
+  [ROUTES.admin.clubTraining]: <AdminClubTrainingPage />,
   [ROUTES.admin.training.teams]: <AdminTrainingTeamsPage />,
   [ROUTES.admin.training.review]: <AdminTrainingReviewPage />,
   [ROUTES.admin.settings]: <AdminSettingsPage />,
@@ -62,6 +63,7 @@ const PAGE_MAP: Record<string, ReactNode> = {
   [ROUTES.candidate.profile]: <CandidateProfilePage />,
 
   [ROUTES.member.overview]: <MemberOverviewPage />,
+  [ROUTES.member.mentorRoadmap]: <MemberMentorRoadmapPage />,
   [ROUTES.member.training.roadmap]: <MemberTrainingRoadmapPage />,
   [ROUTES.member.training.tasks]: <MemberTrainingTasksPage />,
   [ROUTES.member.training.progress]: <MemberTrainingProgressPage />,

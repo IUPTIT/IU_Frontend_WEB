@@ -87,6 +87,7 @@ type BackendApplication = {
   /** Điểm TB vòng đơn / phỏng vấn — backend thang 0-100 */
   cvScore?: number | null;
   interviewScore?: number | null;
+  resultNotifyStatus?: "pending" | "email_sent" | "converted";
 };
 
 // UI dùng thang 0-10, backend lưu 0-100 — quy đổi tại MỘT chỗ duy nhất
@@ -202,6 +203,7 @@ function toApplication(a: BackendApplication): Application {
     interviewScore: toUiScale(a.interviewScore),
     submittedAt: a.submittedAt ?? a.createdAt,
     attachments,
+    resultNotifyStatus: a.resultNotifyStatus ?? "pending",
   };
 }
 
@@ -1064,8 +1066,13 @@ export async function notifyInterviewResults(applicationIds: string[]): Promise<
   return { sent: applicationIds.length };
 }
 
+// Đánh dấu đã gửi email kết quả cuối (lưu backend — hiển thị cột "Trạng thái xử lý")
 export async function notifyFinalResults(applicationIds: string[]): Promise<{ sent: number }> {
-  return { sent: applicationIds.length };
+  const { notified } = await api.post<{ notified: number }>(
+    "/recruitment/applications/notify-final",
+    { applicationIds },
+  );
+  return { sent: notified };
 }
 
 // Xác nhận trúng tuyển cuối — state machine tự enqueue job nâng role candidate → member
