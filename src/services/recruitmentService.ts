@@ -18,78 +18,105 @@ import type {
   ScreeningCriterion,
 } from "../types/recruitment";
 
-// ---- Kiểu dữ liệu backend trả về ----
+// ---- Kiểu dữ liệu backend trả về (model mới: RecruitmentCampaign + ApplicationForm) ----
 
-type BackendQuestion = {
-  _id: string;
+type BackendFieldType =
+  | "text_short"
+  | "text_long"
+  | "single_choice"
+  | "multi_choice"
+  | "file_upload"
+  | "scale";
+
+type BackendField = {
+  fieldId: string;
   label: string;
-  type: "short_text" | "long_text" | "single_choice" | "multi_choice" | "file" | "scale";
-  options?: string[];
+  type: BackendFieldType;
   required: boolean;
   order: number;
+  options?: string[];
+  isFixed: boolean;
+};
+
+type BackendForm = {
+  _id: string;
+  campaignId: string;
+  fields: BackendField[];
+  isLocked: boolean;
 };
 
 type BackendCampaign = {
-  id: string;
+  _id: string;
   name: string;
   description: string;
   openAt: string;
   closeAt: string;
   status: "draft" | "open" | "closed" | "completed";
-  quotas: { team: string; count: number }[];
-  customQuestions: BackendQuestion[];
+  quotas: { department: string; quota: number }[];
   createdAt: string;
   updatedAt: string;
 };
 
 type BackendApplicationStatus =
-  | "pending"
-  | "passed_screening"
-  | "failed_screening"
+  | "draft"
+  | "pending_review"
+  | "passed_cv"
+  | "failed_cv"
   | "passed_interview"
   | "failed_interview"
-  | "accepted"
-  | "rejected"
-  | "withdrawn";
+  | "admitted"
+  | "rejected";
 
 type BackendApplication = {
-  id: string;
-  code: string;
+  _id: string;
+  applicationCode: string | null;
+  campaignId: string | { _id: string; name: string };
+  status: BackendApplicationStatus;
+  email: string;
   fullName: string;
   studentId: string;
   className: string;
   faculty: string;
-  email: string;
   phone: string;
-  wishes: string[];
-  answers: Record<string, string | string[]>;
-  status: BackendApplicationStatus;
+  avatarUrl: string;
+  cvUrl: string;
+  departmentPreferences: { department: string; priority: number }[];
+  answers: { fieldId: string; value: string | string[] }[];
+  submittedAt: string | null;
   createdAt: string;
-  campaign: string | { _id: string; name: string };
 };
 
 // ---- Map backend → types admin UI ----
 
-const QUESTION_TYPE_MAP: Record<BackendQuestion["type"], QuestionType> = {
-  short_text: "short_text",
-  long_text: "long_text",
+const FIELD_TYPE_TO_UI: Record<BackendFieldType, QuestionType> = {
+  text_short: "short_text",
+  text_long: "long_text",
   single_choice: "single_choice",
   multi_choice: "multi_choice",
-  file: "file_upload",
+  file_upload: "file_upload",
   scale: "rating",
+};
+
+const UI_TYPE_TO_FIELD: Record<QuestionType, BackendFieldType> = {
+  short_text: "text_short",
+  long_text: "text_long",
+  single_choice: "single_choice",
+  multi_choice: "multi_choice",
+  file_upload: "file_upload",
+  rating: "scale",
 };
 
 function toCampaign(c: BackendCampaign): RecruitmentCampaign {
   return {
-    id: c.id,
+    id: c._id,
     name: c.name,
     description: c.description,
     openAt: c.openAt,
     closeAt: c.closeAt,
     quotas: c.quotas.map((q) => ({
-      departmentId: q.team,
-      departmentName: q.team,
-      quota: q.count,
+      departmentId: q.department,
+      departmentName: q.department,
+      quota: q.quota,
     })),
     status: c.status === "open" ? "published" : c.status === "draft" ? "draft" : "closed",
     isActive: c.status === "open",
@@ -98,62 +125,64 @@ function toCampaign(c: BackendCampaign): RecruitmentCampaign {
   };
 }
 
-function toQuestion(campaignId: string, q: BackendQuestion): FormQuestion {
+function toQuestion(campaignId: string, f: BackendField): FormQuestion {
   return {
-    id: q._id,
+    id: f.fieldId,
     campaignId,
-    content: q.label,
-    type: QUESTION_TYPE_MAP[q.type],
-    required: q.required,
-    order: q.order,
-    options: q.options?.map((label, i) => ({ id: `${q._id}-${i}`, label, order: i })),
+    content: f.label,
+    type: FIELD_TYPE_TO_UI[f.type],
+    required: f.required,
+    order: f.order,
+    options: f.options?.map((label, i) => ({ id: `${f.fieldId}-${i}`, label, order: i })),
   };
 }
 
 function campaignIdOf(a: BackendApplication): string {
-  return typeof a.campaign === "string" ? a.campaign : a.campaign._id;
+  return typeof a.campaignId === "string" ? a.campaignId : a.campaignId._id;
 }
 
 function toApplication(a: BackendApplication): Application {
   const status: Application["status"] =
-    a.status === "pending"
+    a.status === "draft" || a.status === "pending_review"
       ? "submitted"
-      : a.status === "passed_screening"
+      : a.status === "passed_cv" || a.status === "passed_interview"
         ? "interview"
-        : a.status === "passed_interview"
-          ? "interview"
-          : a.status === "accepted"
-            ? "accepted"
-            : "rejected";
+        : a.status === "admitted"
+          ? "accepted"
+          : "rejected";
 
   const screeningResult: PassFail =
-    a.status === "pending"
+    a.status === "draft" || a.status === "pending_review"
       ? "pending"
-      : ["failed_screening", "withdrawn"].includes(a.status)
+      : a.status === "failed_cv"
         ? "fail"
         : "pass";
-  const interviewResult: PassFail = ["passed_interview", "accepted"].includes(a.status)
+  const interviewResult: PassFail = ["passed_interview", "admitted"].includes(a.status)
     ? "pass"
-    : ["failed_interview", "rejected"].includes(a.status)
+    : a.status === "failed_interview"
       ? "fail"
       : "pending";
   const finalResult: PassFail =
-    a.status === "accepted" ? "pass" : a.status === "rejected" ? "fail" : "pending";
+    a.status === "admitted" ? "pass" : a.status === "rejected" ? "fail" : "pending";
+
+  const preferred = [...(a.departmentPreferences ?? [])].sort(
+    (x, y) => x.priority - y.priority,
+  )[0]?.department;
 
   return {
-    id: a.id,
+    id: a._id,
     campaignId: campaignIdOf(a),
     fullName: a.fullName,
     email: a.email,
     phone: a.phone,
     education: `${a.className} — ${a.faculty}`,
-    preferredDepartmentId: a.wishes[0] ?? "",
-    preferredDepartmentName: a.wishes[0] ?? "",
+    preferredDepartmentId: preferred ?? "",
+    preferredDepartmentName: preferred ?? "",
     status,
     screeningResult,
     interviewResult,
     finalResult,
-    submittedAt: a.createdAt,
+    submittedAt: a.submittedAt ?? a.createdAt,
   };
 }
 
@@ -203,14 +232,36 @@ export type CreateCampaignInput = {
   isActive: boolean;
 };
 
-const QUESTION_TYPE_TO_BACKEND: Record<QuestionType, BackendQuestion["type"]> = {
-  short_text: "short_text",
-  long_text: "long_text",
-  single_choice: "single_choice",
-  multi_choice: "multi_choice",
-  file_upload: "file",
-  rating: "scale",
-};
+function toQuotasBody(quotas: CreateCampaignInput["quotas"]) {
+  // Backend yêu cầu quota >= 1 — bỏ các ban không đặt chỉ tiêu
+  return quotas
+    .filter((q) => q.quota > 0)
+    .map((q) => ({ department: q.departmentName, quota: q.quota }));
+}
+
+// Câu hỏi riêng lưu trong ApplicationForm: giữ 10 trường cố định đã seed,
+// thay toàn bộ trường custom bằng danh sách mới
+async function saveCustomQuestions(campaignId: string, questions: CreateCampaignQuestion[]) {
+  const { form } = await api.get<{ form: BackendForm }>(
+    `/recruitment/campaigns/${campaignId}/form`,
+  );
+  const fixedFields = form.fields.filter((f) => f.isFixed);
+  const maxFixedOrder = Math.max(...fixedFields.map((f) => f.order), 0);
+  const customFields: BackendField[] = questions.map((q, i) => ({
+    fieldId: `custom_question_${i + 1}`,
+    label: q.label,
+    type: UI_TYPE_TO_FIELD[q.type],
+    required: q.required,
+    order: maxFixedOrder + 1 + (q.order ?? i),
+    options: q.options?.length ? q.options : undefined,
+    isFixed: false,
+  }));
+  const { form: saved } = await api.put<{ form: BackendForm }>(
+    `/recruitment/campaigns/${campaignId}/form`,
+    { fields: [...fixedFields, ...customFields] },
+  );
+  return saved;
+}
 
 export async function createCampaign(input: CreateCampaignInput): Promise<RecruitmentCampaign> {
   const { campaign } = await api.post<{ campaign: BackendCampaign }>("/recruitment/campaigns", {
@@ -218,21 +269,14 @@ export async function createCampaign(input: CreateCampaignInput): Promise<Recrui
     description: input.description ?? "",
     openAt: input.openAt,
     closeAt: input.closeAt,
-    // Backend yêu cầu count >= 1 — bỏ các ban không đặt chỉ tiêu
-    quotas: input.quotas
-      .filter((q) => q.quota > 0)
-      .map((q) => ({ team: q.departmentName, count: q.quota })),
-    customQuestions: (input.customQuestions ?? []).map((q) => ({
-      label: q.label,
-      type: QUESTION_TYPE_TO_BACKEND[q.type],
-      options: q.options?.length ? q.options : undefined,
-      required: q.required,
-      order: q.order,
-    })),
+    quotas: toQuotasBody(input.quotas),
   });
+  if (input.customQuestions?.length) {
+    await saveCustomQuestions(campaign._id, input.customQuestions);
+  }
   if (input.status === "published" || input.isActive) {
     const { campaign: published } = await api.post<{ campaign: BackendCampaign }>(
-      `/recruitment/campaigns/${campaign.id}/publish`,
+      `/recruitment/campaigns/${campaign._id}/publish`,
     );
     return toCampaign(published);
   }
@@ -249,7 +293,8 @@ export type UpdateCampaignInput = {
 };
 
 // Sửa đợt tuyển. Đợt đã publish: backend chỉ nhận closeAt/quotas/description
-// (+ customQuestions khi chưa có hồ sơ) — caller tự lọc field trước khi gọi.
+// — caller tự lọc field trước khi gọi. Câu hỏi riêng đi qua endpoint form
+// (backend chặn khi form khoá do đã có hồ sơ nộp).
 export async function updateCampaign(
   id: string,
   input: UpdateCampaignInput,
@@ -259,41 +304,39 @@ export async function updateCampaign(
   if (input.description !== undefined) body.description = input.description;
   if (input.openAt != null) body.openAt = input.openAt;
   if (input.closeAt != null) body.closeAt = input.closeAt;
-  if (input.quotas) {
-    body.quotas = input.quotas
-      .filter((q) => q.quota > 0)
-      .map((q) => ({ team: q.departmentName, count: q.quota }));
+  if (input.quotas) body.quotas = toQuotasBody(input.quotas);
+
+  let campaign: BackendCampaign | undefined;
+  if (Object.keys(body).length) {
+    ({ campaign } = await api.patch<{ campaign: BackendCampaign }>(
+      `/recruitment/campaigns/${id}`,
+      body,
+    ));
   }
   if (input.customQuestions) {
-    body.customQuestions = input.customQuestions.map((q) => ({
-      label: q.label,
-      type: QUESTION_TYPE_TO_BACKEND[q.type],
-      options: q.options?.length ? q.options : undefined,
-      required: q.required,
-      order: q.order,
-    }));
+    await saveCustomQuestions(id, input.customQuestions);
   }
-  const { campaign } = await api.patch<{ campaign: BackendCampaign }>(
-    `/recruitment/campaigns/${id}`,
-    body,
-  );
+  if (!campaign) {
+    ({ campaign } = await api.get<{ campaign: BackendCampaign }>(`/recruitment/campaigns/${id}`));
+  }
   return toCampaign(campaign);
 }
 
 export async function getFormQuestions(campaignId: string): Promise<FormQuestion[]> {
-  const { campaign } = await api.get<{ campaign: BackendCampaign }>(
-    `/recruitment/campaigns/${campaignId}`,
+  const { form } = await api.get<{ form: BackendForm }>(
+    `/recruitment/campaigns/${campaignId}/form`,
   );
-  return campaign.customQuestions
-    .map((q) => toQuestion(campaignId, q))
+  return form.fields
+    .filter((f) => !f.isFixed)
+    .map((f) => toQuestion(campaignId, f))
     .sort((a, b) => a.order - b.order);
 }
 
 // ---- Applications (API thật) ----
 
 async function fetchApplications(campaignId?: string): Promise<BackendApplication[]> {
-  const query = campaignId ? `?campaign=${campaignId}` : "";
-  const { applications } = await api.get<{ applications: BackendApplication[] }>(
+  const query = campaignId ? `?campaignId=${campaignId}&limit=100` : "?limit=100";
+  const { applications } = await api.get<{ applications: BackendApplication[]; total: number }>(
     `/recruitment/applications${query}`,
   );
   return applications;
@@ -305,48 +348,51 @@ export async function getApplications(campaignId?: string): Promise<Application[
 
 export async function getApplicationById(id: string): Promise<Application | undefined> {
   const all = await fetchApplications();
-  const found = all.find((a) => a.id === id);
+  const found = all.find((a) => a._id === id);
   return found ? toApplication(found) : undefined;
 }
 
 export async function getApplicationAnswers(applicationId: string): Promise<ApplicationAnswer[]> {
   const all = await fetchApplications();
-  const app = all.find((a) => a.id === applicationId);
+  const app = all.find((a) => a._id === applicationId);
   if (!app) return [];
   const questions = await getFormQuestions(campaignIdOf(app));
+  const answerByField = new Map((app.answers ?? []).map((ans) => [ans.fieldId, ans.value]));
   return questions
-    .filter((q) => app.answers?.[q.id] !== undefined)
+    .filter((q) => answerByField.get(q.id) !== undefined)
     .map((q) => ({
       id: `${applicationId}-${q.id}`,
       applicationId,
       questionId: q.id,
       questionOrder: q.order,
       questionContent: q.content,
-      value: app.answers[q.id],
+      value: answerByField.get(q.id) as string | string[],
     }));
 }
 
 export async function getRecruitmentStats(campaignId: string): Promise<RecruitmentStats> {
   const apps = await fetchApplications(campaignId);
   const total = apps.length;
-  const screened = apps.filter((a) => a.status !== "pending" && a.status !== "withdrawn");
+  const screened = apps.filter((a) => !["draft", "pending_review"].includes(a.status));
   const screeningPassed = apps.filter((a) =>
-    ["passed_screening", "passed_interview", "accepted", "failed_interview", "rejected"].includes(
+    ["passed_cv", "passed_interview", "failed_interview", "admitted", "rejected"].includes(
       a.status,
     ),
   );
   const interviewed = apps.filter((a) =>
-    ["passed_interview", "failed_interview", "accepted", "rejected"].includes(a.status),
+    ["passed_interview", "failed_interview", "admitted", "rejected"].includes(a.status),
   );
-  const interviewPassed = apps.filter((a) => ["passed_interview", "accepted"].includes(a.status));
+  const interviewPassed = apps.filter((a) => ["passed_interview", "admitted"].includes(a.status));
 
-  const byTeam = new Map<string, { total: number; accepted: number }>();
+  const byDepartment = new Map<string, { total: number; accepted: number }>();
   for (const a of apps) {
-    const team = a.wishes[0] ?? "Khác";
-    const entry = byTeam.get(team) ?? { total: 0, accepted: 0 };
+    const preferred =
+      [...(a.departmentPreferences ?? [])].sort((x, y) => x.priority - y.priority)[0]
+        ?.department ?? "Khác";
+    const entry = byDepartment.get(preferred) ?? { total: 0, accepted: 0 };
     entry.total += 1;
-    if (a.status === "accepted") entry.accepted += 1;
-    byTeam.set(team, entry);
+    if (a.status === "admitted") entry.accepted += 1;
+    byDepartment.set(preferred, entry);
   }
 
   return {
@@ -354,16 +400,16 @@ export async function getRecruitmentStats(campaignId: string): Promise<Recruitme
     totalApplications: total,
     screeningPassRate: screened.length ? screeningPassed.length / screened.length : 0,
     interviewPassRate: interviewed.length ? interviewPassed.length / interviewed.length : 0,
-    acceptRateByDepartment: [...byTeam.entries()].map(([team, v]) => ({
-      departmentId: team,
-      departmentName: team,
+    acceptRateByDepartment: [...byDepartment.entries()].map(([department, v]) => ({
+      departmentId: department,
+      departmentName: department,
       rate: v.total ? v.accepted / v.total : 0,
     })),
   };
 }
 
 // ---- Chấm điểm vòng đơn / phỏng vấn — CHƯA có API, lưu in-memory (rỗng) ----
-// TODO: nối API khi backend có module screening/interview
+// TODO: nối API khi backend có module screening/interview (Phần 2-4 spec)
 
 let scoresStore: ApplicationScore[] = [];
 let interviewSlotsStore: InterviewSlot[] = [];
@@ -424,7 +470,7 @@ export async function setScreeningDecision(
   applicationId: string,
   _result: Extract<PassFail, "pass" | "fail">,
 ): Promise<Application | undefined> {
-  // TODO: gọi API cập nhật trạng thái khi backend có endpoint screening decision
+  // TODO: gọi POST /recruitment/applications/:id/decide khi backend có endpoint
   return getApplicationById(applicationId);
 }
 

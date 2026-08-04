@@ -53,13 +53,13 @@ function RecruitmentPage() {
       ]);
 
       const application = await submitApplication({
+        campaignId: campaign.id,
         fullName: form.fullName,
         studentId: form.studentId,
         className: form.className,
         faculty: form.faculty,
         email: form.email,
         phone: form.phone,
-        nationalId: form.nationalId,
         dateOfBirth: form.dateOfBirth,
         avatarUrl,
         cvUrl,

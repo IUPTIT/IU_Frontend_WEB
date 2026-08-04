@@ -26,7 +26,6 @@ function validate(form: ApplicationForm, questions: PublicQuestion[]): Record<st
 
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errors.email = "Email không đúng định dạng";
   if (!/^0\d{9}$/.test(form.phone)) errors.phone = "Số điện thoại phải đủ 10 số";
-  if (!/^\d{12}$/.test(form.nationalId)) errors.nationalId = "CCCD phải đủ 12 số";
 
   if (!form.dateOfBirth) {
     errors.dateOfBirth = "Bắt buộc chọn ngày sinh";
@@ -140,17 +139,6 @@ function ApplicationFormStep({ campaign, value, onSubmit }: Props) {
             <label className={labelClass}>Số điện thoại *</label>
             <input className="landing-input" type="tel" value={form.phone} onChange={(e) => set("phone", e.target.value)} />
             <FieldError message={errors.phone} />
-          </div>
-          <div>
-            <label className={labelClass}>Số CCCD *</label>
-            <input
-              className="landing-input"
-              inputMode="numeric"
-              maxLength={12}
-              value={form.nationalId}
-              onChange={(e) => set("nationalId", e.target.value.replace(/\D/g, ""))}
-            />
-            <FieldError message={errors.nationalId} />
           </div>
           <div>
             <label className={labelClass}>Ngày sinh *</label>

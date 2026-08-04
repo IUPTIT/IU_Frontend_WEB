@@ -9,12 +9,7 @@ type Props = {
 };
 
 const POSITIVE: PublicApplicationStatus[] = ["passed_screening", "passed_interview", "accepted"];
-const NEGATIVE: PublicApplicationStatus[] = [
-  "failed_screening",
-  "failed_interview",
-  "rejected",
-  "withdrawn",
-];
+const NEGATIVE: PublicApplicationStatus[] = ["failed_screening", "failed_interview", "rejected"];
 
 function statusColor(status: PublicApplicationStatus) {
   if (POSITIVE.includes(status)) return "border-emerald-400/50 bg-emerald-500/15 text-emerald-300";
@@ -58,12 +53,6 @@ function ApplicationStatusCard({ application, withdrawing, onWithdraw }: Props) 
         <Row label="Nộp lúc" value={new Date(application.createdAt).toLocaleString("vi-VN")} />
         <Row label="Ban nguyện vọng" value={application.wishes.map((w, i) => `NV${i + 1}: ${w}`).join(" · ")} />
       </div>
-
-      {application.note && (
-        <p className="mt-5 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-[hsl(var(--landing-foreground)/0.8)]">
-          {application.note}
-        </p>
-      )}
 
       {editable ? (
         <div className="mt-6 flex flex-col gap-3 md:flex-row">

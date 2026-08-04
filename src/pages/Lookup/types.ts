@@ -8,5 +8,4 @@ export const STATUS_LABEL: Record<PublicApplicationStatus, string> = {
   failed_interview: "Không đạt phỏng vấn",
   accepted: "Trúng tuyển",
   rejected: "Không trúng tuyển",
-  withdrawn: "Đã rút đơn",
 };
