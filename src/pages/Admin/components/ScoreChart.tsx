@@ -31,7 +31,7 @@ function ScoreChart({ data }: { data: TrainingScore[] }) {
         </defs>
 
         {[2.5, 5, 7.5, 10].map((v) => (
-          <line key={v} x1={PAD.left} x2={W - PAD.right} y1={y(v)} y2={y(v)} stroke="#A3B1C6" strokeOpacity="0.35" strokeWidth="1" />
+          <line key={v} x1={PAD.left} x2={W - PAD.right} y1={y(v)} y2={y(v)} stroke="currentColor" className="text-muted" strokeOpacity="0.35" strokeWidth="1" />
         ))}
 
         <path d={areaPath} fill="url(#scoreFill)" />
@@ -40,17 +40,16 @@ function ScoreChart({ data }: { data: TrainingScore[] }) {
         {data.map((d, i) => (
           <g key={d.session} onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)}>
             <rect x={x(i) - plotW / data.length / 2} y={PAD.top} width={plotW / data.length} height={plotH} fill="transparent" />
-            {/* marker có vòng nền 2px tách khỏi vùng fill */}
-            <circle cx={x(i)} cy={y(d.avgScore)} r={hover === i ? 7 : 5} fill="#6C63FF" stroke="#E0E5EC" strokeWidth="2" style={{ transition: "r 300ms ease-out" }} />
+            <circle cx={x(i)} cy={y(d.avgScore)} r={hover === i ? 7 : 5} fill="#6C63FF" stroke="currentColor" className="text-background" strokeWidth="2" style={{ transition: "r 200ms ease-in-out" }} />
             {hover === i && (
               <g>
-                <rect x={x(i) - 40} y={y(d.avgScore) - 44} width={80} height={30} rx="8" fill="#3D4852" />
-                <text x={x(i)} y={y(d.avgScore) - 24} textAnchor="middle" className="fill-white text-[11px] font-medium">
+                <rect x={x(i) - 40} y={y(d.avgScore) - 44} width={80} height={30} rx="8" fill="currentColor" className="text-foreground" />
+                <text x={x(i)} y={y(d.avgScore) - 24} textAnchor="middle" className="fill-background text-[11px] font-medium">
                   {d.avgScore.toFixed(1)} / 10
                 </text>
               </g>
             )}
-            <text x={x(i)} y={H - 14} textAnchor="middle" className="fill-[#6B7280] text-[12px]">
+            <text x={x(i)} y={H - 14} textAnchor="middle" className="fill-muted text-[12px]">
               {d.session}
             </text>
           </g>
