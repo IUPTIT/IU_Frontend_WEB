@@ -153,7 +153,8 @@ function ApplicationDetailPage({ applicationId }: Props) {
       });
       await setScreeningDecision(app.id, result);
       showToast(result === "pass" ? "Đã Pass vòng đơn." : "Đã loại hồ sơ.");
-      await load();
+      // Quyết định xong → quay về bảng danh sách hồ sơ (chờ 1 nhịp cho toast hiện)
+      window.setTimeout(backToList, 900);
     } finally {
       setSaving(false);
     }
