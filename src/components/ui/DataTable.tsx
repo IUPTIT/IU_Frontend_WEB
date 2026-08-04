@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 
 export type DataTableColumn = {
   id: string;
@@ -12,28 +12,6 @@ export type DataTableColumn = {
 
 const DEFAULT_WIDTH = 140;
 const DEFAULT_MIN = 72;
-
-export function useColumnWidths(columns: DataTableColumn[]) {
-  const [widths, setWidths] = useState<Record<string, number>>(() =>
-    Object.fromEntries(columns.map((c) => [c.id, c.width ?? DEFAULT_WIDTH])),
-  );
-
-  useEffect(() => {
-    setWidths((prev) => {
-      const next = { ...prev };
-      for (const c of columns) {
-        if (next[c.id] == null) next[c.id] = c.width ?? DEFAULT_WIDTH;
-      }
-      return next;
-    });
-  }, [columns]);
-
-  const setWidth = useCallback((id: string, width: number, minWidth = DEFAULT_MIN) => {
-    setWidths((prev) => ({ ...prev, [id]: Math.max(minWidth, Math.round(width)) }));
-  }, []);
-
-  return { widths, setWidth };
-}
 
 type ShellProps = {
   minWidth?: number;

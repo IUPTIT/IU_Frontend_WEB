@@ -8,7 +8,7 @@ import MetricCard from "../../../../components/ui/MetricCard";
 import Pagination from "../../../../components/ui/Pagination";
 import Select from "../../../../components/ui/Select";
 import SendEmailModal from "../../../../components/ui/SendEmailModal";
-import { usePortalUi } from "../../../../context/PortalUiContext";
+import { usePortalUi } from "../../../../context/usePortalUi";
 import useCountUp from "../../../../hooks/useCountUp";
 import {
   getTrainees,

@@ -5,7 +5,7 @@ import FilterMenu from "../../../../components/ui/FilterMenu";
 import Icon from "../../../../components/ui/Icon";
 import Select from "../../../../components/ui/Select";
 import SendEmailModal from "../../../../components/ui/SendEmailModal";
-import { useAuth } from "../../../../context/AuthContext";
+import { useAuth } from "../../../../context/useAuth";
 import {
   assignInterviewersToSlot,
   createBatchInterviewSlots,

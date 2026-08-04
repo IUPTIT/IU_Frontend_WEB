@@ -2,7 +2,8 @@ import { useEffect, type ReactNode } from "react";
 import SideNavBar from "./SideNavBar";
 import TopBar from "./TopBar";
 import type { Role } from "../types/navigation";
-import { PortalUiProvider, usePortalUi } from "../context/PortalUiContext";
+import { PortalUiProvider } from "../context/PortalUiContext";
+import { usePortalUi } from "../context/usePortalUi";
 
 type Props = {
   role: Role;

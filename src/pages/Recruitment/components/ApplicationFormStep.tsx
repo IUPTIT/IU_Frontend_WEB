@@ -9,6 +9,8 @@ type Props = {
   campaign: PublicCampaign;
   value: ApplicationForm;
   onSubmit: (form: ApplicationForm) => void;
+  /** Lưu nháp — chỉ cần email hợp lệ, backend gửi link điền tiếp qua email */
+  onSaveDraft: (form: ApplicationForm) => Promise<void>;
 };
 
 const MAX_WISHES = 3;
@@ -73,9 +75,10 @@ function FieldError({ message }: { message?: string }) {
   return <p className="mt-1 text-sm text-red-400">{message}</p>;
 }
 
-function ApplicationFormStep({ campaign, value, onSubmit }: Props) {
+function ApplicationFormStep({ campaign, value, onSubmit, onSaveDraft }: Props) {
   const [form, setForm] = useState<ApplicationForm>(value);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [savingDraft, setSavingDraft] = useState(false);
 
   const teams = campaign.quotas.map((q) => q.team);
   const questions = [...campaign.customQuestions].sort((a, b) => a.order - b.order);
@@ -287,9 +290,31 @@ function ApplicationFormStep({ campaign, value, onSubmit }: Props) {
         </div>
       </section>
 
-      <button type="submit" className="landing-btn-primary w-full py-3.5 text-lg">
-        Xem lại & xác nhận
-      </button>
+      <div className="flex flex-col gap-3 md:flex-row">
+        <button
+          type="button"
+          disabled={savingDraft}
+          onClick={async () => {
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+              setErrors({ email: "Nhập email hợp lệ để nhận link điền tiếp" });
+              return;
+            }
+            setErrors({});
+            setSavingDraft(true);
+            try {
+              await onSaveDraft(form);
+            } finally {
+              setSavingDraft(false);
+            }
+          }}
+          className="landing-btn-secondary liquid-glass rounded-full px-6 py-3.5 disabled:opacity-50 md:w-auto"
+        >
+          {savingDraft ? "Đang lưu nháp..." : "Lưu nháp — nhận link qua email"}
+        </button>
+        <button type="submit" className="landing-btn-primary flex-1 py-3.5 text-lg">
+          Xem lại & xác nhận
+        </button>
+      </div>
     </form>
   );
 }

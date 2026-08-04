@@ -57,17 +57,21 @@ function ExportDataModal<T>({
   const [valueFilters, setValueFilters] = useState<Record<string, string[]>>({});
   const [dragId, setDragId] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!open) return;
-    setOrderedIds(defaultIds);
-    const init: Record<string, string[]> = {};
-    for (const c of columns) {
-      if (c.filterOptions?.length) {
-        init[c.id] = c.filterOptions.map((o) => o.value);
+  // Reset lựa chọn mỗi lần mở modal (adjust state during render)
+  const [prevOpen, setPrevOpen] = useState(open);
+  if (open !== prevOpen) {
+    setPrevOpen(open);
+    if (open) {
+      setOrderedIds(defaultIds);
+      const init: Record<string, string[]> = {};
+      for (const c of columns) {
+        if (c.filterOptions?.length) {
+          init[c.id] = c.filterOptions.map((o) => o.value);
+        }
       }
+      setValueFilters(init);
     }
-    setValueFilters(init);
-  }, [open, defaultIds, columns]);
+  }
 
   useEffect(() => {
     if (!open) return;

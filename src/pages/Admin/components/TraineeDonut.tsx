@@ -17,12 +17,12 @@ const GAP = 3; // px khoảng hở giữa các cung
 function TraineeDonut({ departments, total }: { departments: TraineeDepartment[]; total: number }) {
   const [hover, setHover] = useState<string | null>(null);
 
-  let offset = 0;
-  const segments = departments.map((d) => {
+  const segments = departments.map((d, i) => {
     const len = (d.percent / 100) * C;
-    const seg = { ...d, dash: `${Math.max(len - GAP, 1)} ${C - len + GAP}`, offset };
-    offset -= len;
-    return seg;
+    const offset = departments
+      .slice(0, i)
+      .reduce((acc, prev) => acc - (prev.percent / 100) * C, 0);
+    return { ...d, dash: `${Math.max(len - GAP, 1)} ${C - len + GAP}`, offset };
   });
 
   return (

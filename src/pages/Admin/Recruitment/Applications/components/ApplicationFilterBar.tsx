@@ -1,7 +1,7 @@
 import FilterMenu from "../../../../../components/ui/FilterMenu";
 import Select from "../../../../../components/ui/Select";
 import type { ApplicationStatus } from "../../../../../types/recruitment";
-import { getApplicationStatusLabel } from "./ApplicationStatusBadge";
+import { getApplicationStatusLabel } from "./applicationStatus";
 
 export type ApplicationFilterDraft = {
   departmentId: string; // "" = tất cả

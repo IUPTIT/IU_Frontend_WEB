@@ -5,16 +5,16 @@ import {
   DataTableCell,
   DataTableHead,
   DataTableShell,
-  useColumnWidths,
   type DataTableColumn,
 } from "../../../components/ui/DataTable";
+import { useColumnWidths } from "../../../components/ui/useColumnWidths";
 import ExportDataModal, { type ExportColumnDef } from "../../../components/ui/ExportDataModal";
 import FilterMenu from "../../../components/ui/FilterMenu";
 import Icon from "../../../components/ui/Icon";
 import MetricCard from "../../../components/ui/MetricCard";
 import Pagination from "../../../components/ui/Pagination";
 import Select from "../../../components/ui/Select";
-import { usePortalUi } from "../../../context/PortalUiContext";
+import { usePortalUi } from "../../../context/usePortalUi";
 import {
   createClubMember,
   getClubMembers,
@@ -245,7 +245,8 @@ function AdminMembersPage() {
   }, []);
 
   useEffect(() => {
-    void load();
+    // Gọi qua microtask để setState chỉ chạy sau async boundary
+    void Promise.resolve().then(load);
   }, [load]);
 
   const filtered = useMemo(() => {

@@ -1,6 +1,6 @@
-import { useAuth } from "../context/AuthContext";
-import { usePortalUi } from "../context/PortalUiContext";
-import { usePreferences } from "../context/PreferencesContext";
+import { useAuth } from "../context/useAuth";
+import { usePortalUi } from "../context/usePortalUi";
+import { usePreferences } from "../context/usePreferences";
 import { ROUTES } from "../constants/routes";
 import type { Role } from "../types/navigation";
 import Icon from "../components/ui/Icon";

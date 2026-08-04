@@ -5,9 +5,9 @@ import {
   DataTableCell,
   DataTableHead,
   DataTableShell,
-  useColumnWidths,
   type DataTableColumn,
 } from "../../../../../components/ui/DataTable";
+import { useColumnWidths } from "../../../../../components/ui/useColumnWidths";
 import Icon from "../../../../../components/ui/Icon";
 import type { Application } from "../../../../../types/recruitment";
 import { formatDate } from "../../../../../utils/formatDate";
