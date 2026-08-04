@@ -1,6 +1,7 @@
 import { useState } from "react";
 import LandingNavBar from "../../components/LandingNavBar";
 import BackgroundVideo from "../../components/LandingBackgroundVideo";
+import LandingFooter from "../../components/LandingFooter";
 import CampaignHeader from "./components/CampaignHeader";
 import ApplicationFormStep from "./components/ApplicationFormStep";
 import ReviewConfirmStep from "./components/ReviewConfirmStep";
@@ -65,6 +66,8 @@ function RecruitmentPage() {
           {step === "done" && <SuccessScreen applicationCode={applicationCode} email={form.email} />}
         </div>
         </main>
+
+        <LandingFooter />
       </div>
     </div>
   );

@@ -4,6 +4,7 @@ import AboutSection from "./components/AboutSection";
 import AdvisorsSection from "./components/AdvisorsSection";
 import BoardSection from "./components/BoardSection";
 import LandingNavBar from "../../components/LandingNavBar";
+import LandingFooter from "../../components/LandingFooter";
 import HeroCountdown from "./components/HeroCountdown";
 import heroPhoto from "../../assets/DinhChan.png";
 import "../../styles/landing.css";
@@ -50,6 +51,8 @@ function LandingPage() {
         <AboutSection />
         <AdvisorsSection />
         <BoardSection />
+
+        <LandingFooter />
       </div>
     </div>
   );

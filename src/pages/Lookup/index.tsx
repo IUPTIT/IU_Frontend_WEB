@@ -1,6 +1,7 @@
 import { useState } from "react";
 import LandingNavBar from "../../components/LandingNavBar";
 import BackgroundVideo from "../../components/LandingBackgroundVideo";
+import LandingFooter from "../../components/LandingFooter";
 import LookupForm from "./components/LookupForm";
 import ApplicationStatusCard from "./components/ApplicationStatusCard";
 import { lookupApplication } from "./mockData";
@@ -51,6 +52,8 @@ function LookupPage() {
           )}
         </div>
         </main>
+
+        <LandingFooter />
       </div>
     </div>
   );

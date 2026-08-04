@@ -108,7 +108,7 @@ Format: `<type>(<scope>): <mô tả ngắn>`
 
 - **type**: `feat` (tính năng mới) · `fix` (sửa bug) · `refactor` (đổi cấu trúc, không đổi hành vi) · `style` (CSS/theme, không đổi logic) · `docs` (README, CLAUDE.md...) · `chore` (config, dependencies) · `perf` · `test`
 - **scope**: tên trang hoặc khu vực, viết thường: `admin`, `layouts`, `theme`, `types`, `config`... Bỏ scope nếu thay đổi rải rác.
-- **Mô tả**: tiếng Việt không dấu hoặc tiếng Anh, ≤ 72 ký tự, thì hiện tại, không viết hoa chữ đầu, không chấm cuối.
+- **Mô tả**: tiếng Việt không dấu hoặc tiếng Anh, thì hiện tại, không viết hoa chữ đầu, không chấm cuối.
 
 Ví dụ:
 

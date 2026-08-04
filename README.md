@@ -151,7 +151,7 @@ Format: `<type>(<scope>): <mô tả ngắn>`
 | `perf` / `test` | Tối ưu hiệu năng / test |
 
 - **scope** = tên trang hoặc khu vực, viết thường: `admin`, `layouts`, `theme`, `types`, `config`... (bỏ nếu thay đổi rải rác).
-- Mô tả ≤ 72 ký tự, thì hiện tại, không viết hoa chữ đầu, không chấm cuối.
+- Mô tả thì hiện tại, không viết hoa chữ đầu, không chấm cuối.
 
 ```
 feat(admin): them trang tong quan voi mock data
