@@ -5,6 +5,8 @@ type Props = {
   onChange: (patch: Partial<CampaignDraft>) => void;
   onCancel: () => void;
   onNext: () => void;
+  /** Đợt đã publish: tên + thời gian mở đơn không được sửa (nghiệp vụ 0.3) */
+  lockNameAndOpen?: boolean;
 };
 
 const toneIconBg: Record<QuotaDraft["tone"], string> = {
@@ -45,7 +47,7 @@ function QuotaIcon({ icon }: { icon: QuotaDraft["icon"] }) {
   );
 }
 
-function CampaignGeneralStep({ draft, onChange, onCancel, onNext }: Props) {
+function CampaignGeneralStep({ draft, onChange, onCancel, onNext, lockNameAndOpen }: Props) {
   const setQuota = (departmentId: string, quota: number) => {
     onChange({
       quotas: draft.quotas.map((q) => (q.departmentId === departmentId ? { ...q, quota } : q)),
@@ -72,9 +74,11 @@ function CampaignGeneralStep({ draft, onChange, onCancel, onNext }: Props) {
                 </svg>
               </span>
               <input
-                className="neu-input pl-11"
+                className="neu-input pl-11 disabled:opacity-50 disabled:cursor-not-allowed"
                 placeholder="VD: Tuyển Gen 4 - Fall 2024"
                 value={draft.name}
+                disabled={lockNameAndOpen}
+                title={lockNameAndOpen ? "Đợt đã xuất bản — không sửa được tên" : undefined}
                 onChange={(e) => onChange({ name: e.target.value })}
               />
             </div>
@@ -89,8 +93,10 @@ function CampaignGeneralStep({ draft, onChange, onCancel, onNext }: Props) {
                 <span className="text-xs text-muted">Mở đơn (ngày + giờ)</span>
                 <input
                   type="datetime-local"
-                  className="neu-input"
+                  className="neu-input disabled:opacity-50 disabled:cursor-not-allowed"
                   value={draft.openAt}
+                  disabled={lockNameAndOpen}
+                  title={lockNameAndOpen ? "Đợt đã xuất bản — không sửa được thời gian mở đơn" : undefined}
                   onChange={(e) => onChange({ openAt: e.target.value })}
                   aria-label="Thời điểm mở đơn"
                 />

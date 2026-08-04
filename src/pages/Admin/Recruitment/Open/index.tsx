@@ -7,6 +7,7 @@ import { usePortalUi } from "../../../../context/PortalUiContext";
 import {
   createCampaign,
   deleteCampaign,
+  getApplications,
   getCampaigns,
   getFormQuestions,
   setCampaignActive,
@@ -31,6 +32,7 @@ function RecruitmentOpenPage() {
   // Đợt đang sửa (null = tạo mới) + draft prefill cho wizard
   const [editing, setEditing] = useState<RecruitmentCampaign | null>(null);
   const [editDraft, setEditDraft] = useState<CampaignDraft | null>(null);
+  const [editLocks, setEditLocks] = useState<{ nameAndOpen?: boolean; questions?: boolean }>({});
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -113,7 +115,15 @@ function RecruitmentOpenPage() {
 
   const handleEdit = async (campaign: RecruitmentCampaign) => {
     try {
-      const questions = await getFormQuestions(campaign.id);
+      const [questions, applications] = await Promise.all([
+        getFormQuestions(campaign.id),
+        getApplications(campaign.id),
+      ]);
+      const published = campaign.status !== "draft";
+      setEditLocks({
+        nameAndOpen: published,
+        questions: applications.length > 0,
+      });
       const draftQuestions: QuestionDraft[] = questions.map((q) => ({
         id: q.id,
         content: q.content,
@@ -191,7 +201,8 @@ function RecruitmentOpenPage() {
           description: draft.description,
           closeAt: toCloseIso(draft.closeAt),
           quotas,
-          customQuestions,
+          // Đã có hồ sơ nộp → không gửi câu hỏi (UI cũng đã khoá)
+          ...(editLocks.questions ? {} : { customQuestions }),
         });
         if (!published && saveMode === "publish") {
           await setCampaignActive(editing.id, true);
@@ -237,6 +248,7 @@ function RecruitmentOpenPage() {
         <CampaignWizard
           key={editing?.id ?? "new"}
           initialDraft={editDraft ?? undefined}
+          locks={editing ? editLocks : undefined}
           onCancel={() => {
             setMode("list");
             setEditing(null);

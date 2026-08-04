@@ -49,6 +49,7 @@ function RecruitmentPage() {
         faculty: form.faculty,
         email: form.email,
         phone: form.phone,
+        nationalId: form.nationalId,
         dateOfBirth: form.dateOfBirth,
         // TODO: upload file thật khi backend có endpoint upload — tạm gửi tên file
         avatarUrl: form.avatar?.name ?? "",

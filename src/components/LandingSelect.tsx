@@ -41,6 +41,9 @@ const buildStyles = (compact: boolean): StylesConfig<Option, false> => ({
   clearIndicator: (base) => ({ ...base, color: "hsl(40 6% 95% / 0.5)", ":hover": { color: "#f87171" } }),
   menu: (base) => ({
     ...base,
+    // Menu nở theo option dài nhất — tránh chữ bị xuống dòng khi control hẹp
+    width: "max-content",
+    minWidth: "100%",
     backgroundColor: "hsl(258 45% 11%)",
     borderRadius: 16,
     border: "1px solid rgba(255, 255, 255, 0.12)",
@@ -53,7 +56,8 @@ const buildStyles = (compact: boolean): StylesConfig<Option, false> => ({
     ...base,
     borderRadius: 10,
     cursor: "pointer",
-    padding: compact ? "6px 10px" : base.padding,
+    whiteSpace: "nowrap",
+    padding: compact ? "6px 12px" : base.padding,
     backgroundColor: state.isSelected
       ? "rgba(168, 85, 247, 0.35)"
       : state.isFocused

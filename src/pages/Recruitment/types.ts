@@ -6,6 +6,7 @@ export type ApplicationForm = {
   faculty: string;
   email: string;
   phone: string;
+  nationalId: string; // CCCD 12 số
   dateOfBirth: string;
   avatar: File | null;
   cv: File | null;
@@ -20,6 +21,7 @@ export const EMPTY_APPLICATION: ApplicationForm = {
   faculty: "",
   email: "",
   phone: "",
+  nationalId: "",
   dateOfBirth: "",
   avatar: null,
   cv: null,

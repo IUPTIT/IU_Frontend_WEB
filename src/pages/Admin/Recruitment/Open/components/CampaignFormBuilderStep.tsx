@@ -8,6 +8,8 @@ type Props = {
   onBack: () => void;
   onNext: () => void;
   onSaveDraft: () => void;
+  /** Đã có hồ sơ nộp — không được sửa/thêm/xoá câu hỏi (nghiệp vụ 0.3) */
+  locked?: boolean;
 };
 
 const ADD_TYPES: { type: QuestionDraft["type"]; label: string; icon: "short" | "long" | "choice" | "file" }[] = [
@@ -48,7 +50,7 @@ function TypeIcon({ icon }: { icon: (typeof ADD_TYPES)[number]["icon"] }) {
   );
 }
 
-function CampaignFormBuilderStep({ draft, onChange, onBack, onNext, onSaveDraft }: Props) {
+function CampaignFormBuilderStep({ draft, onChange, onBack, onNext, onSaveDraft, locked }: Props) {
   const updateQuestion = (id: string, patch: Partial<QuestionDraft>) => {
     onChange({
       questions: draft.questions.map((q) => (q.id === id ? { ...q, ...patch } : q)),
@@ -179,7 +181,17 @@ function CampaignFormBuilderStep({ draft, onChange, onBack, onNext, onSaveDraft 
             </div>
           </section>
 
-          <section className="neu-card !p-5 space-y-4">
+          {locked && (
+            <p className="rounded-2xl bg-amber-500/10 px-4 py-3 text-sm text-amber-700" role="status">
+              Đợt tuyển đã có hồ sơ nộp — không thể sửa/thêm/xoá câu hỏi để tránh lệch cấu trúc dữ
+              liệu với các hồ sơ cũ.
+            </p>
+          )}
+
+          <section
+            className={`neu-card !p-5 space-y-4 ${locked ? "pointer-events-none select-none opacity-50" : ""}`}
+            aria-disabled={locked}
+          >
             <h2 className="text-sm font-semibold">Thêm câu hỏi riêng của đợt tuyển</h2>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {ADD_TYPES.map((t) => (
@@ -199,7 +211,11 @@ function CampaignFormBuilderStep({ draft, onChange, onBack, onNext, onSaveDraft 
           </section>
 
           {draft.questions.map((q) => (
-            <article key={q.id} className="neu-card !p-5 space-y-4">
+            <article
+              key={q.id}
+              className={`neu-card !p-5 space-y-4 ${locked ? "pointer-events-none select-none opacity-50" : ""}`}
+              aria-disabled={locked}
+            >
               <div className="flex items-start justify-between gap-3">
                 <input
                   className="neu-input font-semibold"

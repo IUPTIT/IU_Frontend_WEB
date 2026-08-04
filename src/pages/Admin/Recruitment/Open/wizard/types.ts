@@ -55,6 +55,7 @@ export const FIXED_FIELDS: { label: string; hint: string }[] = [
   { label: "Khoa/Ngành", hint: "Văn bản ngắn" },
   { label: "Email", hint: "Email — dùng đăng nhập tài khoản Ứng viên" },
   { label: "Số điện thoại", hint: "10 chữ số" },
+  { label: "Số CCCD", hint: "12 chữ số" },
   { label: "Ngày sinh", hint: "Bắt buộc tuyệt đối — dùng sinh mật khẩu tài khoản Ứng viên" },
   { label: "Ảnh đại diện", hint: "JPG/PNG, tối đa 2MB" },
   { label: "CV", hint: "PDF/DOCX, tối đa 5MB" },

@@ -41,6 +41,7 @@ export type PublicApplication = {
   faculty: string;
   email: string;
   phone: string;
+  nationalId: string;
   dateOfBirth: string;
   wishes: string[];
   answers: Record<string, string | string[]>;
@@ -57,6 +58,7 @@ export type SubmitApplicationPayload = {
   faculty: string;
   email: string;
   phone: string;
+  nationalId: string;
   dateOfBirth: string;
   avatarUrl?: string;
   cvUrl?: string;

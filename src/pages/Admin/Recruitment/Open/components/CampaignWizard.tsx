@@ -11,9 +11,11 @@ type Props = {
   onPublished: (draft: CampaignDraft, mode: "draft" | "publish") => void;
   /** Sửa đợt tuyển có sẵn — prefill draft thay vì form trống */
   initialDraft?: CampaignDraft;
+  /** Các phần bị khoá khi sửa (đợt đã publish / đã có hồ sơ) */
+  locks?: { nameAndOpen?: boolean; questions?: boolean };
 };
 
-function CampaignWizard({ onCancel, onPublished, initialDraft }: Props) {
+function CampaignWizard({ onCancel, onPublished, initialDraft, locks }: Props) {
   const [step, setStep] = useState<WizardStepId>(1);
   const [draft, setDraft] = useState<CampaignDraft>(() => initialDraft ?? createEmptyDraft());
   const [error, setError] = useState<string | null>(null);
@@ -73,6 +75,7 @@ function CampaignWizard({ onCancel, onPublished, initialDraft }: Props) {
           onChange={patchDraft}
           onCancel={onCancel}
           onNext={handleNextFrom1}
+          lockNameAndOpen={locks?.nameAndOpen}
         />
       )}
 
@@ -83,6 +86,7 @@ function CampaignWizard({ onCancel, onPublished, initialDraft }: Props) {
           onBack={() => goStep(1)}
           onNext={() => goStep(3)}
           onSaveDraft={() => onPublished(draft, "draft")}
+          locked={locks?.questions}
         />
       )}
 
