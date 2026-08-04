@@ -1,4 +1,4 @@
-import { Plus } from "lucide-react";
+import { ClipboardCheck, Pencil, Plus, Trash2 } from "lucide-react";
 import Icon from "../../../../../components/ui/Icon";
 import type { InterviewSlot } from "../../../../../types/recruitment";
 
@@ -100,29 +100,33 @@ function InterviewSlotCard({ slot, onAssign, onReschedule, onScore, onDelete }: 
             </svg>
             {slot.locationOrLink}
           </p>
-          <div className="flex gap-1">
+          <div className="flex gap-1.5">
             <button
               type="button"
-              className="text-xs font-medium text-muted hover:text-accent"
+              title="Sửa ca"
+              aria-label="Sửa ca"
+              className="flex h-9 w-9 items-center justify-center rounded-xl text-muted shadow-extruded-sm transition-all duration-300 ease-out hover:text-accent active:shadow-inset-sm focus-visible:ring-2 ring-accent ring-offset-2 ring-offset-background"
               onClick={() => onReschedule(slot)}
             >
-              Sửa
+              <Icon icon={Pencil} size={15} />
             </button>
-            <span className="text-muted/40">·</span>
             <button
               type="button"
-              className="text-xs font-medium text-muted hover:text-accent"
+              title="Chấm điểm"
+              aria-label="Chấm điểm"
+              className="flex h-9 w-9 items-center justify-center rounded-xl text-muted shadow-extruded-sm transition-all duration-300 ease-out hover:text-accent active:shadow-inset-sm focus-visible:ring-2 ring-accent ring-offset-2 ring-offset-background"
               onClick={() => onScore(slot)}
             >
-              Chấm điểm
+              <Icon icon={ClipboardCheck} size={15} />
             </button>
-            <span className="text-muted/40">·</span>
             <button
               type="button"
-              className="text-xs font-medium text-rose-500 hover:text-rose-600"
+              title="Xoá ca"
+              aria-label="Xoá ca"
+              className="flex h-9 w-9 items-center justify-center rounded-xl text-rose-500 shadow-extruded-sm transition-all duration-300 ease-out hover:text-rose-600 active:shadow-inset-sm focus-visible:ring-2 ring-accent ring-offset-2 ring-offset-background"
               onClick={() => onDelete(slot)}
             >
-              Xoá
+              <Icon icon={Trash2} size={15} />
             </button>
           </div>
         </div>
