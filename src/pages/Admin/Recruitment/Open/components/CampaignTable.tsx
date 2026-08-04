@@ -1,4 +1,11 @@
-import { Pencil, Trash2 } from "lucide-react";
+import { useMemo } from "react";
+import { FolderOpen, Pencil, Trash2 } from "lucide-react";
+import {
+  createColumnHelper,
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
 import Button from "../../../../../components/ui/Button";
 import {
   DataTableCell,
@@ -36,9 +43,82 @@ function displayDate(iso: string | null) {
   return iso ? formatDate(iso) : "--/--/----";
 }
 
+const columnHelper = createColumnHelper<RecruitmentCampaign>();
+
 function CampaignTable({ campaigns, page, pageSize, onToggleActive, onEdit, onDelete }: Props) {
   const startIndex = (page - 1) * pageSize;
   const { widths, setWidth } = useColumnWidths(COLUMNS);
+
+  // Cột định nghĩa qua TanStack Table — model bảng do thư viện quản lý
+  const columns = useMemo(
+    () => [
+      columnHelper.display({
+        id: "tt",
+        cell: (info) => <span className="text-sm text-muted">{startIndex + info.row.index + 1}</span>,
+      }),
+      columnHelper.accessor("name", {
+        id: "name",
+        cell: (info) => <span className="font-medium text-foreground">{info.getValue()}</span>,
+      }),
+      columnHelper.accessor("openAt", {
+        id: "start",
+        cell: (info) => <span className="text-sm text-muted">{displayDate(info.getValue())}</span>,
+      }),
+      columnHelper.accessor("closeAt", {
+        id: "end",
+        cell: (info) => <span className="text-sm text-muted">{displayDate(info.getValue())}</span>,
+      }),
+      columnHelper.display({
+        id: "status",
+        cell: (info) => (
+          <div className="inline-flex justify-center">
+            <CampaignStatusBadge campaign={info.row.original} />
+          </div>
+        ),
+      }),
+      columnHelper.display({
+        id: "active",
+        cell: (info) => {
+          const c = info.row.original;
+          return (
+            <div className="flex justify-center">
+              <Toggle
+                checked={c.isActive}
+                onChange={(checked) => onToggleActive(c.id, checked)}
+                aria-label={`Kích hoạt ${c.name}`}
+                disabled={c.status === "closed"}
+              />
+            </div>
+          );
+        },
+      }),
+      columnHelper.display({
+        id: "actions",
+        cell: (info) => {
+          const c = info.row.original;
+          return (
+            <div className="flex items-center justify-center gap-2">
+              <Button variant="icon" size="sm" aria-label={`Sửa ${c.name}`} onClick={() => onEdit(c)}>
+                <Icon icon={Pencil} size={16} />
+              </Button>
+              <Button variant="danger-icon" size="sm" aria-label={`Xóa ${c.name}`} onClick={() => onDelete(c)}>
+                <Icon icon={Trash2} size={16} />
+              </Button>
+            </div>
+          );
+        },
+      }),
+    ],
+    [startIndex, onToggleActive, onEdit, onDelete],
+  );
+
+  const table = useReactTable({
+    data: campaigns,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+  });
+
+  const rows = table.getRowModel().rows;
 
   return (
     <DataTableShell minWidth={800}>
@@ -49,52 +129,36 @@ function CampaignTable({ campaigns, page, pageSize, onToggleActive, onEdit, onDe
       </colgroup>
       <DataTableHead columns={COLUMNS} widths={widths} onResize={setWidth} />
       <tbody>
-        {campaigns.map((c, i) => (
-          <tr key={c.id}>
-            <DataTableCell>
-              <span className="text-sm text-muted">{startIndex + i + 1}</span>
-            </DataTableCell>
-            <DataTableCell align="left">
-              <span className="font-medium text-foreground">{c.name}</span>
-            </DataTableCell>
-            <DataTableCell>
-              <span className="text-sm text-muted">{displayDate(c.openAt)}</span>
-            </DataTableCell>
-            <DataTableCell>
-              <span className="text-sm text-muted">{displayDate(c.closeAt)}</span>
-            </DataTableCell>
-            <DataTableCell>
-              <div className="inline-flex justify-center">
-                <CampaignStatusBadge campaign={c} />
+        {rows.length === 0 ? (
+          <tr>
+            <td colSpan={COLUMNS.length}>
+              {/* Empty state — không để bảng trống trơn */}
+              <div className="flex flex-col items-center gap-3 py-14 text-center">
+                <div className="neu-well h-16 w-16 text-muted">
+                  <Icon icon={FolderOpen} size={28} />
+                </div>
+                <p className="font-medium text-foreground">Chưa có đợt tuyển nào</p>
+                <p className="max-w-sm text-sm text-muted">
+                  Bấm <span className="font-semibold text-accent">"Thêm mới"</span> ở góc phải để tạo
+                  đợt tuyển thành viên đầu tiên.
+                </p>
               </div>
-            </DataTableCell>
-            <DataTableCell>
-              <div className="flex justify-center">
-                <Toggle
-                  checked={c.isActive}
-                  onChange={(checked) => onToggleActive(c.id, checked)}
-                  aria-label={`Kích hoạt ${c.name}`}
-                  disabled={c.status === "closed"}
-                />
-              </div>
-            </DataTableCell>
-            <DataTableCell>
-              <div className="flex items-center justify-center gap-2">
-                <Button variant="icon" size="sm" aria-label={`Sửa ${c.name}`} onClick={() => onEdit(c)}>
-                  <Icon icon={Pencil} size={16} />
-                </Button>
-                <Button
-                  variant="danger-icon"
-                  size="sm"
-                  aria-label={`Xóa ${c.name}`}
-                  onClick={() => onDelete(c)}
-                >
-                  <Icon icon={Trash2} size={16} />
-                </Button>
-              </div>
-            </DataTableCell>
+            </td>
           </tr>
-        ))}
+        ) : (
+          rows.map((row) => (
+            <tr key={row.id}>
+              {row.getVisibleCells().map((cell) => {
+                const col = COLUMNS.find((c) => c.id === cell.column.id);
+                return (
+                  <DataTableCell key={cell.id} align={col?.align}>
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </DataTableCell>
+                );
+              })}
+            </tr>
+          ))
+        )}
       </tbody>
     </DataTableShell>
   );
