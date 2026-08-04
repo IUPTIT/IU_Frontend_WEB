@@ -12,6 +12,7 @@ const ROLE_LABEL = {
   admin: "Ban Chủ nhiệm (Admin)",
   leader: "Leader",
   member: "Member / Trainee",
+  candidate: "Ứng viên",
 } as const;
 
 /**

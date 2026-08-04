@@ -23,6 +23,9 @@ import LeaderTrainingEvaluationPage from "../pages/Leader/Training/Evaluation";
 import LeaderSettingsPage from "../pages/Leader/Settings";
 import LeaderHelpPage from "../pages/Leader/Help";
 
+import CandidateInterviewPage from "../pages/Candidate/Interview";
+import CandidateProfilePage from "../pages/Candidate/Profile";
+
 import MemberOverviewPage from "../pages/Member";
 import MemberTrainingRoadmapPage from "../pages/Member/Training/Roadmap";
 import MemberTrainingTasksPage from "../pages/Member/Training/Tasks";
@@ -52,6 +55,9 @@ const PAGE_MAP: Record<string, ReactNode> = {
   [ROUTES.leader.training.evaluation]: <LeaderTrainingEvaluationPage />,
   [ROUTES.leader.settings]: <LeaderSettingsPage />,
   [ROUTES.leader.help]: <LeaderHelpPage />,
+
+  [ROUTES.candidate.interview]: <CandidateInterviewPage />,
+  [ROUTES.candidate.profile]: <CandidateProfilePage />,
 
   [ROUTES.member.overview]: <MemberOverviewPage />,
   [ROUTES.member.training.roadmap]: <MemberTrainingRoadmapPage />,

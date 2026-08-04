@@ -31,6 +31,10 @@ export const ROUTES = {
     settings: "/leader/settings",
     help: "/leader/help",
   },
+  candidate: {
+    interview: "/candidate/interview",
+    profile: "/candidate/profile",
+  },
   member: {
     overview: "/member",
     training: {

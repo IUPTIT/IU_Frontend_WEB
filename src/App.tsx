@@ -7,6 +7,7 @@ import RecruitmentPage from "./pages/Recruitment";
 import LookupPage from "./pages/Lookup";
 import { getDefaultPath } from "./constants/navigation";
 import { renderPortalPage } from "./routes/portalRoutes";
+import ChangePasswordGate from "./components/ChangePasswordGate";
 import { useAuth } from "./context/useAuth";
 
 // Trang đăng nhập — đã đăng nhập rồi thì chuyển thẳng vào khu quản trị
@@ -32,6 +33,11 @@ function AdminPortal() {
 
   if (!isAuthenticated || !user) {
     return <Navigate to="/login" replace />;
+  }
+
+  // Tài khoản sinh tự động (ứng viên) — bắt đổi mật khẩu trước khi vào portal
+  if (user.requirePasswordChange) {
+    return <ChangePasswordGate />;
   }
 
   return (

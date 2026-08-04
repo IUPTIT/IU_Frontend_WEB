@@ -210,6 +210,42 @@ export const SIDEBAR_CONFIG: Record<Role, SidebarConfig> = {
       },
     ],
   },
+  // Ứng viên (candidate) — chỉ đặt lịch PV + xem hồ sơ
+  candidate: {
+    brand: { initial: "U", title: "Ứng viên", subtitle: "IU Club Recruitment" },
+    sections: [
+      {
+        id: "main",
+        items: [
+          {
+            id: "interview",
+            label: "Lịch phỏng vấn",
+            icon: "events",
+            path: ROUTES.candidate.interview,
+          },
+          {
+            id: "profile",
+            label: "Hồ sơ của tôi",
+            icon: "profile",
+            path: ROUTES.candidate.profile,
+          },
+        ],
+      },
+      {
+        id: "footer",
+        items: [
+          {
+            id: "logout",
+            label: "Đăng xuất",
+            icon: "logout",
+            path: "#logout",
+            action: "logout",
+            tone: "danger",
+          },
+        ],
+      },
+    ],
+  },
 };
 
 /** Path mặc định khi vào portal theo role */

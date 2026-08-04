@@ -1,6 +1,6 @@
 // Types cho điều hướng theo role
 
-export type Role = "admin" | "leader" | "member";
+export type Role = "admin" | "leader" | "member" | "candidate";
 
 export type NavChild = {
   id: string;

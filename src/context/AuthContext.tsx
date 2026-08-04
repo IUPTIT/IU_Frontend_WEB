@@ -67,6 +67,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const replaceUser = useCallback((next: AuthUser) => {
+    persist(next);
+    setUser(next);
+  }, []);
+
   const value = useMemo(
     () => ({
       user,
@@ -74,8 +79,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login,
       logout,
       updateProfile,
+      replaceUser,
     }),
-    [user, login, logout, updateProfile],
+    [user, login, logout, updateProfile, replaceUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
