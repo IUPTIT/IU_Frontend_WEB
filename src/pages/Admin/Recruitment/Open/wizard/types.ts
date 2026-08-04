@@ -43,6 +43,24 @@ export const DEFAULT_QUOTAS: QuotaDraft[] = [
   { departmentId: "dept-ext", departmentName: "Đối Ngoại", icon: "external", tone: "red", quota: 0 },
 ];
 
+/**
+ * Trường CỐ ĐỊNH theo tài liệu nghiệp vụ (mục 0.2) — luôn có trong mọi đợt
+ * tuyển, không xoá/sửa được, luôn bắt buộc. Backend tự validate các trường
+ * này khi ứng viên nộp đơn; form builder chỉ hiển thị để BCN thấy đủ cấu trúc.
+ */
+export const FIXED_FIELDS: { label: string; hint: string }[] = [
+  { label: "Họ và tên", hint: "Văn bản ngắn" },
+  { label: "MSSV", hint: "Văn bản ngắn" },
+  { label: "Lớp", hint: "Văn bản ngắn" },
+  { label: "Khoa/Ngành", hint: "Văn bản ngắn" },
+  { label: "Email", hint: "Email — dùng đăng nhập tài khoản Ứng viên" },
+  { label: "Số điện thoại", hint: "10 chữ số" },
+  { label: "Ngày sinh", hint: "Bắt buộc tuyệt đối — dùng sinh mật khẩu tài khoản Ứng viên" },
+  { label: "Ảnh đại diện", hint: "JPG/PNG, tối đa 2MB" },
+  { label: "CV", hint: "PDF/DOCX, tối đa 5MB" },
+  { label: "Ban nguyện vọng", hint: "Chọn tối đa 3 ban theo thứ tự ưu tiên" },
+];
+
 export function createEmptyDraft(): CampaignDraft {
   return {
     name: "",
@@ -51,25 +69,8 @@ export function createEmptyDraft(): CampaignDraft {
     closeAt: "",
     description: "",
     quotas: DEFAULT_QUOTAS.map((q) => ({ ...q })),
-    questions: [
-      {
-        id: "q-draft-1",
-        content: "Họ và tên",
-        type: "short_text",
-        required: true,
-        options: [],
-      },
-      {
-        id: "q-draft-2",
-        content: "Bạn đăng ký vào ban nào?",
-        type: "single_choice",
-        required: true,
-        options: [
-          { id: "opt-1", label: "Ban Chuyên môn" },
-          { id: "opt-2", label: "Ban Truyền thông" },
-        ],
-      },
-    ],
+    // Chỉ chứa câu hỏi BCN tự thêm — trường cố định nằm ở FIXED_FIELDS
+    questions: [],
     activateOnPublish: true,
     notifyOnPublish: true,
   };

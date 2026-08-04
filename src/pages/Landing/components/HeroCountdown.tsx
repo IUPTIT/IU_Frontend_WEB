@@ -1,15 +1,19 @@
 import { useEffect, useState } from "react";
-import { ACTIVE_CAMPAIGN } from "../../Recruitment/mockData";
+import { getActiveCampaign } from "../../../services/publicRecruitmentService";
+import type { PublicCampaign } from "../../../services/publicRecruitmentService";
 
 type CountdownState =
+  | { kind: "loading" }
   | { kind: "not_started" }
   | { kind: "ended" }
   | { kind: "running"; days: number; hours: number; minutes: number };
 
-function computeState(): CountdownState {
+function computeState(campaign: PublicCampaign | null): CountdownState {
+  // Không có đợt nào đang mở → coi như chưa đến thời gian đăng ký
+  if (!campaign) return { kind: "not_started" };
   const now = Date.now();
-  if (now < new Date(ACTIVE_CAMPAIGN.openAt).getTime()) return { kind: "not_started" };
-  const diff = new Date(ACTIVE_CAMPAIGN.closeAt).getTime() - now;
+  if (now < new Date(campaign.openAt).getTime()) return { kind: "not_started" };
+  const diff = new Date(campaign.closeAt).getTime() - now;
   if (diff <= 0) return { kind: "ended" };
   return {
     kind: "running",
@@ -20,12 +24,25 @@ function computeState(): CountdownState {
 }
 
 function HeroCountdown() {
-  const [state, setState] = useState<CountdownState>(computeState);
+  const [campaign, setCampaign] = useState<PublicCampaign | null>(null);
+  const [state, setState] = useState<CountdownState>({ kind: "loading" });
 
   useEffect(() => {
-    const timer = window.setInterval(() => setState(computeState()), 60_000);
-    return () => window.clearInterval(timer);
+    getActiveCampaign()
+      .then((c) => {
+        setCampaign(c);
+        setState(computeState(c));
+      })
+      .catch(() => setState({ kind: "not_started" }));
   }, []);
+
+  useEffect(() => {
+    if (state.kind === "loading") return;
+    const timer = window.setInterval(() => setState(computeState(campaign)), 60_000);
+    return () => window.clearInterval(timer);
+  }, [campaign, state.kind]);
+
+  if (state.kind === "loading") return null;
 
   if (state.kind !== "running") {
     return (

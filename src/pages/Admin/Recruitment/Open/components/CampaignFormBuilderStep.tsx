@@ -1,6 +1,6 @@
 import Toggle from "../../../../../components/ui/Toggle";
 import type { CampaignDraft, QuestionDraft } from "../wizard/types";
-import { uid } from "../wizard/types";
+import { FIXED_FIELDS, uid } from "../wizard/types";
 
 type Props = {
   draft: CampaignDraft;
@@ -139,8 +139,48 @@ function CampaignFormBuilderStep({ draft, onChange, onBack, onNext, onSaveDraft 
 
       <div className="grid gap-6 xl:grid-cols-[1.4fr_0.9fr]">
         <div className="space-y-5">
+          {/* Trường cố định — luôn có trong mọi đợt tuyển, không xoá được (nghiệp vụ 0.2) */}
+          <section className="neu-card !p-5 space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold">Trường cố định</h2>
+              <span className="rounded-full bg-accent/15 px-3 py-1 text-xs font-medium text-accent">
+                Mặc định — không thể xoá
+              </span>
+            </div>
+            <p className="text-xs text-muted">
+              Luôn xuất hiện trong mọi form đăng ký và bắt buộc trả lời. Ngày sinh dùng để sinh mật khẩu
+              tài khoản Ứng viên khi đạt vòng đơn.
+            </p>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {FIXED_FIELDS.map((field) => (
+                <div
+                  key={field.label}
+                  className="flex items-start gap-3 rounded-2xl bg-background p-3 shadow-inset-sm"
+                >
+                  <svg
+                    className="mt-0.5 h-4 w-4 shrink-0 text-muted"
+                    viewBox="0 0 20 20"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    aria-hidden
+                  >
+                    <rect x="4.5" y="8.5" width="11" height="8" rx="2" />
+                    <path d="M7 8.5V6.5a3 3 0 0 1 6 0v2" strokeLinecap="round" />
+                  </svg>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-foreground">
+                      {field.label} <span className="text-red-500">*</span>
+                    </p>
+                    <p className="text-xs text-muted">{field.hint}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
           <section className="neu-card !p-5 space-y-4">
-            <h2 className="text-sm font-semibold">Thêm thành phần</h2>
+            <h2 className="text-sm font-semibold">Thêm câu hỏi riêng của đợt tuyển</h2>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {ADD_TYPES.map((t) => (
                 <button
@@ -258,7 +298,14 @@ function CampaignFormBuilderStep({ draft, onChange, onBack, onNext, onSaveDraft 
               <p className="font-display font-bold text-accent text-sm">Form Ứng Tuyển</p>
             </div>
             <div className="space-y-3 text-xs">
-              {draft.questions.slice(0, 3).map((q) => (
+              {/* Trường cố định luôn đứng đầu form */}
+              {FIXED_FIELDS.slice(0, 2).map((field) => (
+                <div key={field.label} className="space-y-1">
+                  <p className="font-medium text-foreground">{field.label} *</p>
+                  <div className="h-8 rounded-lg bg-background shadow-inset-sm" />
+                </div>
+              ))}
+              {draft.questions.slice(0, 2).map((q) => (
                 <div key={q.id} className="space-y-1">
                   <p className="font-medium text-foreground">
                     {q.content}

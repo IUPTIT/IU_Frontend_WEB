@@ -80,27 +80,34 @@ function CampaignGeneralStep({ draft, onChange, onCancel, onNext }: Props) {
             </div>
           </label>
 
-          <label className="block space-y-2">
+          <div className="block space-y-2">
             <span className="text-sm font-medium">
-              Thời gian mở đơn <span className="text-red-500">*</span>
+              Thời gian mở &amp; đóng đơn <span className="text-red-500">*</span>
             </span>
             <div className="grid grid-cols-2 gap-3">
-              <input
-                type="date"
-                className="neu-input"
-                value={draft.openAt}
-                onChange={(e) => onChange({ openAt: e.target.value })}
-                aria-label="Ngày bắt đầu"
-              />
-              <input
-                type="date"
-                className="neu-input"
-                value={draft.closeAt}
-                onChange={(e) => onChange({ closeAt: e.target.value })}
-                aria-label="Ngày kết thúc"
-              />
+              <label className="block space-y-1">
+                <span className="text-xs text-muted">Mở đơn (ngày + giờ)</span>
+                <input
+                  type="datetime-local"
+                  className="neu-input"
+                  value={draft.openAt}
+                  onChange={(e) => onChange({ openAt: e.target.value })}
+                  aria-label="Thời điểm mở đơn"
+                />
+              </label>
+              <label className="block space-y-1">
+                <span className="text-xs text-muted">Đóng đơn (ngày + giờ)</span>
+                <input
+                  type="datetime-local"
+                  className="neu-input"
+                  value={draft.closeAt}
+                  min={draft.openAt || undefined}
+                  onChange={(e) => onChange({ closeAt: e.target.value })}
+                  aria-label="Thời điểm đóng đơn"
+                />
+              </label>
             </div>
-          </label>
+          </div>
         </div>
 
         <label className="block space-y-2">

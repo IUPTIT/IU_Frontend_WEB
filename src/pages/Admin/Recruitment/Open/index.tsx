@@ -59,9 +59,13 @@ function RecruitmentOpenPage() {
   const paged = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   const handleToggle = async (id: string, active: boolean) => {
-    await setCampaignActive(id, active);
-    await load();
-    showToast(active ? "Đã kích hoạt đợt tuyển." : "Đã tắt kích hoạt đợt tuyển.");
+    try {
+      await setCampaignActive(id, active);
+      await load();
+      showToast(active ? "Đã kích hoạt đợt tuyển." : "Đã tắt kích hoạt đợt tuyển.");
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Thao tác thất bại.");
+    }
   };
 
   const handleDelete = async (campaign: RecruitmentCampaign) => {
@@ -71,9 +75,14 @@ function RecruitmentOpenPage() {
     }
     const ok = window.confirm(`Xóa đợt "${campaign.name}"?`);
     if (!ok) return;
-    await deleteCampaign(campaign.id);
-    await load();
-    showToast("Đã xóa đợt tuyển.");
+    try {
+      await deleteCampaign(campaign.id);
+      await load();
+      showToast("Đã xóa đợt tuyển.");
+    } catch (err) {
+      // VD: backend chặn xoá đợt đã có hồ sơ nộp
+      showToast(err instanceof Error ? err.message : "Xóa đợt tuyển thất bại.");
+    }
   };
 
   const handleEdit = () => {
@@ -82,21 +91,37 @@ function RecruitmentOpenPage() {
   };
 
   const handleWizardDone = async (draft: CampaignDraft, saveMode: "draft" | "publish") => {
-    const toIso = (d: string) => (d ? new Date(`${d}T00:00:00.000Z`).toISOString() : null);
+    // datetime-local ("YYYY-MM-DDTHH:mm", giờ địa phương) → ISO; hỗ trợ cả giá trị chỉ có ngày (nháp cũ)
+    const toOpenIso = (v: string) =>
+      v ? new Date(v.includes("T") ? v : `${v}T00:00:00`).toISOString() : null;
+    const toCloseIso = (v: string) =>
+      v ? new Date(v.includes("T") ? v : `${v}T23:59:59`).toISOString() : null;
 
-    await createCampaign({
-      name: draft.name.trim() || "Đợt tuyển chưa đặt tên",
-      description: draft.description,
-      openAt: toIso(draft.openAt),
-      closeAt: toIso(draft.closeAt),
-      quotas: draft.quotas.map((q) => ({
-        departmentId: q.departmentId,
-        departmentName: q.departmentName,
-        quota: q.quota,
-      })),
-      status: saveMode === "publish" ? "published" : "draft",
-      isActive: saveMode === "publish" && draft.activateOnPublish,
-    });
+    try {
+      await createCampaign({
+        name: draft.name.trim() || "Đợt tuyển chưa đặt tên",
+        description: draft.description,
+        openAt: toOpenIso(draft.openAt),
+        closeAt: toCloseIso(draft.closeAt),
+        quotas: draft.quotas.map((q) => ({
+          departmentId: q.departmentId,
+          departmentName: q.departmentName,
+          quota: q.quota,
+        })),
+        customQuestions: draft.questions.map((q, index) => ({
+          label: q.content,
+          type: q.type,
+          options: q.options.map((o) => o.label),
+          required: q.required,
+          order: index,
+        })),
+        status: saveMode === "publish" ? "published" : "draft",
+        isActive: saveMode === "publish" && draft.activateOnPublish,
+      });
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Tạo đợt tuyển thất bại.");
+      return; // giữ nguyên wizard để sửa lại
+    }
 
     await load();
     setMode("list");
@@ -109,10 +134,17 @@ function RecruitmentOpenPage() {
 
   if (mode === "wizard") {
     return (
-      <CampaignWizard
-        onCancel={() => setMode("list")}
-        onPublished={handleWizardDone}
-      />
+      <>
+        {toast && (
+          <p className="rounded-2xl bg-accent/10 px-4 py-3 text-sm text-accent" role="status">
+            {toast}
+          </p>
+        )}
+        <CampaignWizard
+          onCancel={() => setMode("list")}
+          onPublished={handleWizardDone}
+        />
+      </>
     );
   }
 
