@@ -1,7 +1,7 @@
 function HeroContent() {
   return (
     <div className="flex flex-col items-center text-center">
-      <h1 className="landing-headline text-[64px] font-normal leading-[1.02] tracking-[-0.024em] text-[hsl(var(--landing-foreground))] md:text-[120px] lg:text-[180px]">
+      <h1 className="landing-display text-[64px] font-normal leading-[1.02] tracking-[-0.024em] text-[hsl(var(--landing-foreground))] md:text-[120px] lg:text-[180px]">
         IU{" "}
         <span
           className="bg-clip-text text-transparent"

@@ -54,7 +54,7 @@ function BackgroundVideo() {
       muted
       playsInline
       autoPlay
-      className="absolute inset-0 h-full w-full object-cover"
+      className="fixed inset-0 h-full w-full object-cover"
       style={{ opacity: 0 }}
       aria-hidden
     />
