@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import AdminLayout from "./layouts/AdminLayout";
 import LoginPage from "./pages/Login";
 import LandingPage from "./pages/Landing";
@@ -9,7 +9,14 @@ import { getDefaultPath } from "./constants/navigation";
 import { renderPortalPage } from "./routes/portalRoutes";
 import { useAuth } from "./context/AuthContext";
 
-// Khu quản trị: gate đăng nhập, điều hướng nội bộ bằng activePath (PortalUi)
+// Trang đăng nhập — đã đăng nhập rồi thì chuyển thẳng vào khu quản trị
+function LoginRoute() {
+  const { isAuthenticated } = useAuth();
+  if (isAuthenticated) return <Navigate to="/admin" replace />;
+  return <LoginPage />;
+}
+
+// Khu quản trị: chưa đăng nhập → về /login; điều hướng nội bộ bằng activePath (PortalUi)
 function AdminPortal() {
   const { user, isAuthenticated } = useAuth();
   const [activePath, setActivePath] = useState(() =>
@@ -21,7 +28,7 @@ function AdminPortal() {
   }, [user]);
 
   if (!isAuthenticated || !user) {
-    return <LoginPage />;
+    return <Navigate to="/login" replace />;
   }
 
   return (
@@ -40,6 +47,7 @@ function App() {
         <Route path="/tuyen-thanh-vien" element={<RecruitmentPage />} />
         <Route path="/tra-cuu" element={<LookupPage />} />
         {/* Khu quản trị */}
+        <Route path="/login" element={<LoginRoute />} />
         <Route path="/admin/*" element={<AdminPortal />} />
       </Routes>
     </BrowserRouter>

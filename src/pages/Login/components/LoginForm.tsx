@@ -1,6 +1,5 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { DEMO_ACCOUNTS } from "../../../mocks/auth.mock";
 
 type Props = {
   onSubmit: (email: string, password: string) => Promise<void>;
@@ -34,12 +33,6 @@ function LoginForm({ onSubmit }: Props) {
     } finally {
       setLoading(false);
     }
-  };
-
-  const fillDemo = (demoEmail: string, demoPassword: string) => {
-    setEmail(demoEmail);
-    setPassword(demoPassword);
-    setError(null);
   };
 
   return (
@@ -120,30 +113,6 @@ function LoginForm({ onSubmit }: Props) {
         </button>
       </div>
 
-      {/* Demo accounts — chip chọn nhanh */}
-      <div
-        className="mt-12 space-y-3 animate-fade-up"
-        style={{ animationDelay: "360ms" }}
-      >
-        <p className="text-xs font-medium text-muted">Tài khoản demo — bấm để điền:</p>
-        <div className="flex flex-wrap gap-2">
-          {DEMO_ACCOUNTS.map((a) => (
-            <button
-              key={a.id}
-              type="button"
-              onClick={() => fillDemo(a.email, a.password)}
-              className="rounded-full bg-[#EEF1F5] px-3 py-1.5 text-xs capitalize text-muted
-                shadow-[inset_2px_2px_4px_rgba(163,177,198,0.35),inset_-2px_-2px_4px_rgba(255,255,255,0.9)]
-                transition-all duration-300 ease-out
-                hover:-translate-y-0.5 hover:text-[#4A90E2] hover:shadow-extruded-sm
-                active:translate-y-0
-                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4A90E2]"
-            >
-              {a.role}
-            </button>
-          ))}
-        </div>
-      </div>
     </form>
   );
 }

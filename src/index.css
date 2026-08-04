@@ -141,6 +141,16 @@
       focus:bg-[#F4F6F9];
   }
 
+  /* Chrome autofill đè nền/chữ — ép về đúng style login-input */
+  .login-input:-webkit-autofill,
+  .login-input:-webkit-autofill:hover,
+  .login-input:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0 1000px #eef1f5 inset;
+    -webkit-text-fill-color: #3d4852;
+    caret-color: #3d4852;
+    transition: background-color 9999s ease-out;
+  }
+
   .login-btn {
     @apply inline-flex h-12 items-center justify-center gap-2 rounded-full px-8
       font-medium text-white
