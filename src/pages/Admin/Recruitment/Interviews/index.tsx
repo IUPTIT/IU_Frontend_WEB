@@ -33,7 +33,7 @@ import { formatDate } from "../../../../utils/formatDate";
 import AssignInterviewersModal from "./components/AssignInterviewersModal";
 import BatchScheduleModal from "./components/BatchScheduleModal";
 import DaySummaryCard from "./components/DaySummaryCard";
-import InterviewCalendar from "./components/InterviewCalendar";
+import InterviewCalendar from "../../../../components/InterviewCalendar";
 import InterviewScoreModal from "./components/InterviewScoreModal";
 import InterviewSlotCard from "./components/InterviewSlotCard";
 import RescheduleModal from "./components/RescheduleModal";
@@ -49,9 +49,13 @@ function RecruitmentInterviewsPage() {
   const [tab, setTab] = useState<TabId>("schedule");
   const [campaigns, setCampaigns] = useState<RecruitmentCampaign[]>([]);
   const [campaignId, setCampaignId] = useState("");
-  const [selectedDate, setSelectedDate] = useState("2024-10-07");
-  const [calYear, setCalYear] = useState(2024);
-  const [calMonth, setCalMonth] = useState(9); // Oct
+  // Mặc định theo ngày hiện tại (chốt 1 lần lúc mount)
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+  });
+  const [calYear, setCalYear] = useState(() => new Date().getFullYear());
+  const [calMonth, setCalMonth] = useState(() => new Date().getMonth());
   const [slots, setSlots] = useState<InterviewSlot[]>([]);
   const [markedDates, setMarkedDates] = useState<Set<string>>(new Set());
   const [candidates, setCandidates] = useState<Application[]>([]);
@@ -450,13 +454,12 @@ function RecruitmentInterviewsPage() {
       <BatchScheduleModal
         open={batchOpen}
         onClose={() => setBatchOpen(false)}
-        candidates={candidates}
         defaultDate={selectedDate}
         onSubmit={async (payload) => {
-          await createBatchInterviewSlots({ campaignId, ...payload });
+          const created = await createBatchInterviewSlots({ campaignId, ...payload });
           await reloadSlots(campaignId);
           setSelectedDate(payload.date);
-          showToast(`Đã xếp ${payload.applicationIds.length} lịch phỏng vấn.`);
+          showToast(`Đã tạo ${created.length} ca phỏng vấn — ứng viên có thể vào đặt lịch.`);
         }}
       />
 

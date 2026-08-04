@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import Button from "../../../components/ui/Button";
+import InterviewCalendar from "../../../components/InterviewCalendar";
 import {
   changeSlot,
   confirmBooking,
@@ -37,6 +38,15 @@ function CandidateInterviewPage() {
   const [busy, setBusy] = useState(false);
   // Chế độ đổi ca (đã có booking, chọn ca mới)
   const [changing, setChanging] = useState(false);
+
+  // Lịch tháng: ngày đang xem + tháng hiển thị (mặc định hôm nay)
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const now = new Date();
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+  });
+  const [calYear, setCalYear] = useState(() => new Date().getFullYear());
+  const [calMonth, setCalMonth] = useState(() => new Date().getMonth());
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -159,6 +169,11 @@ function CandidateInterviewPage() {
   const bookedSlot =
     booking && typeof booking.slotId === "object" ? booking.slotId : null;
 
+  // Ngày nào có ca còn chỗ → chấm đánh dấu trên lịch; ca trong ngày đang chọn
+  const bookableSlots = slots.filter((s) => !bookedSlot || s._id !== bookedSlot._id);
+  const markedDates = new Set(bookableSlots.map((s) => s.date.slice(0, 10)));
+  const daySlots = bookableSlots.filter((s) => s.date.slice(0, 10) === selectedDate);
+
   return (
     <>
       <section className="space-y-2">
@@ -225,7 +240,34 @@ function CandidateInterviewPage() {
             )}
           </div>
 
-          {heldSlot ? (
+          {!heldSlot && (
+            <div className="grid gap-5 lg:grid-cols-[320px_1fr]">
+              <InterviewCalendar
+                year={calYear}
+                month={calMonth}
+                selectedDate={selectedDate}
+                markedDates={markedDates}
+                onSelectDate={setSelectedDate}
+                onMonthChange={(y, m) => {
+                  setCalYear(y);
+                  setCalMonth(m);
+                }}
+              />
+              <div className="min-w-0">
+                <p className="mb-3 text-sm font-semibold text-foreground">
+                  Ca phỏng vấn ngày {formatDate(selectedDate)}
+                </p>
+                <SlotList
+                  slots={daySlots}
+                  selectedId={null}
+                  onSelect={(s) => void handlePick(s)}
+                  disabled={busy}
+                />
+              </div>
+            </div>
+          )}
+
+          {heldSlot && (
             <div className="space-y-4 rounded-2xl bg-accent/5 p-5">
               <p className="text-sm text-foreground">
                 Đang giữ chỗ ca{" "}
@@ -254,13 +296,6 @@ function CandidateInterviewPage() {
                 </Button>
               </div>
             </div>
-          ) : (
-            <SlotList
-              slots={slots.filter((s) => !bookedSlot || s._id !== bookedSlot._id)}
-              selectedId={null}
-              onSelect={(s) => void handlePick(s)}
-              disabled={busy}
-            />
           )}
         </section>
       )}

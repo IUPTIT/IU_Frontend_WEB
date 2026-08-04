@@ -644,8 +644,9 @@ function toUiSlot(s: BackendSlot, booking: BackendBooking | null): InterviewSlot
     candidateName: app?.fullName,
     candidateDepartment: preferred,
     interviewers,
-    requiredInterviewers: 2,
-    status: done ? "done" : interviewers.length < 2 ? "missing_interviewers" : "scheduled",
+    // Không bắt buộc số lượng — chỉ cảnh báo khi ca CHƯA có ai phỏng vấn
+    requiredInterviewers: 1,
+    status: done ? "done" : interviewers.length === 0 ? "missing_interviewers" : "scheduled",
   };
 }
 
@@ -687,37 +688,22 @@ export type BatchScheduleInput = {
   startTimes: string[];
   durationMinutes: number;
   locationOrLink: string;
-  applicationIds: string[];
-  requiredInterviewers?: number;
+  /** Số ứng viên tối đa mỗi ca */
+  capacity?: number;
 };
 
-// Tạo mỗi ứng viên 1 ca (capacity 1) rồi gán luôn ứng viên vào ca đó
+// Tạo ca TRỐNG cho từng khung giờ — ứng viên pass vòng đơn tự vào chọn ca,
+// người phỏng vấn phân công sau (nút "Phân công" trên từng ca)
 export async function createBatchInterviewSlots(input: BatchScheduleInput): Promise<InterviewSlot[]> {
-  // Backend bắt buộc slot có >= 1 người phỏng vấn — mặc định lấy người đầu danh sách,
-  // phân công lại sau bằng nút "Phân công" trên từng ca
-  const interviewers = await getInterviewers();
-  if (!interviewers.length) {
-    throw new Error("Chưa có tài khoản BCN/Leader nào để phân công phỏng vấn");
-  }
-  const defaultInterviewer = interviewers[0].id;
-  const times = input.startTimes.length
-    ? input.startTimes
-    : ["08:00", "09:00", "10:00", "11:00", "14:00", "15:00"];
-
   const created: InterviewSlot[] = [];
-  for (const [i, applicationId] of input.applicationIds.entries()) {
-    const startTime = times[i % times.length];
+  for (const startTime of input.startTimes) {
     const { slot } = await api.post<{ slot: BackendSlot }>("/recruitment/slots", {
       campaignId: input.campaignId,
       date: input.date,
       startTime,
       endTime: addMinutes(startTime, input.durationMinutes),
       location: input.locationOrLink,
-      interviewerIds: [defaultInterviewer],
-      capacity: 1,
-    });
-    await api.post(`/recruitment/applications/${applicationId}/assign-slot`, {
-      slotId: slot._id,
+      capacity: input.capacity ?? 1,
     });
     created.push(toUiSlot(slot, null));
   }
