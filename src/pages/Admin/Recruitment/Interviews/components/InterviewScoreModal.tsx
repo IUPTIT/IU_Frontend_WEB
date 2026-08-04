@@ -55,9 +55,12 @@ function InterviewScoreModal({ open, slot, criteria, onClose, onSave, onPassFail
   const handleSave = async () => {
     if (!validate()) return;
     setSaving(true);
+    setError(null);
     try {
       await onSave({ scores, comment });
       onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Lưu điểm thất bại — thử lại.");
     } finally {
       setSaving(false);
     }
@@ -66,10 +69,13 @@ function InterviewScoreModal({ open, slot, criteria, onClose, onSave, onPassFail
   const handleDecision = async (result: "pass" | "fail") => {
     if (!validate()) return;
     setSaving(true);
+    setError(null);
     try {
       await onSave({ scores, comment });
       await onPassFail(result);
       onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Cập nhật kết quả thất bại — thử lại.");
     } finally {
       setSaving(false);
     }

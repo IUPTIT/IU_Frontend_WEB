@@ -37,9 +37,12 @@ function RescheduleModal({ open, slot, onClose, onSubmit }: Props) {
       return;
     }
     setSaving(true);
+    setError(null);
     try {
       await onSubmit(slot.id, date, time, reason);
       onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Đổi lịch thất bại — thử lại.");
     } finally {
       setSaving(false);
     }

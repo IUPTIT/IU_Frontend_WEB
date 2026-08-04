@@ -66,6 +66,7 @@ function BatchScheduleModal({ open, onClose, candidates, defaultDate, onSubmit }
       return;
     }
     setSaving(true);
+    setError(null);
     try {
       await onSubmit({
         date,
@@ -75,6 +76,8 @@ function BatchScheduleModal({ open, onClose, candidates, defaultDate, onSubmit }
         applicationIds: selectedIds,
       });
       onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Xếp lịch thất bại — thử lại.");
     } finally {
       setSaving(false);
     }

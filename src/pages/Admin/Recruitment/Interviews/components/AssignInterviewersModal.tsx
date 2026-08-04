@@ -38,10 +38,13 @@ function AssignInterviewersModal({ open, slot, interviewers, onClose, onSubmit }
       return;
     }
     setSaving(true);
+    setError(null);
     try {
       const list = interviewers.filter((i) => selected.includes(i.id));
       await onSubmit(slot.id, list);
       onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Phân công thất bại — thử lại.");
     } finally {
       setSaving(false);
     }
