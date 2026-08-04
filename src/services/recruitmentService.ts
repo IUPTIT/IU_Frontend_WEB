@@ -169,6 +169,14 @@ function toApplication(a: BackendApplication): Application {
     (x, y) => x.priority - y.priority,
   )[0]?.department;
 
+  const attachments: Application["attachments"] = [];
+  if (a.avatarUrl) {
+    attachments.push({ id: `${a._id}-avatar`, label: "Ảnh đại diện", kind: "link", url: a.avatarUrl });
+  }
+  if (a.cvUrl) {
+    attachments.push({ id: `${a._id}-cv`, label: "CV", kind: "pdf", url: a.cvUrl });
+  }
+
   return {
     id: a._id,
     campaignId: campaignIdOf(a),
@@ -183,6 +191,7 @@ function toApplication(a: BackendApplication): Application {
     interviewResult,
     finalResult,
     submittedAt: a.submittedAt ?? a.createdAt,
+    attachments,
   };
 }
 
