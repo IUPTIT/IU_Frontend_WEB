@@ -38,7 +38,6 @@ function ReviewConfirmStep({ form, campaign, submitting, error, onBack, onConfir
         <Row label="Khoa/Ngành" value={form.faculty} />
         <Row label="Email" value={form.email} />
         <Row label="Số điện thoại" value={form.phone} />
-        <Row label="Số CCCD" value={form.nationalId} />
         <Row label="Ngày sinh" value={form.dateOfBirth} />
         <Row label="Ảnh đại diện" value={form.avatar?.name ?? ""} />
         <Row label="CV" value={form.cv?.name ?? ""} />

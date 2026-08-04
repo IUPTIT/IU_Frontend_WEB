@@ -6,7 +6,11 @@ import CampaignHeader from "./components/CampaignHeader";
 import ApplicationFormStep from "./components/ApplicationFormStep";
 import ReviewConfirmStep from "./components/ReviewConfirmStep";
 import SuccessScreen from "./components/SuccessScreen";
-import { getActiveCampaign, submitApplication } from "../../services/publicRecruitmentService";
+import {
+  getActiveCampaign,
+  submitApplication,
+  uploadRecruitmentFile,
+} from "../../services/publicRecruitmentService";
 import type { PublicCampaign } from "../../services/publicRecruitmentService";
 import { EMPTY_APPLICATION } from "./types";
 import type { ApplicationForm } from "./types";
@@ -42,18 +46,23 @@ function RecruitmentPage() {
     setSubmitting(true);
     setSubmitError(null);
     try {
+      // Upload ảnh + CV lên Cloudinary trước, lấy URL thật đính vào hồ sơ
+      const [avatarUrl, cvUrl] = await Promise.all([
+        form.avatar ? uploadRecruitmentFile("avatar", form.avatar) : Promise.resolve(""),
+        form.cv ? uploadRecruitmentFile("cv", form.cv) : Promise.resolve(""),
+      ]);
+
       const application = await submitApplication({
+        campaignId: campaign.id,
         fullName: form.fullName,
         studentId: form.studentId,
         className: form.className,
         faculty: form.faculty,
         email: form.email,
         phone: form.phone,
-        nationalId: form.nationalId,
         dateOfBirth: form.dateOfBirth,
-        // TODO: upload file thật khi backend có endpoint upload — tạm gửi tên file
-        avatarUrl: form.avatar?.name ?? "",
-        cvUrl: form.cv?.name ?? "",
+        avatarUrl,
+        cvUrl,
         wishes: form.wishes.filter(Boolean),
         answers: form.answers,
       });

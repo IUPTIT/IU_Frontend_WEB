@@ -13,10 +13,12 @@ function LookupPage() {
   const [notFound, setNotFound] = useState(false);
   const [searching, setSearching] = useState(false);
   const [withdrawing, setWithdrawing] = useState(false);
+  const [withdrawn, setWithdrawn] = useState(false);
 
   const handleSearch = async (query: string) => {
     setSearching(true);
     setNotFound(false);
+    setWithdrawn(false);
     try {
       setResult(await lookupApplication(query));
     } catch {
@@ -27,11 +29,14 @@ function LookupPage() {
     }
   };
 
+  // Rút đơn = backend xoá hồ sơ — sau khi rút không còn gì để hiển thị
   const handleWithdraw = async () => {
     if (!result || withdrawing) return;
     setWithdrawing(true);
     try {
-      setResult(await withdrawApplication(result.code, result.email));
+      await withdrawApplication(result.code, result.email);
+      setResult(null);
+      setWithdrawn(true);
     } catch {
       // giữ nguyên kết quả cũ nếu rút thất bại
     } finally {
@@ -58,6 +63,11 @@ function LookupPage() {
 
           <div className="mt-10 space-y-6">
             <LookupForm onSearch={handleSearch} notFound={notFound} searching={searching} />
+            {withdrawn && (
+              <p className="liquid-glass landing-card-solid rounded-3xl p-6 text-center text-[hsl(var(--landing-foreground)/0.8)]">
+                Đã rút đơn thành công — hồ sơ của bạn đã được xoá. Bạn có thể nộp đơn mới khi đợt tuyển còn mở.
+              </p>
+            )}
             {result && (
               <ApplicationStatusCard application={result} withdrawing={withdrawing} onWithdraw={handleWithdraw} />
             )}
