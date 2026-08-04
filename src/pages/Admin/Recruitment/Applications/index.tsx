@@ -85,7 +85,15 @@ function RecruitmentApplicationsPage() {
   const { search, navigate } = usePortalUi();
   const [campaigns, setCampaigns] = useState<RecruitmentCampaign[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
-  const [campaignId, setCampaignId] = useState<string>("");
+  // campaignId dẫn xuất: user chọn thì ưu tiên, không thì lấy đợt đang mở / mới nhất
+  const [campaignIdOverride, setCampaignIdOverride] = useState<string>("");
+  const campaignId = useMemo(() => {
+    if (campaignIdOverride && campaigns.some((c) => c.id === campaignIdOverride)) {
+      return campaignIdOverride;
+    }
+    return campaigns.find((c) => c.isActive)?.id ?? campaigns[0]?.id ?? "";
+  }, [campaignIdOverride, campaigns]);
+  const setCampaignId = setCampaignIdOverride;
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -100,41 +108,39 @@ function RecruitmentApplicationsPage() {
     window.setTimeout(() => setToast(null), 2800);
   };
 
-  const loadCampaigns = useCallback(async () => {
-    const data = await getCampaigns();
-    // Chỉ đợt đã publish/closed mới có hồ sơ thực tế
-    const usable = data.filter((c) => c.status !== "draft");
-    setCampaigns(usable);
-    setCampaignId((prev) => {
-      if (prev && usable.some((c) => c.id === prev)) return prev;
-      const active = usable.find((c) => c.isActive);
-      return active?.id ?? usable[0]?.id ?? "";
-    });
-  }, []);
 
   const loadApplications = useCallback(async (id: string) => {
-    if (!id) {
-      setApplications([]);
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
     try {
-      const data = await getApplications(id);
+      // Luôn await để mọi setState nằm sau async boundary (react-hooks/set-state-in-effect)
+      const data = await (id ? getApplications(id) : Promise.resolve<Application[]>([]));
       setApplications(data);
     } finally {
       setLoading(false);
     }
   }, []);
 
+  // Đổi đợt tuyển → reset chọn/trang + bật skeleton (adjust state during render)
+  const [prevCampaignId, setPrevCampaignId] = useState(campaignId);
+  if (campaignId !== prevCampaignId) {
+    setPrevCampaignId(campaignId);
+    setSelectedIds(new Set());
+    setPage(1);
+    setLoading(true);
+  }
+
   useEffect(() => {
-    void loadCampaigns();
-  }, [loadCampaigns]);
+    let alive = true;
+    void getCampaigns().then((data) => {
+      // Chỉ đợt đã publish/closed mới có hồ sơ thực tế
+      if (alive) setCampaigns(data.filter((c) => c.status !== "draft"));
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   useEffect(() => {
     void loadApplications(campaignId);
-    setSelectedIds(new Set());
-    setPage(1);
   }, [campaignId, loadApplications]);
 
   const selectedCampaign = campaigns.find((c) => c.id === campaignId);
@@ -179,9 +185,13 @@ function RecruitmentApplicationsPage() {
     });
   }, [applications, search, appliedFilter]);
 
-  useEffect(() => {
+  // Đổi tìm kiếm / bộ lọc → về trang 1 (adjust state during render)
+  const [prevFilterKey, setPrevFilterKey] = useState("");
+  const filterKey = `${search}|${JSON.stringify(appliedFilter)}`;
+  if (filterKey !== prevFilterKey) {
+    setPrevFilterKey(filterKey);
     setPage(1);
-  }, [search, appliedFilter]);
+  }
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);

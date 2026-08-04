@@ -351,8 +351,14 @@ function TemplatesPanel({ onToast }: { onToast: (m: string) => void }) {
   const [preview, setPreview] = useState<{ subject: string; bodyHtml: string } | null>(null);
   const [filterCat, setFilterCat] = useState("");
 
-  const load = useCallback(async () => {
+  // Đổi bộ lọc danh mục → bật lại skeleton (adjust state during render)
+  const [prevFilterCat, setPrevFilterCat] = useState(filterCat);
+  if (filterCat !== prevFilterCat) {
+    setPrevFilterCat(filterCat);
     setLoading(true);
+  }
+
+  const load = useCallback(async () => {
     try {
       setList(await getEmailTemplates(filterCat as EmailTemplateCategory | ""));
     } finally {
@@ -679,13 +685,18 @@ function HistoryPanel({ onToast }: { onToast: (m: string) => void }) {
   const [rows, setRows] = useState<EmailHistoryItem[]>([]);
   const [detail, setDetail] = useState<EmailHistoryItem | null>(null);
 
+  // load chỉ gọi từ event handler (refresh sau thao tác) — mount dùng .then bên dưới
   const load = useCallback(async () => {
     setRows(await getEmailHistory());
   }, []);
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    let alive = true;
+    void getEmailHistory().then((data) => alive && setRows(data));
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   return (
     <section className="space-y-4">

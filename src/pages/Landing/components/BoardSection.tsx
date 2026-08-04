@@ -80,11 +80,13 @@ function BoardSection() {
   // Clone các card đầu nối vào cuối để trượt xoay vòng liền mạch
   const items = canSlide ? [...BOARD_MEMBERS, ...BOARD_MEMBERS.slice(0, visible)] : BOARD_MEMBERS;
 
-  // Về vị trí đầu khi đổi breakpoint
-  useEffect(() => {
+  // Về vị trí đầu khi đổi breakpoint (adjust state during render)
+  const [prevVisible, setPrevVisible] = useState(visible);
+  if (visible !== prevVisible) {
+    setPrevVisible(visible);
     setAnimate(false);
     setIndex(0);
-  }, [visible]);
+  }
 
   useEffect(() => {
     if (!animate) {

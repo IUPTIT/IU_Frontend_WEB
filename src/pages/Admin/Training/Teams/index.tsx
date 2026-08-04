@@ -47,16 +47,20 @@ function CreateGroupDrawer({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!open) return;
-    setName("Team Alpha");
-    setDeptId("dept-tech");
-    setMentorId(mentors[0]?.id ?? "");
-    setProgramId(programs[0]?.id ?? "");
-    setMemberIds([]);
-    setQ("");
-    setError(null);
-  }, [open, mentors, programs]);
+  // Reset form mỗi lần mở modal (adjust state during render)
+  const [prevOpen, setPrevOpen] = useState(open);
+  if (open !== prevOpen) {
+    setPrevOpen(open);
+    if (open) {
+      setName("Team Alpha");
+      setDeptId("dept-tech");
+      setMentorId(mentors[0]?.id ?? "");
+      setProgramId(programs[0]?.id ?? "");
+      setMemberIds([]);
+      setQ("");
+      setError(null);
+    }
+  }
 
   const deptMentors = mentors.filter((m) => m.departmentId === deptId);
   const unassigned = trainees.filter(
@@ -253,8 +257,8 @@ function TrainingTeamsPage() {
     window.setTimeout(() => setToast(null), 2500);
   };
 
+  // loading khởi tạo true — refresh sau thao tác giữ nguyên dữ liệu cũ
   const load = useCallback(async () => {
-    setLoading(true);
     try {
       const [g, p, m, t] = await Promise.all([
         getTrainingGroups(),

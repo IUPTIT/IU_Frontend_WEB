@@ -121,8 +121,8 @@ function TrainingReviewPage() {
     window.setTimeout(() => setToast(null), 2800);
   };
 
+  // loading khởi tạo true — refresh sau thao tác giữ nguyên bảng cũ
   const load = useCallback(async () => {
-    setLoading(true);
     try {
       const [list, sum] = await Promise.all([getTrainees(), getTrainingReviewSummary()]);
       setTrainees(list);
@@ -154,9 +154,13 @@ function TrainingReviewPage() {
     });
   }, [trainees, search, quick, applied]);
 
-  useEffect(() => {
+  // Đổi tìm kiếm / bộ lọc → về trang 1 (adjust state during render)
+  const [prevFilterKey, setPrevFilterKey] = useState("");
+  const filterKey = `${search}|${quick}|${JSON.stringify(applied)}`;
+  if (filterKey !== prevFilterKey) {
+    setPrevFilterKey(filterKey);
     setPage(1);
-  }, [search, quick, applied]);
+  }
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);

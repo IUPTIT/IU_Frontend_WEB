@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Button from "../../../../../components/ui/Button";
 import type { Application } from "../../../../../types/recruitment";
 
@@ -27,12 +27,16 @@ function BatchScheduleModal({ open, onClose, candidates, defaultDate, onSubmit }
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    if (!open) return;
-    setDate(defaultDate);
-    setSelectedIds(candidates.slice(0, Math.min(4, candidates.length)).map((c) => c.id));
-    setError(null);
-  }, [open, defaultDate, candidates]);
+  // Reset form mỗi lần mở modal (adjust state during render)
+  const [prevOpen, setPrevOpen] = useState(open);
+  if (open !== prevOpen) {
+    setPrevOpen(open);
+    if (open) {
+      setDate(defaultDate);
+      setSelectedIds(candidates.slice(0, Math.min(4, candidates.length)).map((c) => c.id));
+      setError(null);
+    }
+  }
 
   if (!open) return null;
 

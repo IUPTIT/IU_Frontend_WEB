@@ -39,8 +39,8 @@ function RecruitmentOpenPage() {
     window.setTimeout(() => setToast(null), 2500);
   };
 
+  // loading khởi tạo true — refresh sau thao tác giữ nguyên bảng cũ, không nháy skeleton
   const load = useCallback(async () => {
-    setLoading(true);
     try {
       const data = await getCampaigns();
       setCampaigns(data);
@@ -59,9 +59,12 @@ function RecruitmentOpenPage() {
     return campaigns.filter((c) => c.name.toLowerCase().includes(q));
   }, [campaigns, search]);
 
-  useEffect(() => {
+  // Đổi từ khoá tìm kiếm → về trang 1 (adjust state during render)
+  const [prevSearch, setPrevSearch] = useState(search);
+  if (search !== prevSearch) {
+    setPrevSearch(search);
     setPage(1);
-  }, [search]);
+  }
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);

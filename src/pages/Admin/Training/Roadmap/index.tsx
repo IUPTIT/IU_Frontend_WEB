@@ -259,10 +259,11 @@ function CreateRoadmapView({
     setError(null);
     try {
       const dept = DEPTS.find((d) => d.id === deptId)!;
-      const flatStages: TrainingStage[] = stages.map(({ lessons: _l, ...st }, i) => ({
-        ...st,
-        order: i + 1,
-      }));
+      const flatStages: TrainingStage[] = stages.map((stage, i) => {
+        const { lessons, ...st } = stage;
+        void lessons;
+        return { ...st, order: i + 1 };
+      });
       const lessons: TrainingLesson[] = stages.flatMap((s) =>
         s.lessons.map((l) => ({ ...l, stageId: s.id })),
       );
@@ -423,8 +424,8 @@ function TrainingRoadmapPage() {
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<string | null>(null);
 
+  // loading khởi tạo true — refresh sau thao tác giữ nguyên dữ liệu cũ
   const load = useCallback(async () => {
-    setLoading(true);
     try {
       const [progs, grps] = await Promise.all([getTrainingPrograms(), getTrainingGroups()]);
       setPrograms(progs);

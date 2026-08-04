@@ -53,7 +53,6 @@ function RecruitmentInterviewsPage() {
   const [calYear, setCalYear] = useState(2024);
   const [calMonth, setCalMonth] = useState(9); // Oct
   const [slots, setSlots] = useState<InterviewSlot[]>([]);
-  const [daySlots, setDaySlots] = useState<InterviewSlot[]>([]);
   const [markedDates, setMarkedDates] = useState<Set<string>>(new Set());
   const [candidates, setCandidates] = useState<Application[]>([]);
   const [interviewers, setInterviewers] = useState<InterviewerRef[]>([]);
@@ -77,25 +76,33 @@ function RecruitmentInterviewsPage() {
     window.setTimeout(() => setToast(null), 2800);
   };
 
-  const loadCampaigns = useCallback(async () => {
-    const data = await getCampaigns();
-    const usable = data.filter((c) => c.status !== "draft");
-    setCampaigns(usable);
-    setCampaignId((prev) => {
-      if (prev && usable.some((c) => c.id === prev)) return prev;
-      return usable.find((c) => c.isActive)?.id ?? usable[0]?.id ?? "";
+  useEffect(() => {
+    let alive = true;
+    void getCampaigns().then((data) => {
+      if (!alive) return;
+      const usable = data.filter((c) => c.status !== "draft");
+      setCampaigns(usable);
+      setCampaignId((prev) => {
+        if (prev && usable.some((c) => c.id === prev)) return prev;
+        return usable.find((c) => c.isActive)?.id ?? usable[0]?.id ?? "";
+      });
     });
+    void getInterviewers().then((list) => alive && setInterviewers(list));
+    void getInterviewCriteria().then((list) => alive && setCriteria(list));
+    return () => {
+      alive = false;
+    };
   }, []);
 
-  useEffect(() => {
-    void loadCampaigns();
-    void getInterviewers().then(setInterviewers);
-    void getInterviewCriteria().then(setCriteria);
-  }, [loadCampaigns]);
+  // Đổi đợt tuyển → bật lại skeleton loading (adjust state during render)
+  const [prevCampaignId, setPrevCampaignId] = useState(campaignId);
+  if (campaignId !== prevCampaignId) {
+    setPrevCampaignId(campaignId);
+    setLoading(true);
+  }
 
   const reloadSlots = useCallback(async (cid: string) => {
     if (!cid) return;
-    setLoading(true);
     try {
       const [all, dates, apps] = await Promise.all([
         getInterviewSlots(cid),
@@ -114,9 +121,10 @@ function RecruitmentInterviewsPage() {
     void reloadSlots(campaignId);
   }, [campaignId, reloadSlots]);
 
-  useEffect(() => {
-    setDaySlots(slots.filter((s) => s.date === selectedDate));
-  }, [slots, selectedDate]);
+  const daySlots = useMemo(
+    () => slots.filter((s) => s.date === selectedDate),
+    [slots, selectedDate],
+  );
 
   const campaignName = campaigns.find((c) => c.id === campaignId)?.name ?? "—";
 

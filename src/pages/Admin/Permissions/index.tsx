@@ -76,16 +76,20 @@ function CreateAccountDrawer({
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    if (!open) return;
-    setFullName("");
-    setEmail("");
-    setRole("member");
-    setDepartmentId("dept-tech");
-    setPassword("Temp@123");
-    setIsTraining(true);
-    setError(null);
-  }, [open]);
+  // Reset form mỗi lần mở modal (adjust state during render)
+  const [prevOpen, setPrevOpen] = useState(open);
+  if (open !== prevOpen) {
+    setPrevOpen(open);
+    if (open) {
+      setFullName("");
+      setEmail("");
+      setRole("member");
+      setDepartmentId("dept-tech");
+      setPassword("Temp@123");
+      setIsTraining(true);
+      setError(null);
+    }
+  }
 
   if (!open) return null;
 
@@ -248,8 +252,8 @@ function AdminPermissionsPage() {
     window.setTimeout(() => setToast(null), 2800);
   };
 
+  // loading khởi tạo true — refresh sau thao tác giữ nguyên bảng cũ
   const load = useCallback(async () => {
-    setLoading(true);
     try {
       setAccounts(await getManagedAccounts());
     } finally {
@@ -276,9 +280,13 @@ function AdminPermissionsPage() {
     });
   }, [accounts, search, roleFilter]);
 
-  useEffect(() => {
+  // Đổi tìm kiếm / lọc role → về trang 1 (adjust state during render)
+  const [prevFilterKey, setPrevFilterKey] = useState("");
+  const filterKey = `${search}|${roleFilter}`;
+  if (filterKey !== prevFilterKey) {
+    setPrevFilterKey(filterKey);
     setPage(1);
-  }, [search, roleFilter]);
+  }
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);

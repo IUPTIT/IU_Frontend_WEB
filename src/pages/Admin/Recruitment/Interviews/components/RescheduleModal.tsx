@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Button from "../../../../../components/ui/Button";
 import type { InterviewSlot } from "../../../../../types/recruitment";
 
@@ -16,13 +16,18 @@ function RescheduleModal({ open, slot, onClose, onSubmit }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    if (!open || !slot) return;
-    setDate(slot.date);
-    setTime(slot.startTime);
-    setReason("");
-    setError(null);
-  }, [open, slot]);
+  // Reset form mỗi lần mở modal / đổi slot (adjust state during render)
+  const resetKey = open && slot ? slot.id : null;
+  const [prevKey, setPrevKey] = useState<string | null>(resetKey);
+  if (resetKey !== prevKey) {
+    setPrevKey(resetKey);
+    if (resetKey && slot) {
+      setDate(slot.date);
+      setTime(slot.startTime);
+      setReason("");
+      setError(null);
+    }
+  }
 
   if (!open || !slot) return null;
 

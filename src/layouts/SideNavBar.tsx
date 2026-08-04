@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
   BarChart3,
@@ -70,18 +70,20 @@ function SideNavBar({ role, variant = "rail" }: Props) {
     return null;
   });
 
-  // Đồng bộ accordion với route — không reset khi chỉ collapse
-  useEffect(() => {
+  // Đồng bộ accordion với route — không reset khi chỉ collapse (adjust state during render)
+  const [prevActivePath, setPrevActivePath] = useState(activePath);
+  if (activePath !== prevActivePath) {
+    setPrevActivePath(activePath);
     for (const section of sections) {
       const parent = section.items.find((i) =>
         i.children?.some((c) => c.path === activePath || activePath.startsWith(`${c.path}/`)),
       );
       if (parent) {
         setOpenId(parent.id);
-        return;
+        break;
       }
     }
-  }, [activePath, sections]);
+  }
 
   const handleParentClick = (item: NavItem) => {
     if (item.action === "logout") {
