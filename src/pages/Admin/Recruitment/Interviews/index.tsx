@@ -1,5 +1,5 @@
 ﻿import { useCallback, useEffect, useMemo, useState } from "react";
-import { Plus, Send } from "lucide-react";
+import { ClipboardCheck, Plus, Send } from "lucide-react";
 import Button from "../../../../components/ui/Button";
 import FilterMenu from "../../../../components/ui/FilterMenu";
 import Icon from "../../../../components/ui/Icon";
@@ -512,18 +512,19 @@ function RecruitmentInterviewsPage() {
                             : "Chờ"}
                       </td>
                       <td className="px-3 py-4 text-center">
-                        <Button
-                          variant="soft"
-                          size="sm"
-                          className="!h-9"
+                        <button
+                          type="button"
+                          title="Phỏng vấn & chấm điểm"
+                          aria-label="Phỏng vấn & chấm điểm"
                           disabled={!slot.bookingId}
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-muted shadow-extruded-sm transition-all duration-300 ease-out hover:text-accent active:shadow-inset-sm disabled:opacity-40 focus-visible:ring-2 ring-accent ring-offset-2 ring-offset-background"
                           onClick={() =>
                             slot.bookingId &&
                             navigate(ROUTES.admin.recruitment.interviewNote(slot.bookingId))
                           }
                         >
-                          Phỏng vấn & note
-                        </Button>
+                          <Icon icon={ClipboardCheck} size={15} />
+                        </button>
                       </td>
                     </tr>
                   ))

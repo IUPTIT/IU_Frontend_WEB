@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ClipboardCheck } from "lucide-react";
 import Button from "../../../../components/ui/Button";
 import Icon from "../../../../components/ui/Icon";
 import { ROUTES } from "../../../../constants/routes";
@@ -137,7 +137,13 @@ function InterviewSlotDetailPage({ slotId }: { slotId: string }) {
                     </td>
                     <td className="px-3 py-4 text-center text-sm text-muted">{c.scoreCount}</td>
                     <td className="px-3 py-4 text-right">
-                      <span className="text-sm font-medium text-accent">Phỏng vấn & note →</span>
+                      <span
+                        title="Phỏng vấn & chấm điểm"
+                        aria-label="Phỏng vấn & chấm điểm"
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-accent shadow-extruded-sm"
+                      >
+                        <Icon icon={ClipboardCheck} size={15} />
+                      </span>
                     </td>
                   </tr>
                 ))
