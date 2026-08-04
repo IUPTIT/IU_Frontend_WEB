@@ -6,6 +6,8 @@ import AdminRecruitmentOpenPage from "../pages/Admin/Recruitment/Open";
 import AdminRecruitmentApplicationsPage from "../pages/Admin/Recruitment/Applications";
 import AdminRecruitmentApplicationDetailPage from "../pages/Admin/Recruitment/Applications/Detail";
 import AdminRecruitmentInterviewsPage from "../pages/Admin/Recruitment/Interviews";
+import AdminInterviewSlotDetailPage from "../pages/Admin/Recruitment/Interviews/SlotDetail";
+import AdminInterviewNotePage from "../pages/Admin/Recruitment/Interviews/CandidateNote";
 import AdminRecruitmentResultsPage from "../pages/Admin/Recruitment/Results";
 import AdminMembersPage from "../pages/Admin/Members";
 import AdminTrainingRoadmapPage from "../pages/Admin/Training/Roadmap";
@@ -68,11 +70,21 @@ const PAGE_MAP: Record<string, ReactNode> = {
 };
 
 const APPLICATION_DETAIL_RE = /^\/admin\/recruitment\/applications\/([^/]+)$/;
+const INTERVIEW_SLOT_RE = /^\/admin\/recruitment\/interviews\/slots\/([^/]+)$/;
+const INTERVIEW_NOTE_RE = /^\/admin\/recruitment\/interviews\/notes\/([^/]+)$/;
 
 export function renderPortalPage(path: string): ReactNode {
   const detailMatch = path.match(APPLICATION_DETAIL_RE);
   if (detailMatch) {
     return <AdminRecruitmentApplicationDetailPage applicationId={detailMatch[1]} />;
+  }
+  const slotMatch = path.match(INTERVIEW_SLOT_RE);
+  if (slotMatch) {
+    return <AdminInterviewSlotDetailPage slotId={slotMatch[1]} />;
+  }
+  const noteMatch = path.match(INTERVIEW_NOTE_RE);
+  if (noteMatch) {
+    return <AdminInterviewNotePage bookingId={noteMatch[1]} />;
   }
 
   return (

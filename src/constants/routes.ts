@@ -8,6 +8,8 @@ export const ROUTES = {
       applications: "/admin/recruitment/applications",
       applicationDetail: (id: string) => `/admin/recruitment/applications/${id}`,
       interviews: "/admin/recruitment/interviews",
+      interviewSlot: (slotId: string) => `/admin/recruitment/interviews/slots/${slotId}`,
+      interviewNote: (bookingId: string) => `/admin/recruitment/interviews/notes/${bookingId}`,
       results: "/admin/recruitment/results",
     },
     members: "/admin/members",

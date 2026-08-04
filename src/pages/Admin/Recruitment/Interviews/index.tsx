@@ -6,6 +6,9 @@ import Icon from "../../../../components/ui/Icon";
 import Select from "../../../../components/ui/Select";
 import SendEmailModal from "../../../../components/ui/SendEmailModal";
 import { useAuth } from "../../../../context/useAuth";
+import { usePortalUi } from "../../../../context/usePortalUi";
+import { ROUTES } from "../../../../constants/routes";
+import ExportDataModal, { type ExportColumnDef } from "../../../../components/ui/ExportDataModal";
 import {
   assignInterviewersToSlot,
   createBatchInterviewSlots,
@@ -15,6 +18,7 @@ import {
   getInterviewSlots,
   getInterviewers,
   deleteInterviewSlot,
+  getInterviewResults,
   getPassedScreeningApplications,
   notifyInterviewResults,
   rescheduleInterviewSlot,
@@ -46,8 +50,54 @@ function pad(n: number) {
   return String(n).padStart(2, "0");
 }
 
+type InterviewResultRowUi = import("../../../../services/recruitmentService").InterviewResultRow;
+
+const BOOKING_STATUS_LABEL: Record<string, string> = {
+  booked: "Đã đặt lịch",
+  changed: "Đã đổi ca",
+  completed: "Đã phỏng vấn",
+  no_show: "Vắng mặt",
+};
+
+// Cột xuất file kết quả phỏng vấn toàn đợt (CSV mở được bằng Excel)
+const EXPORT_COLUMNS: ExportColumnDef<InterviewResultRowUi>[] = [
+  { id: "code", label: "Mã hồ sơ", getValue: (r) => r.applicationCode, defaultSelected: true },
+  { id: "fullName", label: "Họ và tên", getValue: (r) => r.fullName, defaultSelected: true },
+  { id: "email", label: "Email", getValue: (r) => r.email, defaultSelected: true },
+  { id: "phone", label: "Số điện thoại", getValue: (r) => r.phone, defaultSelected: false },
+  { id: "department", label: "Ban dự tuyển", getValue: (r) => r.department, defaultSelected: true },
+  { id: "slotDate", label: "Ngày PV", getValue: (r) => r.slotDate, defaultSelected: true },
+  { id: "slotTime", label: "Giờ PV", getValue: (r) => r.slotTime, defaultSelected: true },
+  { id: "location", label: "Địa điểm", getValue: (r) => r.location, defaultSelected: true },
+  {
+    id: "bookingStatus",
+    label: "Trạng thái ca",
+    getValue: (r) => BOOKING_STATUS_LABEL[r.bookingStatus] ?? r.bookingStatus,
+    defaultSelected: true,
+  },
+  {
+    id: "averageScore",
+    label: "Điểm PV trung bình",
+    getValue: (r) => (r.averageScore != null ? String(r.averageScore) : ""),
+    defaultSelected: true,
+  },
+  {
+    id: "reviewerCount",
+    label: "Số người chấm",
+    getValue: (r) => String(r.reviewerCount),
+    defaultSelected: true,
+  },
+  {
+    id: "reviewerNotes",
+    label: "Nhận xét từng người chấm",
+    getValue: (r) => r.reviewerNotes,
+    defaultSelected: true,
+  },
+];
+
 function RecruitmentInterviewsPage() {
   const { user } = useAuth();
+  const { navigate } = usePortalUi();
   const [tab, setTab] = useState<TabId>("schedule");
   const [campaigns, setCampaigns] = useState<RecruitmentCampaign[]>([]);
   const [campaignId, setCampaignId] = useState("");
@@ -78,6 +128,8 @@ function RecruitmentInterviewsPage() {
   const [scoreSlot, setScoreSlot] = useState<InterviewSlot | null>(null);
   const [deleteSlotTarget, setDeleteSlotTarget] = useState<InterviewSlot | null>(null);
   const [deletingSlot, setDeletingSlot] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
+  const [exportRows, setExportRows] = useState<InterviewResultRowUi[]>([]);
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -297,6 +349,31 @@ function RecruitmentInterviewsPage() {
             </>
           )}
 
+          <Button
+            variant="soft"
+            size="sm"
+            className="!h-11"
+            onClick={async () => {
+              try {
+                const rows = await getInterviewResults(campaignId);
+                if (rows.length === 0) {
+                  showToast("Chưa có ứng viên nào đặt lịch phỏng vấn.");
+                  return;
+                }
+                setExportRows(rows);
+                setExportOpen(true);
+              } catch (err) {
+                showToast(err instanceof Error ? err.message : "Không tải được kết quả PV.");
+              }
+            }}
+            leftIcon={
+              <svg className="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+                <path d="M10 3v9m0 0 3.5-3.5M10 12 6.5 8.5M4 16h12" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            }
+          >
+            Xuất kết quả PV
+          </Button>
           {tab === "results" && (
             <Button
               variant="soft"
@@ -394,6 +471,9 @@ function RecruitmentInterviewsPage() {
                     onReschedule={setRescheduleSlot}
                     onScore={setScoreSlot}
                     onDelete={setDeleteSlotTarget}
+                    onOpenCandidates={(s) =>
+                      navigate(ROUTES.admin.recruitment.interviewSlot(s.id.split("::")[0]))
+                    }
                   />
                 ))}
               </div>
@@ -490,6 +570,17 @@ function RecruitmentInterviewsPage() {
           setSelectedDate(patch.date);
           showToast("Đã cập nhật ca phỏng vấn.");
         }}
+      />
+
+      <ExportDataModal
+        open={exportOpen}
+        onClose={() => setExportOpen(false)}
+        title="Xuất kết quả phỏng vấn toàn đợt"
+        description="Toàn bộ ứng viên đã đặt lịch ở mọi ca — kèm điểm và nhận xét từng người chấm để thảo luận:"
+        columns={EXPORT_COLUMNS}
+        rows={exportRows}
+        filenameBase={`ket_qua_phong_van_${campaignId || "dot"}`}
+        onExported={(n) => showToast(`Đã tải xuống ${n} dòng (CSV — mở bằng Excel).`)}
       />
 
       <ConfirmDialog

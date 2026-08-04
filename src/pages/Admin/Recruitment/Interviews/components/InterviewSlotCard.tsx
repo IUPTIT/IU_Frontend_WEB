@@ -1,4 +1,4 @@
-import { ClipboardCheck, Pencil, Plus, Trash2 } from "lucide-react";
+import { ClipboardCheck, Pencil, Plus, Trash2, Users } from "lucide-react";
 import Icon from "../../../../../components/ui/Icon";
 import type { InterviewSlot } from "../../../../../types/recruitment";
 
@@ -8,6 +8,7 @@ type Props = {
   onReschedule: (slot: InterviewSlot) => void;
   onScore: (slot: InterviewSlot) => void;
   onDelete: (slot: InterviewSlot) => void;
+  onOpenCandidates: (slot: InterviewSlot) => void;
 };
 
 function initials(name: string) {
@@ -15,7 +16,7 @@ function initials(name: string) {
   return ((p[0]?.[0] ?? "") + (p[p.length - 1]?.[0] ?? "")).toUpperCase();
 }
 
-function InterviewSlotCard({ slot, onAssign, onReschedule, onScore, onDelete }: Props) {
+function InterviewSlotCard({ slot, onAssign, onReschedule, onScore, onDelete, onOpenCandidates }: Props) {
   const filled = slot.interviewers.length;
   const need = slot.requiredInterviewers;
   const missing = filled < need;
@@ -101,6 +102,15 @@ function InterviewSlotCard({ slot, onAssign, onReschedule, onScore, onDelete }: 
             {slot.locationOrLink}
           </p>
           <div className="flex gap-1.5">
+            <button
+              type="button"
+              title="Danh sách ứng viên trong ca"
+              aria-label="Danh sách ứng viên trong ca"
+              className="flex h-9 w-9 items-center justify-center rounded-xl text-muted shadow-extruded-sm transition-all duration-300 ease-out hover:text-accent active:shadow-inset-sm focus-visible:ring-2 ring-accent ring-offset-2 ring-offset-background"
+              onClick={() => onOpenCandidates(slot)}
+            >
+              <Icon icon={Users} size={15} />
+            </button>
             <button
               type="button"
               title="Sửa ca"
