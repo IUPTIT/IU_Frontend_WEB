@@ -110,15 +110,18 @@ function InterviewSlotCard({ slot, onAssign, onReschedule, onScore, onDelete }: 
             >
               <Icon icon={Pencil} size={15} />
             </button>
-            <button
-              type="button"
-              title="Chấm điểm"
-              aria-label="Chấm điểm"
-              className="flex h-9 w-9 items-center justify-center rounded-xl text-muted shadow-extruded-sm transition-all duration-300 ease-out hover:text-accent active:shadow-inset-sm focus-visible:ring-2 ring-accent ring-offset-2 ring-offset-background"
-              onClick={() => onScore(slot)}
-            >
-              <Icon icon={ClipboardCheck} size={15} />
-            </button>
+            {/* Chấm điểm là chấm ỨNG VIÊN trong ca — ca trống thì không có gì để chấm */}
+            {slot.applicationId && (
+              <button
+                type="button"
+                title="Chấm điểm ứng viên"
+                aria-label="Chấm điểm ứng viên"
+                className="flex h-9 w-9 items-center justify-center rounded-xl text-muted shadow-extruded-sm transition-all duration-300 ease-out hover:text-accent active:shadow-inset-sm focus-visible:ring-2 ring-accent ring-offset-2 ring-offset-background"
+                onClick={() => onScore(slot)}
+              >
+                <Icon icon={ClipboardCheck} size={15} />
+              </button>
+            )}
             <button
               type="button"
               title="Xoá ca"
