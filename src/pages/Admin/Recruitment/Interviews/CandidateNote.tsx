@@ -8,6 +8,7 @@ import {
   getBookingDetail,
   getInterviewCriteria,
   saveBookingScore,
+  setInterviewDecision,
   type BookingDetail,
 } from "../../../../services/recruitmentService";
 import type { InterviewCriterion } from "../../../../types/recruitment";
@@ -29,6 +30,7 @@ function InterviewCandidateNotePage({ bookingId }: { bookingId: string }) {
   const [note, setNote] = useState("");
   const [attendance, setAttendance] = useState<"present" | "absent">("present");
   const [saving, setSaving] = useState(false);
+  const [deciding, setDeciding] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
@@ -108,6 +110,19 @@ function InterviewCandidateNotePage({ bookingId }: { bookingId: string }) {
     }
   };
 
+  const handleDecide = async (result: "pass" | "fail") => {
+    setDeciding(true);
+    try {
+      await setInterviewDecision(detail.applicationId, result);
+      showToast(result === "pass" ? "Đã đánh dấu ĐẠT phỏng vấn." : "Đã đánh dấu KHÔNG ĐẠT.");
+      await load();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Cập nhật kết quả thất bại.");
+    } finally {
+      setDeciding(false);
+    }
+  };
+
   const avgPreview = (() => {
     const vals = criteria.map((c) => Number.parseFloat(scores[c.id] || ""));
     if (!criteria.length || vals.some((v) => Number.isNaN(v))) return null;
@@ -122,7 +137,7 @@ function InterviewCandidateNotePage({ bookingId }: { bookingId: string }) {
             variant="soft"
             size="sm"
             className="!h-10"
-            onClick={() => navigate(ROUTES.admin.recruitment.interviews)}
+            onClick={() => navigate(ROUTES.admin.recruitment.interviewSlot(detail.slot.slotId))}
             leftIcon={<Icon icon={ArrowLeft} size={15} />}
           >
             Quay lại
@@ -248,9 +263,41 @@ function InterviewCandidateNotePage({ bookingId }: { bookingId: string }) {
               ))}
             </ul>
           )}
-          <p className="text-xs text-muted">
-            Kết luận cuối (trúng tuyển / loại) thực hiện ở trang <b>Kết quả</b> sau khi thảo luận.
-          </p>
+          {/* Kết luận vòng PV — làm sau khi các reviewer đã chấm và thảo luận */}
+          {detail.applicationStatus === "passed_cv" ? (
+            <div className="space-y-2 border-t border-black/5 pt-4">
+              <p className="text-sm font-semibold text-foreground">Kết luận vòng phỏng vấn</p>
+              <div className="flex gap-2">
+                <Button
+                  variant="primary"
+                  size="sm"
+                  className="!h-11 flex-1"
+                  disabled={deciding || detail.reviewerScores.length === 0}
+                  onClick={() => void handleDecide("pass")}
+                >
+                  Đạt phỏng vấn
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="!h-11 flex-1 !text-rose-600"
+                  disabled={deciding || detail.reviewerScores.length === 0}
+                  onClick={() => void handleDecide("fail")}
+                >
+                  Không đạt
+                </Button>
+              </div>
+              <p className="text-xs text-muted">
+                Cần ít nhất 1 đánh giá đã lưu. Không đạt sẽ tự khoá tài khoản + gửi email.
+                Trúng tuyển chính thức chốt ở trang <b>Kết quả</b>.
+              </p>
+            </div>
+          ) : (
+            <p className="text-xs text-muted">
+              Trạng thái hồ sơ: <b>{detail.applicationStatus === "passed_interview" ? "Đã đạt phỏng vấn" : detail.applicationStatus === "failed_interview" ? "Không đạt phỏng vấn" : detail.applicationStatus}</b>
+              {" · "}Kết luận cuối (trúng tuyển / loại) ở trang <b>Kết quả</b>.
+            </p>
+          )}
         </aside>
       </div>
     </>

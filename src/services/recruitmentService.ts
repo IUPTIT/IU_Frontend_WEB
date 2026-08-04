@@ -862,7 +862,7 @@ export type BookingDetail = {
   applicationCode: string;
   applicationStatus: string;
   department: string;
-  slot: { date: string; startTime: string; endTime: string; location: string };
+  slot: { slotId: string; date: string; startTime: string; endTime: string; location: string };
   /** Điểm TB thang 10 + danh sách điểm từng reviewer */
   averageScore: number | null;
   reviewerScores: BookingReviewerScore[];
@@ -874,7 +874,7 @@ export async function getBookingDetail(bookingId: string): Promise<BookingDetail
     booking: {
       _id: string;
       applicationId: BackendBookingApp;
-      slotId: { date: string; startTime: string; endTime: string; location: string };
+      slotId: { _id: string; date: string; startTime: string; endTime: string; location: string };
     };
     summary: {
       average: number;
@@ -899,6 +899,7 @@ export async function getBookingDetail(bookingId: string): Promise<BookingDetail
     applicationStatus: app.status,
     department: preferredDept(app),
     slot: {
+      slotId: booking.slotId._id,
       date: booking.slotId.date.slice(0, 10),
       startTime: booking.slotId.startTime,
       endTime: booking.slotId.endTime,

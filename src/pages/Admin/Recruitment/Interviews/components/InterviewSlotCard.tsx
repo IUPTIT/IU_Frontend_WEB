@@ -1,4 +1,4 @@
-import { ClipboardCheck, Pencil, Plus, Trash2, Users } from "lucide-react";
+import { Pencil, Plus, Trash2, Users } from "lucide-react";
 import Icon from "../../../../../components/ui/Icon";
 import type { InterviewSlot } from "../../../../../types/recruitment";
 
@@ -6,7 +6,6 @@ type Props = {
   slot: InterviewSlot;
   onAssign: (slot: InterviewSlot) => void;
   onReschedule: (slot: InterviewSlot) => void;
-  onScore: (slot: InterviewSlot) => void;
   onDelete: (slot: InterviewSlot) => void;
   onOpenCandidates: (slot: InterviewSlot) => void;
 };
@@ -16,7 +15,7 @@ function initials(name: string) {
   return ((p[0]?.[0] ?? "") + (p[p.length - 1]?.[0] ?? "")).toUpperCase();
 }
 
-function InterviewSlotCard({ slot, onAssign, onReschedule, onScore, onDelete, onOpenCandidates }: Props) {
+function InterviewSlotCard({ slot, onAssign, onReschedule, onDelete, onOpenCandidates }: Props) {
   const filled = slot.interviewers.length;
   const need = slot.requiredInterviewers;
   const missing = filled < need;
@@ -120,18 +119,7 @@ function InterviewSlotCard({ slot, onAssign, onReschedule, onScore, onDelete, on
             >
               <Icon icon={Pencil} size={15} />
             </button>
-            {/* Chấm điểm là chấm ỨNG VIÊN trong ca — ca trống thì không có gì để chấm */}
-            {slot.applicationId && (
-              <button
-                type="button"
-                title="Chấm điểm ứng viên"
-                aria-label="Chấm điểm ứng viên"
-                className="flex h-9 w-9 items-center justify-center rounded-xl text-muted shadow-extruded-sm transition-all duration-300 ease-out hover:text-accent active:shadow-inset-sm focus-visible:ring-2 ring-accent ring-offset-2 ring-offset-background"
-                onClick={() => onScore(slot)}
-              >
-                <Icon icon={ClipboardCheck} size={15} />
-              </button>
-            )}
+            {/* Chấm điểm thực hiện trong trang danh sách ứng viên theo ca (icon Users) */}
             <button
               type="button"
               title="Xoá ca"

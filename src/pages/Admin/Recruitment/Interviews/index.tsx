@@ -5,7 +5,6 @@ import FilterMenu from "../../../../components/ui/FilterMenu";
 import Icon from "../../../../components/ui/Icon";
 import Select from "../../../../components/ui/Select";
 import SendEmailModal from "../../../../components/ui/SendEmailModal";
-import { useAuth } from "../../../../context/useAuth";
 import { usePortalUi } from "../../../../context/usePortalUi";
 import { ROUTES } from "../../../../constants/routes";
 import ExportDataModal, { type ExportColumnDef } from "../../../../components/ui/ExportDataModal";
@@ -13,7 +12,6 @@ import {
   assignInterviewersToSlot,
   createBatchInterviewSlots,
   getCampaigns,
-  getInterviewCriteria,
   getInterviewDatesWithSlots,
   getInterviewSlots,
   getInterviewers,
@@ -22,12 +20,9 @@ import {
   getPassedScreeningApplications,
   notifyInterviewResults,
   rescheduleInterviewSlot,
-  saveInterviewScore,
-  setInterviewDecision,
 } from "../../../../services/recruitmentService";
 import type {
   Application,
-  InterviewCriterion,
   InterviewSlot,
   InterviewerRef,
   RecruitmentCampaign,
@@ -40,7 +35,6 @@ import BatchScheduleModal from "./components/BatchScheduleModal";
 import DaySummaryCard from "./components/DaySummaryCard";
 import ConfirmDialog from "../../../../components/ui/ConfirmDialog";
 import InterviewCalendar from "../../../../components/InterviewCalendar";
-import InterviewScoreModal from "./components/InterviewScoreModal";
 import InterviewSlotCard from "./components/InterviewSlotCard";
 import RescheduleModal from "./components/RescheduleModal";
 
@@ -96,7 +90,6 @@ const EXPORT_COLUMNS: ExportColumnDef<InterviewResultRowUi>[] = [
 ];
 
 function RecruitmentInterviewsPage() {
-  const { user } = useAuth();
   const { navigate } = usePortalUi();
   const [tab, setTab] = useState<TabId>("schedule");
   const [campaigns, setCampaigns] = useState<RecruitmentCampaign[]>([]);
@@ -112,7 +105,6 @@ function RecruitmentInterviewsPage() {
   const [markedDates, setMarkedDates] = useState<Set<string>>(new Set());
   const [candidates, setCandidates] = useState<Application[]>([]);
   const [interviewers, setInterviewers] = useState<InterviewerRef[]>([]);
-  const [criteria, setCriteria] = useState<InterviewCriterion[]>([]);
   const [localSearch, setLocalSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"" | "scheduled" | "missing_interviewers" | "done">("");
   const [draftStatus, setDraftStatus] = useState(statusFilter);
@@ -125,7 +117,6 @@ function RecruitmentInterviewsPage() {
   const [batchOpen, setBatchOpen] = useState(false);
   const [assignSlot, setAssignSlot] = useState<InterviewSlot | null>(null);
   const [rescheduleSlot, setRescheduleSlot] = useState<InterviewSlot | null>(null);
-  const [scoreSlot, setScoreSlot] = useState<InterviewSlot | null>(null);
   const [deleteSlotTarget, setDeleteSlotTarget] = useState<InterviewSlot | null>(null);
   const [deletingSlot, setDeletingSlot] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
@@ -148,7 +139,6 @@ function RecruitmentInterviewsPage() {
       });
     });
     void getInterviewers().then((list) => alive && setInterviewers(list));
-    void getInterviewCriteria().then((list) => alive && setCriteria(list));
     return () => {
       alive = false;
     };
@@ -469,7 +459,6 @@ function RecruitmentInterviewsPage() {
                     slot={slot}
                     onAssign={setAssignSlot}
                     onReschedule={setRescheduleSlot}
-                    onScore={setScoreSlot}
                     onDelete={setDeleteSlotTarget}
                     onOpenCandidates={(s) =>
                       navigate(ROUTES.admin.recruitment.interviewSlot(s.id.split("::")[0]))
@@ -523,8 +512,17 @@ function RecruitmentInterviewsPage() {
                             : "Chờ"}
                       </td>
                       <td className="px-3 py-4 text-center">
-                        <Button variant="soft" size="sm" className="!h-9" onClick={() => setScoreSlot(slot)}>
-                          Nhập điểm / Pass-Fail
+                        <Button
+                          variant="soft"
+                          size="sm"
+                          className="!h-9"
+                          disabled={!slot.bookingId}
+                          onClick={() =>
+                            slot.bookingId &&
+                            navigate(ROUTES.admin.recruitment.interviewNote(slot.bookingId))
+                          }
+                        >
+                          Phỏng vấn & note
                         </Button>
                       </td>
                     </tr>
@@ -608,36 +606,6 @@ function RecruitmentInterviewsPage() {
           }
         }}
         onClose={() => setDeleteSlotTarget(null)}
-      />
-
-      <InterviewScoreModal
-        open={!!scoreSlot}
-        slot={scoreSlot}
-        criteria={criteria}
-        onClose={() => setScoreSlot(null)}
-        onSave={async ({ scores, comment }) => {
-          if (!scoreSlot?.applicationId || !user) return;
-          await saveInterviewScore({
-            slotId: scoreSlot.id,
-            applicationId: scoreSlot.applicationId,
-            interviewerId: user.id,
-            interviewerName: user.name,
-            comment,
-            criteriaScores: criteria.map((c) => ({
-              criteriaId: c.id,
-              criteriaName: c.name,
-              maxScore: c.maxScore,
-              score: Number.parseFloat(scores[c.id] || "0") || 0,
-            })),
-          });
-          showToast("Đã lưu điểm phỏng vấn.");
-        }}
-        onPassFail={async (result) => {
-          if (!scoreSlot?.applicationId) return;
-          await setInterviewDecision(scoreSlot.applicationId, result);
-          await reloadSlots(campaignId);
-          showToast(result === "pass" ? "Đã đánh dấu Đạt vòng PV." : "Đã đánh dấu Không đạt.");
-        }}
       />
 
       <SendEmailModal
