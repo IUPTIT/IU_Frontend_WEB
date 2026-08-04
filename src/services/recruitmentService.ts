@@ -84,7 +84,15 @@ type BackendApplication = {
   answers: { fieldId: string; value: string | string[] }[];
   submittedAt: string | null;
   createdAt: string;
+  /** Điểm TB vòng đơn / phỏng vấn — backend thang 0-100 */
+  cvScore?: number | null;
+  interviewScore?: number | null;
 };
+
+// UI dùng thang 0-10, backend lưu 0-100 — quy đổi tại MỘT chỗ duy nhất
+function toUiScale(score: number | null | undefined): number | undefined {
+  return score != null ? Number((score / 10).toFixed(1)) : undefined;
+}
 
 // ---- Map backend → types admin UI ----
 
@@ -190,6 +198,8 @@ function toApplication(a: BackendApplication): Application {
     screeningResult,
     interviewResult,
     finalResult,
+    totalScore: toUiScale(a.cvScore),
+    interviewScore: toUiScale(a.interviewScore),
     submittedAt: a.submittedAt ?? a.createdAt,
     attachments,
   };
