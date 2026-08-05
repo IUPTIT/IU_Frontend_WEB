@@ -153,6 +153,75 @@ function RandomAssignModal({
   );
 }
 
+// Chi tiết đội: mentor + danh sách thành viên thật (match trainee theo groupId)
+function GroupDetailModal({
+  group,
+  trainees,
+  onClose,
+}: {
+  group: TrainingGroup | null;
+  trainees: Trainee[];
+  onClose: () => void;
+}) {
+  if (!group) return null;
+  const members = trainees.filter((t) => t.groupId === group.id);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6" role="presentation">
+      <button
+        type="button"
+        className="absolute inset-0 bg-foreground/35 backdrop-blur-[2px]"
+        aria-label="Đóng"
+        onClick={onClose}
+      />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="group-detail-title"
+        className="relative z-10 flex max-h-[min(90vh,600px)] w-full max-w-md flex-col overflow-hidden rounded-card bg-background shadow-extruded"
+      >
+        <header className="flex items-start justify-between gap-3 border-b border-black/5 px-5 py-4 sm:px-6">
+          <div>
+            <h2 id="group-detail-title" className="font-display text-xl font-extrabold">
+              {group.name}
+            </h2>
+            <p className="mt-1 text-sm text-muted">
+              {group.specialtyLabel ?? group.departmentName} · Mentor: {group.mentorName ?? "—"}
+            </p>
+          </div>
+          <Button variant="icon" size="sm" aria-label="Đóng" onClick={onClose}>
+            <svg className="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+              <path d="m6 6 8 8M14 6l-8 8" strokeLinecap="round" />
+            </svg>
+          </Button>
+        </header>
+
+        <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-5 sm:px-6">
+          <div className="flex items-center justify-between">
+            <span className="neu-field-label !mb-0">Thành viên</span>
+            <span className="text-xs text-muted">{members.length}</span>
+          </div>
+          <ul className="space-y-1 rounded-2xl bg-background p-2 shadow-inset-sm">
+            {members.map((t) => (
+              <li key={t.id} className="flex items-center gap-3 rounded-xl px-3 py-2.5">
+                <Avatar name={t.fullName} size="sm" />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-medium">{t.fullName}</span>
+                  <span className="block truncate text-xs text-muted">{t.email}</span>
+                </span>
+                <span className="text-xs text-muted">{t.departmentName}</span>
+              </li>
+            ))}
+            {members.length === 0 && (
+              <li className="px-3 py-8 text-center text-sm text-muted">Đội chưa có thành viên.</li>
+            )}
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function TrainingTeamsPage() {
   const { search } = usePortalUi();
   const [groups, setGroups] = useState<TrainingGroup[]>([]);
@@ -162,6 +231,7 @@ function TrainingTeamsPage() {
   const [loading, setLoading] = useState(true);
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [mentorModalOpen, setMentorModalOpen] = useState(false);
+  const [detailGroup, setDetailGroup] = useState<TrainingGroup | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
@@ -279,19 +349,27 @@ function TrainingTeamsPage() {
                   <p className="text-[10px] uppercase tracking-wide text-muted">Thành viên</p>
                   <div className="mt-1 flex items-center gap-2">
                     <div className="flex -space-x-2">
-                      {g.memberIds.slice(0, 4).map((id, i) => (
-                        <Avatar
-                          key={id}
-                          name={String.fromCharCode(65 + i)}
-                          size="sm"
-                          className="ring-2 ring-background"
-                        />
-                      ))}
+                      {trainees
+                        .filter((t) => t.groupId === g.id)
+                        .slice(0, 4)
+                        .map((t) => (
+                          <Avatar
+                            key={t.id}
+                            name={t.fullName}
+                            size="sm"
+                            className="ring-2 ring-background"
+                          />
+                        ))}
                     </div>
                     <span className="text-sm font-medium">{g.memberIds.length}</span>
                   </div>
                 </div>
-                <Button variant="icon" size="sm" aria-label={`Chi tiết ${g.name}`}>
+                <Button
+                  variant="icon"
+                  size="sm"
+                  aria-label={`Chi tiết ${g.name}`}
+                  onClick={() => setDetailGroup(g)}
+                >
                   <Icon icon={ChevronRight} size={16} />
                 </Button>
               </div>
@@ -315,6 +393,12 @@ function TrainingTeamsPage() {
         open={mentorModalOpen}
         onClose={() => setMentorModalOpen(false)}
         onChanged={() => void load()}
+      />
+
+      <GroupDetailModal
+        group={detailGroup}
+        trainees={trainees}
+        onClose={() => setDetailGroup(null)}
       />
 
       <RandomAssignModal
