@@ -397,7 +397,9 @@ function CreateTaskForm({
 function MentorTasksPage() {
   const { user } = useAuth();
   const canManage =
-    user?.isMentor === true || user?.role === "leader" || user?.role === "bcn";
+    user?.isMentor === true ||
+    user?.role === "leader" ||
+    user?.role === "admin";
 
   const [tasks, setTasks] = useState<MentorTask[]>([]);
   const [groups, setGroups] = useState<TrainingGroup[]>([]);
@@ -417,9 +419,9 @@ function MentorTasksPage() {
       getTrainingGroups(),
       getMyTeamTrainees(),
     ]);
-    // Leader/mentor: chỉ nhóm mình dẫn; BCN xem tất cả
+    // Leader/mentor: chỉ nhóm mình dẫn; BCN (admin) xem tất cả
     const myGroups =
-      user?.role === "bcn" ? g : g.filter((x) => x.mentorId === user?.id);
+      user?.role === "admin" ? g : g.filter((x) => x.mentorId === user?.id);
     return { t, g: myGroups, tt };
   }, [user?.id, user?.role]);
 
