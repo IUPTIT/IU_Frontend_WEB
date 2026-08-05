@@ -9,15 +9,11 @@ import AdminRecruitmentInterviewsPage from "../pages/Admin/Recruitment/Interview
 import AdminInterviewSlotDetailPage from "../pages/Admin/Recruitment/Interviews/SlotDetail";
 import AdminInterviewNotePage from "../pages/Admin/Recruitment/Interviews/CandidateNote";
 import AdminRecruitmentResultsPage from "../pages/Admin/Recruitment/Results";
-import AdminMembersPage from "../pages/Admin/Members";
-import AdminClubTrainingPage from "../pages/Admin/ClubTraining";
 import AdminTrainingTeamsPage from "../pages/Admin/Training/Teams";
 import AdminTrainingProgramsPage from "../pages/Admin/Training/Programs";
 import AdminTrainingTraineesPage from "../pages/Admin/Training/Trainees";
 import AdminTrainingReviewPage from "../pages/Admin/Training/Review";
 import AdminSettingsPage from "../pages/Admin/Settings";
-import AdminEmailConfigPage from "../pages/Admin/Settings/Email";
-import AdminPermissionsPage from "../pages/Admin/Permissions";
 import AdminHelpPage from "../pages/Admin/Help";
 
 import LeaderOverviewPage from "../pages/Leader";
@@ -40,6 +36,18 @@ import MemberTrainingProgressPage from "../pages/Member/Training/Progress";
 import MemberSettingsPage from "../pages/Member/Settings";
 import MemberHelpPage from "../pages/Member/Help";
 
+/** Trang mock / chưa có API — chặn truy cập sâu URL */
+function ComingSoonPage({ title }: { title: string }) {
+  return (
+    <section className="neu-card !p-10 text-center space-y-2">
+      <h1 className="font-display text-2xl font-extrabold">{title}</h1>
+      <p className="text-sm text-muted">
+        Module này chưa kết nối API thật — tạm khoá cho đến khi backend sẵn sàng.
+      </p>
+    </section>
+  );
+}
+
 /** Map path → page component theo menu 3 role */
 const PAGE_MAP: Record<string, ReactNode> = {
   [ROUTES.admin.overview]: <AdminOverviewPage />,
@@ -47,15 +55,15 @@ const PAGE_MAP: Record<string, ReactNode> = {
   [ROUTES.admin.recruitment.applications]: <AdminRecruitmentApplicationsPage />,
   [ROUTES.admin.recruitment.interviews]: <AdminRecruitmentInterviewsPage />,
   [ROUTES.admin.recruitment.results]: <AdminRecruitmentResultsPage />,
-  [ROUTES.admin.members]: <AdminMembersPage />,
-  [ROUTES.admin.clubTraining]: <AdminClubTrainingPage />,
+  [ROUTES.admin.members]: <ComingSoonPage title="Quản lý thành viên" />,
+  [ROUTES.admin.clubTraining]: <ComingSoonPage title="Đào tạo CLB" />,
   [ROUTES.admin.training.trainees]: <AdminTrainingTraineesPage />,
   [ROUTES.admin.training.programs]: <AdminTrainingProgramsPage />,
   [ROUTES.admin.training.teams]: <AdminTrainingTeamsPage />,
   [ROUTES.admin.training.review]: <AdminTrainingReviewPage />,
   [ROUTES.admin.settings]: <AdminSettingsPage />,
-  [ROUTES.admin.email]: <AdminEmailConfigPage />,
-  [ROUTES.admin.permissions]: <AdminPermissionsPage />,
+  [ROUTES.admin.email]: <ComingSoonPage title="Email Configuration" />,
+  [ROUTES.admin.permissions]: <ComingSoonPage title="Phân quyền" />,
   [ROUTES.admin.help]: <AdminHelpPage />,
 
   [ROUTES.leader.overview]: <LeaderOverviewPage />,

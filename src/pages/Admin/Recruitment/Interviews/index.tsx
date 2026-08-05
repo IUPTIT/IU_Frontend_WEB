@@ -672,7 +672,10 @@ function RecruitmentInterviewsPage() {
           await reloadSlots(campaignId);
           setSelectedDate(payload.date);
           showToast(
-            `Đã tạo ${created.length} ca · ${payload.interviewerIds.length} người PV phụ trách mỗi ca.`,
+            `Đã tạo ${created.length} ca` +
+              (payload.interviewerIds.length
+                ? ` · ${payload.interviewerIds.length} người PV mỗi ca.`
+                : " · chưa gán người PV (phân công sau trên từng ca)."),
           );
         }}
       />

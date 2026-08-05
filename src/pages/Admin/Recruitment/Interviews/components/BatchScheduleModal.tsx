@@ -76,10 +76,7 @@ function BatchScheduleModal({
       setError("Chọn ít nhất một khung giờ.");
       return;
     }
-    if (selectedInterviewers.length === 0) {
-      setError("Chọn ít nhất một người phỏng vấn cho ca.");
-      return;
-    }
+    // Panel có thể để trống — phân công người PV sau trên card ca
     const safeDuration = Math.min(120, Math.max(15, duration || 45));
     const safeCapacity = Math.min(20, Math.max(1, capacity || 1));
     setDuration(safeDuration);
@@ -218,10 +215,11 @@ function BatchScheduleModal({
 
           <div className="space-y-1.5">
             <span className="neu-field-label">
-              Người phỏng vấn phụ trách ca * ({selectedInterviewers.length} đã chọn)
+              Người phỏng vấn phụ trách ca ({selectedInterviewers.length} đã chọn)
             </span>
             <p className="text-xs text-muted">
-              Có thể chọn nhiều người — họ cùng phụ trách hết số ứng viên trong ca.
+              Có thể bỏ trống và phân công sau. Ứng viên chỉ đặt được ca đã có ≥1
+              người PV.
             </p>
             <div className="max-h-44 space-y-2 overflow-y-auto rounded-2xl bg-background p-2 shadow-inset-sm">
               {interviewers.length === 0 ? (

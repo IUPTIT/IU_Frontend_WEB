@@ -16,6 +16,8 @@ export type AuthUser = {
   sourceApplicationId?: string;
   /** Member được đẩy quyền mentor dẫn team vòng training */
   isMentor?: boolean;
+  /** Ch.2.4: Đang training | Chính thức (chỉ khi role=member) */
+  memberStatus?: "training" | "official" | null;
 };
 
 // Backend dùng role "bcn" cho Ban Chủ nhiệm — frontend gọi là "admin"
@@ -30,6 +32,7 @@ type BackendUser = {
   requirePasswordChange?: boolean;
   sourceApplicationId?: string | null;
   isMentor?: boolean;
+  memberStatus?: "training" | "official" | null;
 };
 
 function toAuthUser(u: BackendUser): AuthUser {
@@ -42,6 +45,7 @@ function toAuthUser(u: BackendUser): AuthUser {
     requirePasswordChange: u.requirePasswordChange ?? false,
     sourceApplicationId: u.sourceApplicationId ?? undefined,
     isMentor: u.isMentor ?? false,
+    memberStatus: u.memberStatus ?? null,
   };
 }
 

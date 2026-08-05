@@ -126,8 +126,8 @@ function InterviewCandidateNotePage({ bookingId }: { bookingId: string }) {
         editAsUserId && isBcn
           ? "Đã cập nhật điểm hộ reviewer."
           : attendance === "absent"
-            ? "Đã đánh dấu Vắng mặt. BCN cần xác nhận Fail ở cột bên phải (không tự Fail)."
-            : "Đã lưu điểm & ghi chú.",
+            ? "Đã đánh dấu Vắng mặt. Booking chỉ đóng khi đủ panel chấm — BCN xác nhận Fail riêng."
+            : "Đã lưu điểm & ghi chú. Trạng thái ca hoàn tất khi đủ người PV trong panel đã chấm.",
       );
       setEditAsUserId(null);
       setScores({});
