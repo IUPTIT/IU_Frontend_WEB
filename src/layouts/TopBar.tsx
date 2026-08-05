@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../context/useAuth";
 import { usePortalUi } from "../context/usePortalUi";
 import { usePreferences } from "../context/usePreferences";
@@ -28,6 +28,34 @@ function settingsPath(role: Role) {
   return ROUTES.admin.settings;
 }
 
+/** Map link BE sang portal đúng role hiện tại */
+function resolveNotifLink(
+  link: string | null,
+  role: Role,
+  isMentor?: boolean,
+): string | null {
+  if (!link) return null;
+  if (role === "leader") {
+    if (
+      link.startsWith("/member/training") ||
+      link.startsWith("/member/mentor")
+    ) {
+      return ROUTES.leader.training.groups;
+    }
+  }
+  if (role === "admin" && link.startsWith("/member/training")) {
+    return ROUTES.admin.training.teams;
+  }
+  if (
+    role === "member" &&
+    isMentor &&
+    link.startsWith("/member/training/progress")
+  ) {
+    return ROUTES.member.mentorTasks;
+  }
+  return link;
+}
+
 function TopBar({
   search,
   onSearchChange,
@@ -41,12 +69,13 @@ function TopBar({
   const [openNotif, setOpenNotif] = useState(false);
   const [items, setItems] = useState<AppNotification[]>([]);
   const [unread, setUnread] = useState(0);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   const refreshNotifs = () => {
     void listNotifications()
       .then((d) => {
-        setItems(d.items);
-        setUnread(d.unread);
+        setItems(d.items ?? []);
+        setUnread(d.unread ?? 0);
       })
       .catch(() => {
         setItems([]);
@@ -57,9 +86,32 @@ function TopBar({
   useEffect(() => {
     if (!user) return;
     refreshNotifs();
-    const t = window.setInterval(refreshNotifs, 60_000);
-    return () => window.clearInterval(t);
+    const t = window.setInterval(refreshNotifs, 20_000);
+    const onFocus = () => refreshNotifs();
+    window.addEventListener("focus", onFocus);
+    return () => {
+      window.clearInterval(t);
+      window.removeEventListener("focus", onFocus);
+    };
   }, [user]);
+
+  useEffect(() => {
+    if (!openNotif) return;
+    const onDown = (e: MouseEvent) => {
+      if (!panelRef.current?.contains(e.target as Node)) {
+        setOpenNotif(false);
+      }
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpenNotif(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [openNotif]);
 
   return (
     <header className="sticky top-4 sm:top-6 z-10">
@@ -75,7 +127,10 @@ function TopBar({
         </button>
 
         <label className="relative flex-1 max-w-xl">
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-placeholder" aria-hidden>
+          <span
+            className="absolute left-4 top-1/2 -translate-y-1/2 text-placeholder"
+            aria-hidden
+          >
             <Icon icon={Search} size={20} />
           </span>
           <input
@@ -90,13 +145,17 @@ function TopBar({
           <button
             type="button"
             className="neu-btn h-12 w-12 !px-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-            aria-label={theme === "dark" ? "Chuyển sang giao diện sáng" : "Chuyển sang giao diện tối"}
+            aria-label={
+              theme === "dark"
+                ? "Chuyển sang giao diện sáng"
+                : "Chuyển sang giao diện tối"
+            }
             title={theme === "dark" ? "Chế độ sáng" : "Chế độ tối"}
             onClick={toggleTheme}
           >
             <Icon icon={theme === "dark" ? Sun : Moon} size={20} />
           </button>
-          <div className="relative">
+          <div className="relative" ref={panelRef}>
             <button
               type="button"
               className="neu-btn relative h-12 w-12 !px-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
@@ -117,18 +176,26 @@ function TopBar({
             {openNotif && (
               <div className="absolute right-0 top-14 z-30 w-80 max-w-[calc(100vw-2rem)] rounded-2xl bg-background p-3 shadow-extruded ring-1 ring-black/5">
                 <div className="mb-2 flex items-center justify-between gap-2 px-1">
-                  <p className="text-sm font-semibold">Thông báo</p>
-                  <button
-                    type="button"
-                    className="text-xs text-accent hover:underline"
-                    onClick={() => void markAllNotificationsRead().then(refreshNotifs)}
-                  >
-                    Đánh dấu đã đọc
-                  </button>
+                  <p className="text-sm font-semibold">
+                    Thông báo{unread > 0 ? ` (${unread})` : ""}
+                  </p>
+                  {items.length > 0 && (
+                    <button
+                      type="button"
+                      className="text-xs text-accent hover:underline"
+                      onClick={() =>
+                        void markAllNotificationsRead().then(refreshNotifs)
+                      }
+                    >
+                      Đánh dấu đã đọc
+                    </button>
+                  )}
                 </div>
                 <ul className="max-h-80 space-y-2 overflow-y-auto">
                   {items.length === 0 ? (
-                    <li className="px-2 py-6 text-center text-sm text-muted">Chưa có thông báo</li>
+                    <li className="px-2 py-6 text-center text-sm text-muted">
+                      Chưa có thông báo
+                    </li>
                   ) : (
                     items.map((n) => (
                       <li key={n._id}>
@@ -140,13 +207,24 @@ function TopBar({
                           onClick={() => {
                             void markNotificationRead(n._id).then(() => {
                               refreshNotifs();
-                              if (n.link) navigate(n.link);
+                              const path = resolveNotifLink(
+                                n.link,
+                                role,
+                                user?.isMentor,
+                              );
+                              if (path) navigate(path);
                               setOpenNotif(false);
                             });
                           }}
                         >
-                          <p className="font-semibold text-foreground">{n.title}</p>
-                          {n.body && <p className="mt-0.5 text-xs text-muted line-clamp-2">{n.body}</p>}
+                          <p className="font-semibold text-foreground">
+                            {n.title}
+                          </p>
+                          {n.body && (
+                            <p className="mt-0.5 text-xs text-muted line-clamp-2">
+                              {n.body}
+                            </p>
+                          )}
                         </button>
                       </li>
                     ))
@@ -162,7 +240,12 @@ function TopBar({
             onClick={() => navigate(settingsPath(role))}
           >
             {user ? (
-              <Avatar name={user.name} src={user.avatarDataUrl} size="md" className="!h-full !w-full !rounded-none" />
+              <Avatar
+                name={user.name}
+                src={user.avatarDataUrl}
+                size="md"
+                className="!h-full !w-full !rounded-none"
+              />
             ) : (
               <span className="text-xs font-bold text-accent">?</span>
             )}
