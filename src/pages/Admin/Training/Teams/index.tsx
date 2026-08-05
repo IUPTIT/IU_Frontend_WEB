@@ -1,15 +1,13 @@
-﻿import { useCallback, useEffect, useMemo, useState } from "react";
-import { Plus, ChevronRight, Volume2 } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { ChevronRight, Shuffle, Volume2 } from "lucide-react";
 import Button from "../../../../components/ui/Button";
 import Badge from "../../../../components/ui/Badge";
 import Icon from "../../../../components/ui/Icon";
 import Avatar from "../../../../components/ui/Avatar";
-import Select from "../../../../components/ui/Select";
 import { usePortalUi } from "../../../../context/usePortalUi";
 import MentorManageModal from "./components/MentorManageModal";
 import {
   autoAssignTeams,
-  createTrainingGroup,
   getMentors,
   getTrainees,
   getTrainingGroups,
@@ -18,110 +16,41 @@ import {
 } from "../../../../services/trainingService";
 import type { Trainee, TrainingGroup, TrainingMentor, TrainingProgram } from "../../../../types/training";
 
-// Fallback khi chưa có trainee nào — bình thường danh sách ban suy từ trainee thực tế
-const DEFAULT_DEPTS: { id: string; name: string }[] = [
-  { id: "Ban Chuyên môn", name: "Ban Chuyên môn" },
-  { id: "Ban Truyền thông", name: "Ban Truyền thông" },
-  { id: "Ban Nhân sự", name: "Ban Nhân sự" },
-];
-
-function CreateGroupDrawer({
+// Chia đội NGẪU NHIÊN: hiển thị mentor & tân binh chưa có đội 2 bên, 1 nút random —
+// backend trộn Fisher–Yates rồi chia round-robin, không chọn tay để đảm bảo khách quan
+function RandomAssignModal({
   open,
   onClose,
   programs,
   mentors,
   trainees,
-  onSaved,
+  onAssigned,
 }: {
   open: boolean;
   onClose: () => void;
   programs: TrainingProgram[];
   mentors: TrainingMentor[];
   trainees: Trainee[];
-  onSaved: () => void;
+  onAssigned: (msg: string) => void;
 }) {
-  const [name, setName] = useState("Team Alpha");
-  // Ban suy từ trainee thực tế (tên ban = id, đồng bộ module tuyển)
-  const depts = useMemo(() => {
-    const unique = [...new Set(trainees.map((t) => t.departmentName))];
-    return unique.length ? unique.map((n) => ({ id: n, name: n })) : DEFAULT_DEPTS;
-  }, [trainees]);
-  const [deptId, setDeptId] = useState("");
-  const [mentorId, setMentorId] = useState("");
-  const [programId, setProgramId] = useState("");
-  const [memberIds, setMemberIds] = useState<string[]>([]);
-  const [q, setQ] = useState("");
-  const [saving, setSaving] = useState(false);
+  const [assigning, setAssigning] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Reset form mỗi lần mở modal (adjust state during render)
-  const [prevOpen, setPrevOpen] = useState(open);
-  if (open !== prevOpen) {
-    setPrevOpen(open);
-    if (open) {
-      setName("Team Alpha");
-      setDeptId(depts[0]?.id ?? "");
-      setMentorId(mentors[0]?.id ?? "");
-      setProgramId(programs[0]?.id ?? "");
-      setMemberIds([]);
-      setQ("");
-      setError(null);
-    }
-  }
-
-  // Mentor không gắn ban cụ thể (member/leader nào cũng nhận team được)
-  const deptMentors = mentors;
-  const unassigned = trainees.filter(
-    (t) => t.departmentId === deptId && (!t.groupId || memberIds.includes(t.id)),
-  );
-  const filteredMembers = unassigned.filter((t) => {
-    const s = q.trim().toLowerCase();
-    if (!s) return true;
-    return t.fullName.toLowerCase().includes(s) || t.email.toLowerCase().includes(s);
-  });
-
-  const mentor = mentors.find((m) => m.id === mentorId);
-  const dept = depts.find((d) => d.id === deptId);
+  const unassigned = trainees.filter((t) => !t.groupId && t.status !== "removed");
 
   if (!open) return null;
 
-  const toggleMember = (id: string) => {
-    setMemberIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
-  };
-
-  const handleSave = async () => {
-    if (!name.trim()) {
-      setError("Tên nhóm là bắt buộc.");
-      return;
-    }
-    if (!mentorId) {
-      setError("Chọn mentor phụ trách.");
-      return;
-    }
-    if (!programId && !programs[0]?.id) {
-      setError("Chưa có lộ trình đào tạo — tạo lộ trình trước khi chia đội.");
-      return;
-    }
-    if (memberIds.length === 0) {
-      setError("Chọn ít nhất một tân binh vào đội.");
-      return;
-    }
-    setSaving(true);
+  const handleAssign = async () => {
+    setError(null);
+    setAssigning(true);
     try {
-      await createTrainingGroup({
-        name: name.trim(),
-        programId: programId || programs[0].id,
-        departmentId: deptId,
-        departmentName: dept?.name ?? deptId,
-        specialtyLabel: dept?.name ?? "",
-        mentorId,
-        mentorName: mentor?.name,
-        memberIds,
-      });
-      onSaved();
+      const res = await autoAssignTeams(programs[0]?.id);
+      onAssigned(`Đã random chia ${res.assigned} tân binh cho ${res.mentors} mentor.`);
       onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Chia đội thất bại — thử lại.");
     } finally {
-      setSaving(false);
+      setAssigning(false);
     }
   };
 
@@ -136,15 +65,17 @@ function CreateGroupDrawer({
       <div
         role="dialog"
         aria-modal="true"
-        aria-labelledby="create-group-title"
-        className="relative z-10 flex max-h-[min(90vh,680px)] w-full max-w-xl flex-col overflow-hidden rounded-card bg-background shadow-extruded"
+        aria-labelledby="random-assign-title"
+        className="relative z-10 flex max-h-[min(90vh,680px)] w-full max-w-2xl flex-col overflow-hidden rounded-card bg-background shadow-extruded"
       >
         <header className="flex items-start justify-between gap-3 border-b border-black/5 px-5 py-4 sm:px-6">
           <div>
-            <h2 id="create-group-title" className="font-display text-xl font-extrabold">
-              Chia Đội Mới
+            <h2 id="random-assign-title" className="font-display text-xl font-extrabold">
+              Chia Đội Ngẫu Nhiên
             </h2>
-            <p className="mt-1 text-sm text-muted">Thiết lập nhóm training và chọn tân binh.</p>
+            <p className="mt-1 text-sm text-muted">
+              Tân binh được trộn random và chia đều cho các mentor — không chọn tay.
+            </p>
           </div>
           <Button variant="icon" size="sm" aria-label="Đóng" onClick={onClose}>
             <svg className="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
@@ -153,102 +84,68 @@ function CreateGroupDrawer({
           </Button>
         </header>
 
-        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto p-5 sm:px-6">
-          <label className="block space-y-1.5">
-            <span className="neu-field-label">Tên nhóm</span>
-            <input className="neu-input !h-11" value={name} onChange={(e) => setName(e.target.value)} />
-          </label>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <span className="neu-field-label">Ban chuyên môn</span>
-              <Select
-                width="full"
-                value={deptId}
-                options={depts.map((d) => ({ value: d.id, label: d.name }))}
-                onChange={(id) => {
-                  setDeptId(id);
-                  setMemberIds([]);
-                }}
-              />
-            </div>
-            <div>
-              <span className="neu-field-label">Mentor phụ trách</span>
-              <Select
-                width="full"
-                value={mentorId}
-                options={deptMentors.map((m) => ({ value: m.id, label: m.name }))}
-                onChange={setMentorId}
-                placeholder="Chọn mentor"
-              />
-            </div>
-          </div>
-
-          {programs.length > 1 && (
-            <div>
-              <span className="neu-field-label">Lộ trình</span>
-              <Select
-                width="full"
-                value={programId}
-                options={programs.map((p) => ({ value: p.id, label: p.name }))}
-                onChange={setProgramId}
-              />
-            </div>
-          )}
-
-          <div className="space-y-2">
+        <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 overflow-y-auto p-5 sm:grid-cols-2 sm:px-6">
+          <section className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="neu-field-label !mb-0">Chọn thành viên</span>
-              <span className="text-xs text-muted">{memberIds.length} đã chọn</span>
+              <span className="neu-field-label !mb-0">Mentor</span>
+              <span className="text-xs text-muted">{mentors.length}</span>
             </div>
-            <input
-              className="neu-input !h-10 text-sm"
-              placeholder="Tìm tân binh..."
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-            />
-            <ul className="max-h-48 space-y-1 overflow-y-auto rounded-2xl bg-background p-2 shadow-inset-sm">
-              {filteredMembers.map((t) => (
-                <li key={t.id}>
-                  <label className="flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-accent/8">
-                    <Avatar name={t.fullName} size="sm" />
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-sm font-medium">{t.fullName}</span>
-                      <span className="text-xs text-muted">{t.cohortLabel ?? t.departmentName}</span>
-                    </span>
-                    <input
-                      type="checkbox"
-                      className="accent-accent"
-                      checked={memberIds.includes(t.id)}
-                      onChange={() => toggleMember(t.id)}
-                    />
-                  </label>
+            <ul className="max-h-72 space-y-1 overflow-y-auto rounded-2xl bg-background p-2 shadow-inset-sm">
+              {mentors.map((m) => (
+                <li key={m.id} className="flex items-center gap-3 rounded-xl px-3 py-2.5">
+                  <Avatar name={m.name} size="sm" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-medium">{m.name}</span>
+                    <span className="text-xs text-muted">{m.roleLabel}</span>
+                  </span>
                 </li>
               ))}
-              {filteredMembers.length === 0 && (
-                <li className="px-3 py-8 text-center text-sm text-muted">Không có tân binh phù hợp.</li>
+              {mentors.length === 0 && (
+                <li className="px-3 py-8 text-center text-sm text-muted">
+                  Chưa có mentor — đẩy quyền mentor cho member trước.
+                </li>
               )}
             </ul>
-          </div>
+          </section>
 
-          <div className="rounded-2xl bg-accent/8 p-4 space-y-2 shadow-inset-sm">
-            <p className="font-bold text-accent">{name || "Nhóm mới"}</p>
-            <p className="text-xs text-muted">
-              <span className="inline-flex items-center gap-1.5">
-                {dept?.name ?? "—"} · Mentor: {mentor?.name ?? "—"}
-              </span>            </p>
-            <p className="text-xs text-muted">Thành viên: {memberIds.length}</p>
-          </div>
+          <section className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="neu-field-label !mb-0">Tân binh chưa có đội</span>
+              <span className="text-xs text-muted">{unassigned.length}</span>
+            </div>
+            <ul className="max-h-72 space-y-1 overflow-y-auto rounded-2xl bg-background p-2 shadow-inset-sm">
+              {unassigned.map((t) => (
+                <li key={t.id} className="flex items-center gap-3 rounded-xl px-3 py-2.5">
+                  <Avatar name={t.fullName} size="sm" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-medium">{t.fullName}</span>
+                    <span className="text-xs text-muted">{t.cohortLabel ?? t.departmentName}</span>
+                  </span>
+                </li>
+              ))}
+              {unassigned.length === 0 && (
+                <li className="px-3 py-8 text-center text-sm text-muted">
+                  Tất cả tân binh đã có đội.
+                </li>
+              )}
+            </ul>
+          </section>
 
-          {error && <p className="text-sm text-rose-500">{error}</p>}
+          {error && <p className="text-sm text-rose-500 sm:col-span-2">{error}</p>}
         </div>
 
         <footer className="flex gap-3 border-t border-black/5 px-5 py-4 sm:px-6">
           <Button variant="secondary" className="flex-1" onClick={onClose}>
             Hủy
           </Button>
-          <Button variant="primary" className="flex-1" disabled={saving} onClick={() => void handleSave()}>
-            Lưu Nhóm
+          <Button
+            variant="primary"
+            className="flex-1"
+            disabled={assigning || mentors.length === 0 || unassigned.length === 0}
+            onClick={() => void handleAssign()}
+            leftIcon={<Icon icon={Shuffle} size={16} />}
+          >
+            {assigning ? "Đang chia..." : "Chia đội random"}
           </Button>
         </footer>
       </div>
@@ -263,9 +160,8 @@ function TrainingTeamsPage() {
   const [mentors, setMentors] = useState<TrainingMentor[]>([]);
   const [trainees, setTrainees] = useState<Trainee[]>([]);
   const [loading, setLoading] = useState(true);
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [mentorModalOpen, setMentorModalOpen] = useState(false);
-  const [autoAssigning, setAutoAssigning] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
@@ -332,28 +228,6 @@ function TrainingTeamsPage() {
             variant="secondary"
             size="sm"
             className="!h-11"
-            disabled={autoAssigning}
-            onClick={async () => {
-              setAutoAssigning(true);
-              try {
-                const res = await autoAssignTeams(programs[0]?.id);
-                showToast(
-                  `Đã random chia ${res.assigned} tân binh cho ${res.mentors} mentor.`,
-                );
-                await load();
-              } catch (err) {
-                showToast(err instanceof Error ? err.message : "Chia team thất bại.");
-              } finally {
-                setAutoAssigning(false);
-              }
-            }}
-          >
-            {autoAssigning ? "Đang chia..." : "Chia team tự động"}
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            className="!h-11"
             onClick={async () => {
               const res = await notifyTrainingGroups(groups.map((g) => g.id));
               showToast(`Đã gửi thông báo tới ${res.sent} đội.`);
@@ -366,10 +240,10 @@ function TrainingTeamsPage() {
             variant="primary"
             size="sm"
             className="!h-11"
-            onClick={() => setDrawerOpen(true)}
-            leftIcon={<Icon icon={Plus} size={16} />}
+            onClick={() => setAssignModalOpen(true)}
+            leftIcon={<Icon icon={Shuffle} size={16} />}
           >
-            Chia đội mới
+            Chia đội random
           </Button>
         </div>
       </section>
@@ -426,13 +300,13 @@ function TrainingTeamsPage() {
 
           <button
             type="button"
-            onClick={() => setDrawerOpen(true)}
+            onClick={() => setAssignModalOpen(true)}
             className="flex min-h-[220px] flex-col items-center justify-center gap-3 rounded-card border-2 border-dashed border-accent/30 text-accent hover:bg-accent/5 transition-colors duration-200"
           >
             <span className="flex h-14 w-14 items-center justify-center rounded-full bg-accent/10">
-              <Icon icon={Plus} size={28} />
+              <Icon icon={Shuffle} size={28} />
             </span>
-            <span className="font-semibold">Tạo đội mới</span>
+            <span className="font-semibold">Chia đội random</span>
           </button>
         </div>
       )}
@@ -443,14 +317,14 @@ function TrainingTeamsPage() {
         onChanged={() => void load()}
       />
 
-      <CreateGroupDrawer
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
+      <RandomAssignModal
+        open={assignModalOpen}
+        onClose={() => setAssignModalOpen(false)}
         programs={programs}
         mentors={mentors}
         trainees={trainees}
-        onSaved={() => {
-          showToast("Đã lưu nhóm training.");
+        onAssigned={(msg) => {
+          showToast(msg);
           void load();
         }}
       />
