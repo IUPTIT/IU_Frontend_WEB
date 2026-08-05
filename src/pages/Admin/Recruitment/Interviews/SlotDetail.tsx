@@ -3,6 +3,7 @@ import { ArrowLeft, ClipboardCheck } from "lucide-react";
 import Button from "../../../../components/ui/Button";
 import Icon from "../../../../components/ui/Icon";
 import { ROUTES } from "../../../../constants/routes";
+import { useAuth } from "../../../../context/useAuth";
 import { usePortalUi } from "../../../../context/usePortalUi";
 import {
   getSlotCandidates,
@@ -26,6 +27,11 @@ function statusBadgeClass(status: SlotCandidate["bookingStatus"]) {
 
 /** Bảng tất cả ứng viên đã đặt lịch trong 1 ca — bấm vào ứng viên để mở trang note PV */
 function InterviewSlotDetailPage({ slotId }: { slotId: string }) {
+  const { user } = useAuth();
+  const routes =
+    user?.role === "leader"
+      ? ROUTES.leader.recruitment
+      : ROUTES.admin.recruitment;
   const { navigate } = usePortalUi();
   const [slot, setSlot] = useState<SlotInfo | null>(null);
   const [candidates, setCandidates] = useState<SlotCandidate[]>([]);
@@ -69,7 +75,7 @@ function InterviewSlotDetailPage({ slotId }: { slotId: string }) {
           variant="soft"
           size="sm"
           className="!h-10"
-          onClick={() => navigate(ROUTES.admin.recruitment.interviews)}
+          onClick={() => navigate(routes.interviews)}
           leftIcon={<Icon icon={ArrowLeft} size={15} />}
         >
           Về lịch phỏng vấn
@@ -118,9 +124,7 @@ function InterviewSlotDetailPage({ slotId }: { slotId: string }) {
                   <tr
                     key={c.bookingId}
                     className="cursor-pointer transition-colors hover:bg-accent/[0.06]"
-                    onClick={() =>
-                      navigate(ROUTES.admin.recruitment.interviewNote(c.bookingId))
-                    }
+                    onClick={() => navigate(routes.interviewNote(c.bookingId))}
                   >
                     <td className="px-4 py-4 text-sm font-semibold text-accent">
                       {c.applicationCode}

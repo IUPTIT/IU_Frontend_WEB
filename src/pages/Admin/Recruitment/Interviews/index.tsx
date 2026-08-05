@@ -343,7 +343,7 @@ function RecruitmentInterviewsPage() {
                         location: row.location,
                         meeting_link: row.location.startsWith("http")
                           ? row.location
-                          : "https://meet.google.com/iu-club",
+                          : row.location,
                       }),
                     ),
                   );
@@ -406,7 +406,7 @@ function RecruitmentInterviewsPage() {
                       location: row.location,
                       meeting_link: row.location.startsWith("http")
                         ? row.location
-                        : "https://meet.google.com/iu-club",
+                        : row.location,
                     }),
                   ),
                 );

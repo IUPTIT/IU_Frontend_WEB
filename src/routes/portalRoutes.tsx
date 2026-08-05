@@ -21,6 +21,7 @@ import AdminPermissionsPage from "../pages/Admin/Permissions";
 import AdminHelpPage from "../pages/Admin/Help";
 
 import LeaderOverviewPage from "../pages/Leader";
+import LeaderRecruitmentInterviewsPage from "../pages/Leader/Recruitment/Interviews";
 import LeaderTrainingGroupsPage from "../pages/Leader/Training/Groups";
 import LeaderTrainingTasksPage from "../pages/Leader/Training/Tasks";
 import LeaderTrainingEvaluationPage from "../pages/Leader/Training/Evaluation";
@@ -59,6 +60,7 @@ const PAGE_MAP: Record<string, ReactNode> = {
   [ROUTES.admin.help]: <AdminHelpPage />,
 
   [ROUTES.leader.overview]: <LeaderOverviewPage />,
+  [ROUTES.leader.recruitment.interviews]: <LeaderRecruitmentInterviewsPage />,
   [ROUTES.leader.training.groups]: <LeaderTrainingGroupsPage />,
   [ROUTES.leader.training.tasks]: <LeaderTrainingTasksPage />,
   [ROUTES.leader.training.evaluation]: <LeaderTrainingEvaluationPage />,
@@ -80,8 +82,10 @@ const PAGE_MAP: Record<string, ReactNode> = {
 };
 
 const APPLICATION_DETAIL_RE = /^\/admin\/recruitment\/applications\/([^/]+)$/;
-const INTERVIEW_SLOT_RE = /^\/admin\/recruitment\/interviews\/slots\/([^/]+)$/;
-const INTERVIEW_NOTE_RE = /^\/admin\/recruitment\/interviews\/notes\/([^/]+)$/;
+const INTERVIEW_SLOT_RE =
+  /^\/(?:admin|leader)\/recruitment\/interviews\/slots\/([^/]+)$/;
+const INTERVIEW_NOTE_RE =
+  /^\/(?:admin|leader)\/recruitment\/interviews\/notes\/([^/]+)$/;
 
 export function renderPortalPage(path: string): ReactNode {
   const detailMatch = path.match(APPLICATION_DETAIL_RE);

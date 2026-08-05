@@ -8,6 +8,8 @@ type Props = {
   onReschedule: (slot: InterviewSlot) => void;
   onDelete: (slot: InterviewSlot) => void;
   onOpenCandidates: (slot: InterviewSlot) => void;
+  /** Leader xem ca được phân — ẩn sửa/xoá/phân công */
+  readOnly?: boolean;
 };
 
 function initials(name: string) {
@@ -21,6 +23,7 @@ function InterviewSlotCard({
   onReschedule,
   onDelete,
   onOpenCandidates,
+  readOnly = false,
 }: Props) {
   const filled = slot.interviewers.length;
   const missing = filled === 0;
@@ -53,13 +56,17 @@ function InterviewSlotCard({
             Người phỏng vấn ({filled})
           </p>
           {filled === 0 ? (
-            <button
-              type="button"
-              onClick={() => onAssign(slot)}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-dashed border-accent/40 px-3 py-2 text-xs font-medium text-accent hover:bg-accent/8 transition-colors"
-            >
-              <Icon icon={Plus} size={16} /> Thêm người PV
-            </button>
+            readOnly ? (
+              <p className="text-xs text-muted">Chưa có người PV</p>
+            ) : (
+              <button
+                type="button"
+                onClick={() => onAssign(slot)}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-dashed border-accent/40 px-3 py-2 text-xs font-medium text-accent hover:bg-accent/8 transition-colors"
+              >
+                <Icon icon={Plus} size={16} /> Thêm người PV
+              </button>
+            )
           ) : (
             <div className="flex flex-wrap items-center gap-2">
               {slot.interviewers.map((iv) => (
@@ -73,13 +80,15 @@ function InterviewSlotCard({
                   {iv.name}
                 </span>
               ))}
-              <button
-                type="button"
-                onClick={() => onAssign(slot)}
-                className="text-xs font-medium text-accent hover:underline"
-              >
-                Sửa panel
-              </button>
+              {!readOnly && (
+                <button
+                  type="button"
+                  onClick={() => onAssign(slot)}
+                  className="text-xs font-medium text-accent hover:underline"
+                >
+                  Sửa panel
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -123,24 +132,28 @@ function InterviewSlotCard({
             >
               <Icon icon={Users} size={15} />
             </button>
-            <button
-              type="button"
-              title="Sửa ca"
-              aria-label="Sửa ca"
-              className="flex h-9 w-9 items-center justify-center rounded-xl text-muted shadow-extruded-sm transition-all duration-300 ease-out hover:text-accent active:shadow-inset-sm focus-visible:ring-2 ring-accent ring-offset-2 ring-offset-background"
-              onClick={() => onReschedule(slot)}
-            >
-              <Icon icon={Pencil} size={15} />
-            </button>
-            <button
-              type="button"
-              title="Xoá ca"
-              aria-label="Xoá ca"
-              className="flex h-9 w-9 items-center justify-center rounded-xl text-rose-500 shadow-extruded-sm transition-all duration-300 ease-out hover:text-rose-600 active:shadow-inset-sm focus-visible:ring-2 ring-accent ring-offset-2 ring-offset-background"
-              onClick={() => onDelete(slot)}
-            >
-              <Icon icon={Trash2} size={15} />
-            </button>
+            {!readOnly && (
+              <>
+                <button
+                  type="button"
+                  title="Sửa ca"
+                  aria-label="Sửa ca"
+                  className="flex h-9 w-9 items-center justify-center rounded-xl text-muted shadow-extruded-sm transition-all duration-300 ease-out hover:text-accent active:shadow-inset-sm focus-visible:ring-2 ring-accent ring-offset-2 ring-offset-background"
+                  onClick={() => onReschedule(slot)}
+                >
+                  <Icon icon={Pencil} size={15} />
+                </button>
+                <button
+                  type="button"
+                  title="Xoá ca"
+                  aria-label="Xoá ca"
+                  className="flex h-9 w-9 items-center justify-center rounded-xl text-rose-500 shadow-extruded-sm transition-all duration-300 ease-out hover:text-rose-600 active:shadow-inset-sm focus-visible:ring-2 ring-accent ring-offset-2 ring-offset-background"
+                  onClick={() => onDelete(slot)}
+                >
+                  <Icon icon={Trash2} size={15} />
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>

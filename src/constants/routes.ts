@@ -30,6 +30,13 @@ export const ROUTES = {
   },
   leader: {
     overview: "/leader",
+    recruitment: {
+      interviews: "/leader/recruitment/interviews",
+      interviewSlot: (slotId: string) =>
+        `/leader/recruitment/interviews/slots/${slotId}`,
+      interviewNote: (bookingId: string) =>
+        `/leader/recruitment/interviews/notes/${bookingId}`,
+    },
     training: {
       groups: "/leader/training/groups",
       tasks: "/leader/training/tasks",

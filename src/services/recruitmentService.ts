@@ -705,6 +705,21 @@ export async function getInterviewSlots(
   return date ? rows.filter((r) => r.date === date) : rows;
 }
 
+/** Ca Leader/BCN đang phụ trách (interviewerIds chứa mình) */
+export async function getMyInterviewSlots(): Promise<InterviewSlot[]> {
+  const { slots, bookings } = await api.get<{
+    slots: BackendSlot[];
+    bookings: BackendBooking[];
+  }>("/recruitment/slots/mine");
+  const bySlot = new Map<string, BackendBooking[]>();
+  for (const b of bookings) {
+    const list = bySlot.get(b.slotId) ?? [];
+    list.push(b);
+    bySlot.set(b.slotId, list);
+  }
+  return slots.map((s) => toUiSlot(s, bySlot.get(s._id) ?? []));
+}
+
 export async function getInterviewDatesWithSlots(campaignId: string): Promise<string[]> {
   const rows = await fetchSlots(campaignId);
   return [...new Set(rows.map((r) => r.date))];

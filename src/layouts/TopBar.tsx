@@ -36,6 +36,9 @@ function resolveNotifLink(
 ): string | null {
   if (!link) return null;
   if (role === "leader") {
+    if (link.startsWith("/admin/recruitment/interviews")) {
+      return link.replace("/admin/", "/leader/");
+    }
     if (
       link.startsWith("/member/training") ||
       link.startsWith("/member/mentor")
@@ -43,8 +46,13 @@ function resolveNotifLink(
       return ROUTES.leader.training.groups;
     }
   }
-  if (role === "admin" && link.startsWith("/member/training")) {
-    return ROUTES.admin.training.teams;
+  if (role === "admin") {
+    if (link.startsWith("/leader/recruitment/interviews")) {
+      return link.replace("/leader/", "/admin/");
+    }
+    if (link.startsWith("/member/training")) {
+      return ROUTES.admin.training.teams;
+    }
   }
   if (
     role === "member" &&

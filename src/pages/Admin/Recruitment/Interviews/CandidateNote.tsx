@@ -22,6 +22,10 @@ import { formatDate } from "../../../../utils/formatDate";
 function InterviewCandidateNotePage({ bookingId }: { bookingId: string }) {
   const { user } = useAuth();
   const isBcn = user?.role === "admin";
+  const routes =
+    user?.role === "leader"
+      ? ROUTES.leader.recruitment
+      : ROUTES.admin.recruitment;
   const { navigate } = usePortalUi();
   const [detail, setDetail] = useState<BookingDetail | null>(null);
   const [criteria, setCriteria] = useState<InterviewCriterion[]>([]);
@@ -121,7 +125,9 @@ function InterviewCandidateNotePage({ bookingId }: { bookingId: string }) {
       showToast(
         editAsUserId && isBcn
           ? "Đã cập nhật điểm hộ reviewer."
-          : "Đã lưu điểm & ghi chú.",
+          : attendance === "absent"
+            ? "Đã đánh dấu Vắng mặt. BCN cần xác nhận Fail ở cột bên phải (không tự Fail)."
+            : "Đã lưu điểm & ghi chú.",
       );
       setEditAsUserId(null);
       setScores({});
@@ -184,9 +190,7 @@ function InterviewCandidateNotePage({ bookingId }: { bookingId: string }) {
             variant="soft"
             size="sm"
             className="!h-10"
-            onClick={() =>
-              navigate(ROUTES.admin.recruitment.interviewSlot(detail.slot.slotId))
-            }
+            onClick={() => navigate(routes.interviewSlot(detail.slot.slotId))}
             leftIcon={<Icon icon={ArrowLeft} size={15} />}
           >
             Quay lại
@@ -367,17 +371,27 @@ function InterviewCandidateNotePage({ bookingId }: { bookingId: string }) {
               ))}
             </ul>
           )}
-          {detail.applicationStatus === "passed_cv" ? (
+          {isBcn && detail.applicationStatus === "passed_cv" ? (
             <div className="space-y-2 border-t border-black/5 pt-4">
               <p className="text-sm font-semibold text-foreground">
                 Kết luận vòng phỏng vấn
               </p>
+              {detail.reviewerScores.some((s) => s.attendance === "absent") && (
+                <p className="rounded-xl bg-rose-500/10 px-3 py-2 text-xs text-rose-700 dark:text-rose-300">
+                  Có đánh dấu Vắng mặt — bạn cần xác nhận <b>Không đạt</b> để Fail
+                  hồ sơ (hệ thống không tự Fail).
+                </p>
+              )}
               <div className="flex gap-2">
                 <Button
                   variant="primary"
                   size="sm"
                   className="!h-11 flex-1"
-                  disabled={deciding || detail.reviewerScores.length === 0}
+                  disabled={
+                    deciding ||
+                    detail.reviewerScores.length === 0 ||
+                    detail.reviewerScores.every((s) => s.attendance === "absent")
+                  }
                   onClick={() => void handleDecide("pass")}
                 >
                   Đạt phỏng vấn
@@ -393,8 +407,8 @@ function InterviewCandidateNotePage({ bookingId }: { bookingId: string }) {
                 </Button>
               </div>
               <p className="text-xs text-muted">
-                Cần ít nhất 1 đánh giá đã lưu. Kết luận cuối ở trang{" "}
-                <b>Kết quả</b>.
+                Chỉ BCN chốt Đạt/Trượt. Vắng mặt chỉ là điểm danh — phải bấm Không
+                đạt để Fail. Cần ≥1 đánh giá đã lưu.
               </p>
             </div>
           ) : (
@@ -405,7 +419,9 @@ function InterviewCandidateNotePage({ bookingId }: { bookingId: string }) {
                   ? "Đã đạt phỏng vấn"
                   : detail.applicationStatus === "failed_interview"
                     ? "Không đạt phỏng vấn"
-                    : detail.applicationStatus}
+                    : detail.applicationStatus === "passed_cv"
+                      ? "Chờ BCN duyệt kết quả PV"
+                      : detail.applicationStatus}
               </b>
             </p>
           )}

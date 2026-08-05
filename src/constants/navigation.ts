@@ -148,6 +148,19 @@ export const SIDEBAR_CONFIG: Record<Role, SidebarConfig> = {
             icon: "dashboard",
             path: ROUTES.leader.overview,
           },
+          {
+            id: "recruitment",
+            label: "Tuyển dụng",
+            icon: "recruitment",
+            path: ROUTES.leader.recruitment.interviews,
+            children: [
+              {
+                id: "recruitment-interviews",
+                label: "Ca của tôi",
+                path: ROUTES.leader.recruitment.interviews,
+              },
+            ],
+          },
         ],
       },
       {
