@@ -130,15 +130,28 @@
     background-color: #6c63ff;
   }
 
-  /* Login — input neumorphism theo mockup */
+  /* Login — input neumorphism theo mockup (màu cố định, không theo dark mode) */
   .login-input {
-    @apply w-full h-12 rounded-2xl bg-[#EEF1F5] px-5 text-foreground border-0
-      shadow-[inset_4px_4px_8px_rgba(163,177,198,0.45),inset_-4px_-4px_8px_rgba(255,255,255,0.9)]
+    @apply w-full h-12 rounded-2xl border-0 px-5
       transition-all duration-300 ease-out
-      placeholder:text-placeholder
-      focus:outline-none
-      focus:shadow-[inset_6px_6px_12px_rgba(163,177,198,0.55),inset_-6px_-6px_12px_rgba(255,255,255,1),0_0_0_3px_rgba(74,144,226,0.2)]
-      focus:bg-[#F4F6F9];
+      focus:outline-none;
+    background-color: #eef1f5;
+    color: #2c3340;
+    box-shadow:
+      inset 4px 4px 8px rgba(163, 177, 198, 0.45),
+      inset -4px -4px 8px rgba(255, 255, 255, 0.9);
+  }
+
+  .login-input::placeholder {
+    color: #a0a8b8;
+  }
+
+  .login-input:focus {
+    background-color: #f4f6f9;
+    box-shadow:
+      inset 6px 6px 12px rgba(163, 177, 198, 0.55),
+      inset -6px -6px 12px rgba(255, 255, 255, 1),
+      0 0 0 3px rgba(74, 144, 226, 0.2);
   }
 
   /* Chrome autofill đè nền/chữ — ép về đúng style login-input */
@@ -164,6 +177,32 @@
       focus-visible:ring-offset-2
       disabled:opacity-60 disabled:pointer-events-none disabled:translate-y-0;
   }
+}
+
+/* Login luôn sáng — chặn override từ html.dark */
+html.dark .login-shell {
+  background-color: #e8eef8 !important;
+  color: #2c3340 !important;
+}
+
+html.dark .login-shell .login-card,
+html.dark .login-shell .bg-white {
+  background-color: #ffffff !important;
+}
+
+html.dark .login-shell .login-title {
+  color: #2c3340 !important;
+}
+
+html.dark .login-shell .login-label,
+html.dark .login-shell .login-forgot,
+html.dark .login-shell .text-muted {
+  color: #8a94a6 !important;
+}
+
+html.dark .login-shell .login-input {
+  background-color: #eef1f5 !important;
+  color: #2c3340 !important;
 }
 
 /* Dark Soft UI — elevated surfaces, clear hierarchy, soft highlights */
@@ -267,6 +306,27 @@ html.dark .neu-input:focus {
 html.dark .bg-white,
 html.dark .bg-white\/80 {
   background-color: var(--dark-surface) !important;
+}
+
+/* Login card không bị rule .bg-white tối đè (specificity ngang !important) */
+html.dark .login-shell,
+html.dark .login-shell * {
+  color-scheme: light;
+}
+
+html.dark .login-shell .login-card,
+html.dark .login-shell .login-panel,
+html.dark .login-shell .bg-white,
+html.dark .login-shell .bg-white\/80 {
+  background-color: #ffffff !important;
+}
+
+html.dark .login-shell .bg-\[\#DDE2FF\] {
+  background-color: #dde2ff !important;
+}
+
+html.dark .login-shell .login-input::placeholder {
+  color: #a0a8b8 !important;
 }
 
 html.dark .bg-background\/80 {
