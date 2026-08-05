@@ -54,16 +54,31 @@ function SideNavBar({ role, variant = "rail" }: Props) {
     toggleSidebarCollapsed,
     closeMobileNav,
   } = usePortalUi();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
+  const isMentor = user?.isMentor === true;
 
-  const { brand, sections } = SIDEBAR_CONFIG[role];
+  const { brand: baseBrand, sections: allSections } = SIDEBAR_CONFIG[role];
+  // Sidebar theo vai trò thực tế: mentor thấy khu mentor, member thường thấy khu đào tạo
+  const sections = allSections
+    .filter((s) => !(isMentor && s.hideForMentor))
+    .map((s) => ({
+      ...s,
+      items: s.items.filter((i) => !i.mentorOnly || isMentor),
+    }))
+    .filter((s) => s.items.length > 0);
+  const brand =
+    role === "member" && isMentor
+      ? { ...baseBrand, initial: "M", title: "Mentor Portal" }
+      : baseBrand;
   const activeId = findNavIdByPath(role, activePath);
   const collapsed = variant === "rail" && sidebarCollapsed;
 
   const [openId, setOpenId] = useState<string | null>(() => {
     for (const section of sections) {
       const parent = section.items.find((i) =>
-        i.children?.some((c) => c.path === activePath || activePath.startsWith(`${c.path}/`)),
+        i.children?.some(
+          (c) => c.path === activePath || activePath.startsWith(`${c.path}/`),
+        ),
       );
       if (parent) return parent.id;
     }
@@ -76,7 +91,9 @@ function SideNavBar({ role, variant = "rail" }: Props) {
     setPrevActivePath(activePath);
     for (const section of sections) {
       const parent = section.items.find((i) =>
-        i.children?.some((c) => c.path === activePath || activePath.startsWith(`${c.path}/`)),
+        i.children?.some(
+          (c) => c.path === activePath || activePath.startsWith(`${c.path}/`),
+        ),
       );
       if (parent) {
         setOpenId(parent.id);
@@ -113,7 +130,10 @@ function SideNavBar({ role, variant = "rail" }: Props) {
   const mainSections = sections.filter((s) => s.id !== "footer");
   const footerSection = sections.find((s) => s.id === "footer");
 
-  const renderSection = (section: (typeof sections)[number], isFooter = false) => (
+  const renderSection = (
+    section: (typeof sections)[number],
+    isFooter = false,
+  ) => (
     <div
       key={section.id}
       className={`space-y-2 ${isFooter ? "mt-auto pt-4 border-t border-accent/10 shrink-0" : "shrink-0"}`}
@@ -126,8 +146,10 @@ function SideNavBar({ role, variant = "rail" }: Props) {
 
       {section.items.map((item) => {
         const open = openId === item.id && !collapsed;
-        const childActive = item.children?.some((c) => c.id === activeId) ?? false;
-        const selfActive = item.action !== "logout" && item.id === activeId && !item.children;
+        const childActive =
+          item.children?.some((c) => c.id === activeId) ?? false;
+        const selfActive =
+          item.action !== "logout" && item.id === activeId && !item.children;
         const groupActive = childActive || (item.children != null && open);
         const danger = item.tone === "danger";
 
@@ -144,7 +166,9 @@ function SideNavBar({ role, variant = "rail" }: Props) {
               type="button"
               onClick={() => handleParentClick(item)}
               aria-expanded={item.children ? open : undefined}
-              aria-current={selfActive || (childActive && collapsed) ? "page" : undefined}
+              aria-current={
+                selfActive || (childActive && collapsed) ? "page" : undefined
+              }
               aria-label={collapsed ? item.label : undefined}
               title={collapsed ? item.label : undefined}
               className={`group relative flex w-full items-center rounded-2xl min-h-12 font-medium transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
@@ -180,7 +204,10 @@ function SideNavBar({ role, variant = "rail" }: Props) {
               )}
 
               {collapsed && (selfActive || childActive) && (
-                <span className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-accent" aria-hidden />
+                <span
+                  className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-accent"
+                  aria-hidden
+                />
               )}
 
               {collapsed && (
@@ -215,7 +242,9 @@ function SideNavBar({ role, variant = "rail" }: Props) {
                           aria-hidden
                         />
                       )}
-                      <span className={isActive ? "pl-1.5" : ""}>{child.label}</span>
+                      <span className={isActive ? "pl-1.5" : ""}>
+                        {child.label}
+                      </span>
                     </button>
                   );
                 })}
@@ -253,7 +282,9 @@ function SideNavBar({ role, variant = "rail" }: Props) {
         </div>
         {!collapsed && (
           <div className="min-w-0 flex-1">
-            <p className="font-display font-bold text-accent leading-tight">{brand.title}</p>
+            <p className="font-display font-bold text-accent leading-tight">
+              {brand.title}
+            </p>
             <p className="text-xs text-muted leading-snug">{brand.subtitle}</p>
           </div>
         )}

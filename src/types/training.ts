@@ -8,7 +8,8 @@ export type PenaltyActionType = "final_reminder" | "remove_from_club";
 
 export type LessonKind = "doc" | "video" | "practice";
 
-export type TraineeEvalStatus = "studying" | "qualified" | "failed" | "certified";
+export type TraineeEvalStatus =
+  "studying" | "qualified" | "failed" | "certified";
 
 export type Trainee = {
   id: string;
@@ -24,6 +25,8 @@ export type Trainee = {
   mentorName?: string;
   /** Đánh giá tổng kết */
   avgScore?: number;
+  /** Note quá trình của mentor */
+  mentorNote?: string;
   sessionsDone?: number;
   sessionsTotal?: number;
   evalStatus?: TraineeEvalStatus;

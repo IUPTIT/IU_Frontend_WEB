@@ -13,7 +13,7 @@ import {
   getMyTeamTrainees,
   getTrainingGroups,
   reviewMentorTask,
-  setTraineeEvalStatus,
+  saveMentorTraineeReview,
   type MentorTask,
   type MentorTaskAssignment,
 } from "../../../services/trainingService";
@@ -50,7 +50,8 @@ const EVAL_TONE: Record<string, "accent" | "success" | "danger" | "info"> = {
   certified: "info",
 };
 
-// Đánh giá cuối vòng: mentor chốt Đạt/Trượt, BCN cấp chứng nhận & đẩy lên member sau
+// Đánh giá QUÁ TRÌNH: mentor ghi note + điểm — quyết định Đạt/Trượt cuối cùng
+// là của BCN ở trang Tổng kết training, mentor không chốt
 function EvaluationRow({
   trainee,
   onChanged,
@@ -58,55 +59,73 @@ function EvaluationRow({
   trainee: Trainee;
   onChanged: (msg: string) => void;
 }) {
+  const [score, setScore] = useState(
+    trainee.avgScore != null ? String(trainee.avgScore) : "",
+  );
+  const [note, setNote] = useState(trainee.mentorNote ?? "");
   const [saving, setSaving] = useState(false);
   const evalStatus = trainee.evalStatus ?? "studying";
-  const locked = evalStatus === "certified";
 
-  const handleEval = async (status: "qualified" | "failed") => {
+  const handleSave = async () => {
+    const parsed = score.trim() === "" ? undefined : Number.parseFloat(score);
+    if (parsed != null && (Number.isNaN(parsed) || parsed < 0 || parsed > 10)) {
+      onChanged("Điểm phải từ 0 đến 10.");
+      return;
+    }
+    if (parsed == null && !note.trim()) {
+      onChanged("Nhập điểm hoặc note quá trình trước khi lưu.");
+      return;
+    }
     setSaving(true);
     try {
-      await setTraineeEvalStatus(trainee.id, status);
-      onChanged(
-        status === "qualified"
-          ? `Đã đánh giá ${trainee.fullName} ĐẠT vòng training.`
-          : `Đã đánh giá ${trainee.fullName} TRƯỢT vòng training.`,
-      );
+      await saveMentorTraineeReview(trainee.id, {
+        score: parsed ?? null,
+        note: note.trim(),
+      });
+      onChanged(`Đã lưu đánh giá quá trình cho ${trainee.fullName}.`);
     } catch (err) {
-      onChanged(err instanceof Error ? err.message : "Đánh giá thất bại.");
+      onChanged(err instanceof Error ? err.message : "Lưu đánh giá thất bại.");
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <li className="flex flex-wrap items-center gap-3 rounded-2xl bg-background p-3 shadow-inset-sm">
-      <Avatar name={trainee.fullName} size="sm" />
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold">{trainee.fullName}</p>
-        <p className="text-xs text-muted">{trainee.email}</p>
-      </div>
-      <Badge tone={EVAL_TONE[evalStatus]}>{EVAL_LABEL[evalStatus]}</Badge>
-      {!locked && (
-        <div className="flex gap-2">
-          <Button
-            variant={evalStatus === "qualified" ? "secondary" : "primary"}
-            size="sm"
-            disabled={saving || evalStatus === "qualified"}
-            onClick={() => void handleEval("qualified")}
-          >
-            Đạt
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            className="!text-rose-600"
-            disabled={saving || evalStatus === "failed"}
-            onClick={() => void handleEval("failed")}
-          >
-            Trượt
-          </Button>
+    <li className="space-y-2 rounded-2xl bg-background p-3 shadow-inset-sm">
+      <div className="flex flex-wrap items-center gap-3">
+        <Avatar name={trainee.fullName} size="sm" />
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold">{trainee.fullName}</p>
+          <p className="text-xs text-muted">{trainee.email}</p>
         </div>
-      )}
+        <Badge tone={EVAL_TONE[evalStatus]}>{EVAL_LABEL[evalStatus]}</Badge>
+      </div>
+      <div className="flex gap-2">
+        <input
+          type="number"
+          min={0}
+          max={10}
+          step={0.5}
+          className="neu-input !h-9 w-24 text-sm"
+          placeholder="Điểm"
+          value={score}
+          onChange={(e) => setScore(e.target.value)}
+        />
+        <input
+          className="neu-input !h-9 flex-1 text-sm"
+          placeholder="Note quá trình: thái độ, tiến bộ, điểm mạnh/yếu..."
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+        />
+        <Button
+          variant="primary"
+          size="sm"
+          disabled={saving}
+          onClick={() => void handleSave()}
+        >
+          {saving ? "Đang lưu..." : "Lưu"}
+        </Button>
+      </div>
     </li>
   );
 }
@@ -495,8 +514,9 @@ function MentorTasksPage() {
               Đánh giá tân binh ({teamTrainees.length})
             </h2>
             <p className="text-xs text-muted">
-              Chốt Đạt/Trượt cuối vòng training — tân binh Đạt sẽ được Ban Chủ
-              nhiệm cấp chứng nhận và đẩy lên thành viên chính thức.
+              Ghi note quá trình và chấm điểm cho tân binh — Ban Chủ nhiệm sẽ
+              dựa vào đánh giá này để chốt Đạt/Trượt và đẩy lên thành viên chính
+              thức.
             </p>
           </div>
           <ul className="space-y-2">

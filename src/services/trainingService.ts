@@ -28,6 +28,8 @@ type BackendTrainee = {
   campaignId: string | null;
   status: Trainee["status"];
   evalStatus: NonNullable<Trainee["evalStatus"]>;
+  mentorScore?: number | null;
+  mentorNote?: string;
   groupId: {
     _id: string;
     name: string;
@@ -92,6 +94,8 @@ function toTrainee(t: BackendTrainee): Trainee {
     mentorId: t.groupId?.mentorId?._id,
     mentorName: t.groupId?.mentorId?.name,
     evalStatus: t.evalStatus,
+    avgScore: t.mentorScore ?? undefined,
+    mentorNote: t.mentorNote || undefined,
     cohortLabel: t.cohortLabel || undefined,
   };
 }
@@ -593,6 +597,14 @@ export async function getTrainingReviewSummary(
     `/training/review-summary${query}`,
   );
   return summary;
+}
+
+/** Mentor lưu đánh giá quá trình (note + điểm) — không chốt Đạt/Trượt */
+export async function saveMentorTraineeReview(
+  traineeId: string,
+  input: { score?: number | null; note?: string },
+): Promise<void> {
+  await api.patch(`/training/trainees/${traineeId}/mentor-review`, input);
 }
 
 export async function setTraineeEvalStatus(

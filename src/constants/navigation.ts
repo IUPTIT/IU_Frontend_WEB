@@ -219,24 +219,28 @@ export const SIDEBAR_CONFIG: Record<Role, SidebarConfig> = {
             icon: "dashboard",
             path: ROUTES.member.overview,
           },
-          // Trang mentor — member được đẩy quyền sẽ tạo lộ trình training riêng ở đây
+          // Trang mentor — CHỈ hiện với member được đẩy quyền mentor
           {
             id: "mentor-roadmap",
             label: "Lộ trình mentor",
             icon: "roadmap",
             path: ROUTES.member.mentorRoadmap,
+            mentorOnly: true,
           },
           {
             id: "mentor-tasks",
             label: "Task cho team",
             icon: "tasks",
             path: ROUTES.member.mentorTasks,
+            mentorOnly: true,
           },
         ],
       },
       {
         id: "dao-tao",
         label: "ĐÀO TẠO",
+        // Khu tự học của member thường — mentor dẫn team, không học khu này
+        hideForMentor: true,
         items: [
           {
             id: "training-roadmap",
