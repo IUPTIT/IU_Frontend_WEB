@@ -6,10 +6,13 @@ export const ROUTES = {
     recruitment: {
       open: "/admin/recruitment/open",
       applications: "/admin/recruitment/applications",
-      applicationDetail: (id: string) => `/admin/recruitment/applications/${id}`,
+      applicationDetail: (id: string) =>
+        `/admin/recruitment/applications/${id}`,
       interviews: "/admin/recruitment/interviews",
-      interviewSlot: (slotId: string) => `/admin/recruitment/interviews/slots/${slotId}`,
-      interviewNote: (bookingId: string) => `/admin/recruitment/interviews/notes/${bookingId}`,
+      interviewSlot: (slotId: string) =>
+        `/admin/recruitment/interviews/slots/${slotId}`,
+      interviewNote: (bookingId: string) =>
+        `/admin/recruitment/interviews/notes/${bookingId}`,
       results: "/admin/recruitment/results",
     },
     members: "/admin/members",
@@ -35,11 +38,13 @@ export const ROUTES = {
   },
   candidate: {
     interview: "/candidate/interview",
+    training: "/candidate/training",
     profile: "/candidate/profile",
   },
   member: {
     overview: "/member",
     mentorRoadmap: "/member/mentor/roadmap",
+    mentorTasks: "/member/mentor/tasks",
     training: {
       roadmap: "/member/training/roadmap",
       tasks: "/member/training/tasks",

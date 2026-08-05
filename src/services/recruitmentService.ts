@@ -154,11 +154,13 @@ function toApplication(a: BackendApplication): Application {
   const status: Application["status"] =
     a.status === "draft" || a.status === "pending_review"
       ? "submitted"
-      : a.status === "passed_cv" || a.status === "passed_interview"
+      : a.status === "passed_cv"
         ? "interview"
-        : a.status === "admitted"
-          ? "accepted"
-          : "rejected";
+        : a.status === "passed_interview"
+          ? "interview_passed"
+          : a.status === "admitted"
+            ? "accepted"
+            : "rejected";
 
   const screeningResult: PassFail =
     a.status === "draft" || a.status === "pending_review"

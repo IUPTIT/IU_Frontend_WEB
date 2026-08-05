@@ -5,6 +5,7 @@ export type ApplicationStatusLabel =
   | "Mới nộp"
   | "Đang đánh giá"
   | "Chờ phỏng vấn"
+  | "Đạt phỏng vấn"
   | "Đã đậu"
   | "Loại";
 
@@ -16,6 +17,8 @@ export function getApplicationStatusLabel(status: ApplicationStatus): Applicatio
       return "Đang đánh giá";
     case "interview":
       return "Chờ phỏng vấn";
+    case "interview_passed":
+      return "Đạt phỏng vấn";
     case "accepted":
       return "Đã đậu";
     case "rejected":
