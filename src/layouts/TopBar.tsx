@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { useAuth } from "../context/useAuth";
 import { usePortalUi } from "../context/usePortalUi";
 import { usePreferences } from "../context/usePreferences";
@@ -6,6 +7,12 @@ import type { Role } from "../types/navigation";
 import Icon from "../components/ui/Icon";
 import Avatar from "../components/ui/Avatar";
 import { Bell, Menu, Moon, Search, Sun } from "lucide-react";
+import {
+  listNotifications,
+  markAllNotificationsRead,
+  markNotificationRead,
+  type AppNotification,
+} from "../services/notificationService";
 
 type Props = {
   search: string;
@@ -31,6 +38,28 @@ function TopBar({
   const { user } = useAuth();
   const { navigate } = usePortalUi();
   const { theme, toggleTheme } = usePreferences();
+  const [openNotif, setOpenNotif] = useState(false);
+  const [items, setItems] = useState<AppNotification[]>([]);
+  const [unread, setUnread] = useState(0);
+
+  const refreshNotifs = () => {
+    void listNotifications()
+      .then((d) => {
+        setItems(d.items);
+        setUnread(d.unread);
+      })
+      .catch(() => {
+        setItems([]);
+        setUnread(0);
+      });
+  };
+
+  useEffect(() => {
+    if (!user) return;
+    refreshNotifs();
+    const t = window.setInterval(refreshNotifs, 60_000);
+    return () => window.clearInterval(t);
+  }, [user]);
 
   return (
     <header className="sticky top-4 sm:top-6 z-10">
@@ -67,13 +96,65 @@ function TopBar({
           >
             <Icon icon={theme === "dark" ? Sun : Moon} size={20} />
           </button>
-          <button
-            type="button"
-            className="neu-btn h-12 w-12 !px-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-            aria-label="Thông báo"
-          >
-            <Icon icon={Bell} size={20} />
-          </button>
+          <div className="relative">
+            <button
+              type="button"
+              className="neu-btn relative h-12 w-12 !px-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              aria-label="Thông báo"
+              aria-expanded={openNotif}
+              onClick={() => {
+                setOpenNotif((v) => !v);
+                if (!openNotif) refreshNotifs();
+              }}
+            >
+              <Icon icon={Bell} size={20} />
+              {unread > 0 && (
+                <span className="absolute right-2 top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[10px] font-bold text-white">
+                  {unread > 9 ? "9+" : unread}
+                </span>
+              )}
+            </button>
+            {openNotif && (
+              <div className="absolute right-0 top-14 z-30 w-80 max-w-[calc(100vw-2rem)] rounded-2xl bg-background p-3 shadow-extruded ring-1 ring-black/5">
+                <div className="mb-2 flex items-center justify-between gap-2 px-1">
+                  <p className="text-sm font-semibold">Thông báo</p>
+                  <button
+                    type="button"
+                    className="text-xs text-accent hover:underline"
+                    onClick={() => void markAllNotificationsRead().then(refreshNotifs)}
+                  >
+                    Đánh dấu đã đọc
+                  </button>
+                </div>
+                <ul className="max-h-80 space-y-2 overflow-y-auto">
+                  {items.length === 0 ? (
+                    <li className="px-2 py-6 text-center text-sm text-muted">Chưa có thông báo</li>
+                  ) : (
+                    items.map((n) => (
+                      <li key={n._id}>
+                        <button
+                          type="button"
+                          className={`w-full rounded-xl px-3 py-2 text-left text-sm hover:bg-accent/10 ${
+                            n.readAt ? "opacity-70" : "bg-accent/5"
+                          }`}
+                          onClick={() => {
+                            void markNotificationRead(n._id).then(() => {
+                              refreshNotifs();
+                              if (n.link) navigate(n.link);
+                              setOpenNotif(false);
+                            });
+                          }}
+                        >
+                          <p className="font-semibold text-foreground">{n.title}</p>
+                          {n.body && <p className="mt-0.5 text-xs text-muted line-clamp-2">{n.body}</p>}
+                        </button>
+                      </li>
+                    ))
+                  )}
+                </ul>
+              </div>
+            )}
+          </div>
           <button
             type="button"
             className="neu-btn h-12 w-12 !px-0 rounded-full overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"

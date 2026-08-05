@@ -1,6 +1,6 @@
 /** Types module Tuyển dụng (Recruitment) — Admin */
 
-export type CampaignStatus = "draft" | "published" | "closed";
+export type CampaignStatus = "draft" | "published" | "closed" | "completed";
 
 export type QuestionType =
   | "short_text"
@@ -36,7 +36,7 @@ export type RecruitmentCampaign = {
 };
 
 /** Label trạng thái hiển thị trên UI danh sách */
-export type CampaignStatusLabel = "Đang diễn ra" | "Đã kết thúc" | "Nháp";
+export type CampaignStatusLabel = "Đang mở" | "Đã đóng" | "Đã hoàn tất" | "Nháp";
 
 export type FormOption = {
   id: string;
@@ -60,7 +60,9 @@ export type ApplicationStatus =
   | "interview"
   | "interview_passed"
   | "accepted"
-  | "rejected";
+  | "rejected"
+  | "cv_failed"
+  | "interview_failed";
 
 export type Application = {
   id: string;
@@ -70,8 +72,12 @@ export type Application = {
   phone?: string;
   /** VD: K62 - Khoa CNTT */
   education?: string;
-  preferredDepartmentId: string; // Ban nguyện vọng
+  preferredDepartmentId: string; // Ban nguyện vọng (NV1 hoặc assigned)
   preferredDepartmentName: string;
+  /** Toàn bộ NV theo thứ tự ưu tiên — dùng đổi ban trước trúng tuyển */
+  departmentPreferences: { department: string; priority: number }[];
+  /** Ban chính thức BCN gán (nếu có) */
+  assignedDepartment?: string | null;
   status: ApplicationStatus;
   screeningResult: PassFail;
   interviewResult: PassFail;
@@ -81,6 +87,11 @@ export type Application = {
   interviewScore?: number;
   submittedAt: string;
   attachments?: ApplicationAttachment[];
+  /** Cảnh báo chênh điểm reviewer >30% */
+  needsManualReview?: boolean;
+  /** Người được phân công chấm vòng đơn */
+  reviewerIds?: string[];
+  reviewerNames?: string[];
   /** Trạng thái xử lý sau kết quả cuối: chờ / đã gửi email / đã chuyển Member */
   resultNotifyStatus?: "pending" | "email_sent" | "converted";
 };

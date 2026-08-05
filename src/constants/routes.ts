@@ -17,6 +17,8 @@ export const ROUTES = {
     },
     members: "/admin/members",
     training: {
+      trainees: "/admin/training/trainees",
+      programs: "/admin/training/programs",
       teams: "/admin/training/teams",
       review: "/admin/training/review",
     },

@@ -13,11 +13,14 @@ import {
   getScreeningCriteria,
   saveApplicationScore,
   setScreeningDecision,
+  getInterviewers,
+  assignReviewers,
 } from "../../../../services/recruitmentService";
 import type {
   Application,
   ApplicationAnswer,
   ApplicationAttachment,
+  InterviewerRef,
   ScreeningCriterion,
 } from "../../../../types/recruitment";
 import { applicationToEmailRecipient } from "../../../../utils/emailRecipients";
@@ -71,6 +74,9 @@ function ApplicationDetailPage({ applicationId }: Props) {
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [emailOpen, setEmailOpen] = useState(false);
+  const [reviewers, setReviewers] = useState<InterviewerRef[]>([]);
+  const [selectedReviewerIds, setSelectedReviewerIds] = useState<string[]>([]);
+  const [assigning, setAssigning] = useState(false);
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -78,31 +84,31 @@ function ApplicationDetailPage({ applicationId }: Props) {
   };
 
   const load = useCallback(async () => {
+    setLoading(true);
     try {
-      const [detail, ans, crit, score] = await Promise.all([
+      const [detail, ans, crit, score, interviewerList] = await Promise.all([
         getApplicationById(applicationId),
         getApplicationAnswers(applicationId),
         getScreeningCriteria(),
         getApplicationScore(applicationId),
+        getInterviewers(),
       ]);
-
-      if (!detail) {
-        setApp(null);
-        return;
-      }
-
-      setApp(detail);
+      setApp(detail ?? null);
       setAnswers(ans);
       setCriteria(crit);
-      setReviewerName(score?.reviewerName ?? user?.name ?? "Admin");
-
-      const scoreMap: Record<string, string> = {};
-      for (const c of crit) {
-        const found = score?.criteriaScores.find((s) => s.criteriaId === c.id);
-        scoreMap[c.id] = found != null ? String(found.score) : "";
+      setReviewers(interviewerList);
+      setSelectedReviewerIds(detail?.reviewerIds ?? []);
+      if (score) {
+        const map: Record<string, string> = {};
+        for (const c of score.criteriaScores) map[c.criteriaId] = String(c.score);
+        setScores(map);
+        setComment(score.comment ?? "");
+        setReviewerName(score.reviewerName ?? user?.name ?? "Admin");
+      } else {
+        setScores({});
+        setComment("");
+        setReviewerName(user?.name ?? "Admin");
       }
-      setScores(scoreMap);
-      setComment(score?.comment ?? "");
     } finally {
       setLoading(false);
     }
@@ -347,6 +353,68 @@ function ApplicationDetailPage({ applicationId }: Props) {
                 ))}
               </div>
             )}
+          </section>
+
+          <section className="neu-card !p-6 space-y-5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h3 className="font-display text-lg font-bold">Phân công người chấm</h3>
+              {app.status === "submitted" && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  disabled={assigning || selectedReviewerIds.length === 0}
+                  onClick={async () => {
+                    setAssigning(true);
+                    try {
+                      await assignReviewers(applicationId, selectedReviewerIds);
+                      showToast("Đã phân công người chấm.");
+                      await load();
+                    } catch {
+                      showToast("Phân công thất bại.");
+                    } finally {
+                      setAssigning(false);
+                    }
+                  }}
+                >
+                  {assigning ? "Đang lưu..." : "Lưu phân công"}
+                </Button>
+              )}
+            </div>
+            <p className="text-sm text-muted">
+              Mỗi hồ sơ có thể gán nhiều người chấm để tránh thiên vị. Chỉ người được gán (và BCN) mới
+              chấm được.
+            </p>
+            {app.reviewerNames && app.reviewerNames.length > 0 && (
+              <p className="text-sm text-foreground">
+                Đã gán: <b>{app.reviewerNames.join(", ")}</b>
+              </p>
+            )}
+            <div className="flex flex-wrap gap-2">
+              {reviewers.map((r) => {
+                const checked = selectedReviewerIds.includes(r.id);
+                return (
+                  <label
+                    key={r.id}
+                    className={`inline-flex cursor-pointer items-center gap-2 rounded-2xl px-3 py-2 text-sm shadow-inset-sm ${
+                      checked ? "bg-accent/15 text-accent" : "bg-background text-muted"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      className="accent-accent"
+                      checked={checked}
+                      disabled={app.status !== "submitted"}
+                      onChange={() => {
+                        setSelectedReviewerIds((prev) =>
+                          checked ? prev.filter((id) => id !== r.id) : [...prev, r.id],
+                        );
+                      }}
+                    />
+                    {r.name}
+                  </label>
+                );
+              })}
+            </div>
           </section>
 
           <section className="neu-card !p-6 space-y-5">

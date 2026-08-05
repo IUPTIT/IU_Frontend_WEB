@@ -88,6 +88,9 @@ type BackendApplication = {
   cvScore?: number | null;
   interviewScore?: number | null;
   resultNotifyStatus?: "pending" | "email_sent" | "converted";
+  needsManualReview?: boolean;
+  assignedDepartment?: string | null;
+  reviewerIds?: { _id: string; name: string; email: string }[] | string[];
 };
 
 // UI dùng thang 0-10, backend lưu 0-100 — quy đổi tại MỘT chỗ duy nhất
@@ -127,7 +130,14 @@ function toCampaign(c: BackendCampaign): RecruitmentCampaign {
       departmentName: q.department,
       quota: q.quota,
     })),
-    status: c.status === "open" ? "published" : c.status === "draft" ? "draft" : "closed",
+    status:
+      c.status === "open"
+        ? "published"
+        : c.status === "completed"
+          ? "completed"
+          : c.status === "draft"
+            ? "draft"
+            : "closed",
     isActive: c.status === "open",
     createdAt: c.createdAt,
     updatedAt: c.updatedAt,
@@ -160,7 +170,11 @@ function toApplication(a: BackendApplication): Application {
           ? "interview_passed"
           : a.status === "admitted"
             ? "accepted"
-            : "rejected";
+            : a.status === "failed_cv"
+              ? "cv_failed"
+              : a.status === "failed_interview"
+                ? "interview_failed"
+                : "rejected";
 
   const screeningResult: PassFail =
     a.status === "draft" || a.status === "pending_review"
@@ -168,7 +182,10 @@ function toApplication(a: BackendApplication): Application {
       : a.status === "failed_cv"
         ? "fail"
         : "pass";
-  const interviewResult: PassFail = ["passed_interview", "admitted"].includes(a.status)
+  // rejected (kết quả cuối) cũng đã Pass PV — state machine chỉ reject từ passed_interview
+  const interviewResult: PassFail = ["passed_interview", "admitted", "rejected"].includes(
+    a.status,
+  )
     ? "pass"
     : a.status === "failed_interview"
       ? "fail"
@@ -176,9 +193,8 @@ function toApplication(a: BackendApplication): Application {
   const finalResult: PassFail =
     a.status === "admitted" ? "pass" : a.status === "rejected" ? "fail" : "pending";
 
-  const preferred = [...(a.departmentPreferences ?? [])].sort(
-    (x, y) => x.priority - y.priority,
-  )[0]?.department;
+  const prefs = [...(a.departmentPreferences ?? [])].sort((x, y) => x.priority - y.priority);
+  const preferred = a.assignedDepartment || prefs[0]?.department;
 
   const attachments: Application["attachments"] = [];
   if (a.avatarUrl) {
@@ -197,6 +213,8 @@ function toApplication(a: BackendApplication): Application {
     education: `${a.className} — ${a.faculty}`,
     preferredDepartmentId: preferred ?? "",
     preferredDepartmentName: preferred ?? "",
+    departmentPreferences: prefs,
+    assignedDepartment: a.assignedDepartment ?? null,
     status,
     screeningResult,
     interviewResult,
@@ -205,6 +223,13 @@ function toApplication(a: BackendApplication): Application {
     interviewScore: toUiScale(a.interviewScore),
     submittedAt: a.submittedAt ?? a.createdAt,
     attachments,
+    needsManualReview: a.needsManualReview ?? false,
+    reviewerIds: (a.reviewerIds ?? []).map((r) =>
+      typeof r === "string" ? r : r._id,
+    ),
+    reviewerNames: (a.reviewerIds ?? [])
+      .map((r) => (typeof r === "string" ? "" : r.name))
+      .filter(Boolean),
     resultNotifyStatus: a.resultNotifyStatus ?? "pending",
   };
 }
@@ -1077,6 +1102,39 @@ export async function notifyFinalResults(applicationIds: string[]): Promise<{ se
   return { sent: notified };
 }
 
+// Xác nhận trúng tuyển / không trúng tuyển — từ pool Đạt phỏng vấn
+export async function confirmFinalDecision(
+  applicationId: string,
+  status: "admitted" | "rejected",
+): Promise<Application | undefined> {
+  await api.post(`/recruitment/applications/${applicationId}/confirm-final`, { status });
+  return getApplicationById(applicationId);
+}
+
+/** Đổi ban chính thức (NV2/NV3) trước khi xác nhận trúng tuyển */
+export async function assignOfficialDepartment(
+  applicationId: string,
+  department: string,
+): Promise<Application | undefined> {
+  await api.patch(`/recruitment/applications/${applicationId}/assigned-department`, {
+    department,
+  });
+  return getApplicationById(applicationId);
+}
+
+/** Duyệt hàng loạt vòng đơn theo ngưỡng điểm (backend thang 0–100; UI truyền 0–10) */
+export async function bulkDecideCvByThreshold(
+  campaignId: string,
+  uiThreshold: number,
+  failBelow = true,
+): Promise<{ passed: number; failed: number; skipped: number }> {
+  return api.post("/recruitment/applications/bulk-decide-cv", {
+    campaignId,
+    threshold: uiThreshold * 10,
+    failBelow,
+  });
+}
+
 // Xác nhận trúng tuyển cuối — state machine tự enqueue job nâng role candidate → member
 export async function convertAcceptedToMembers(
   applicationIds: string[],
@@ -1091,6 +1149,68 @@ export async function convertAcceptedToMembers(
     }
   }
   return { converted };
+}
+
+export async function rejectFinalCandidates(
+  applicationIds: string[],
+): Promise<{ rejected: number }> {
+  let rejected = 0;
+  for (const id of applicationIds) {
+    try {
+      await api.post(`/recruitment/applications/${id}/confirm-final`, { status: "rejected" });
+      rejected += 1;
+    } catch {
+      // bỏ qua
+    }
+  }
+  return { rejected };
+}
+
+export async function assignReviewers(
+  applicationId: string,
+  reviewerIds: string[],
+): Promise<Application | undefined> {
+  await api.post(`/recruitment/applications/${applicationId}/assign-reviewers`, {
+    reviewerIds,
+  });
+  return getApplicationById(applicationId);
+}
+
+export type UnbookedApplication = {
+  _id: string;
+  fullName: string;
+  email: string;
+  phone?: string;
+  applicationCode?: string;
+  bookingReminderSentAt?: string | null;
+  updatedAt: string;
+};
+
+export async function listUnbookedApplications(
+  campaignId: string,
+): Promise<UnbookedApplication[]> {
+  const { applications } = await api.get<{ applications: UnbookedApplication[] }>(
+    `/recruitment/campaigns/${campaignId}/unbooked`,
+  );
+  return applications;
+}
+
+export async function assignInterviewSlot(
+  applicationId: string,
+  slotId: string,
+): Promise<void> {
+  await api.post(`/recruitment/applications/${applicationId}/assign-slot`, { slotId });
+}
+
+export async function markUnbookedNoShow(applicationId: string): Promise<void> {
+  await api.post(`/recruitment/applications/${applicationId}/mark-unbooked-no-show`);
+}
+
+export async function completeCampaign(id: string): Promise<RecruitmentCampaign | undefined> {
+  const { campaign } = await api.post<{ campaign: BackendCampaign }>(
+    `/recruitment/campaigns/${id}/complete`,
+  );
+  return toCampaign(campaign);
 }
 
 export async function getPassedScreeningApplications(campaignId: string): Promise<Application[]> {

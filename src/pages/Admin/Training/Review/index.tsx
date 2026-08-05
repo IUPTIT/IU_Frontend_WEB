@@ -1,5 +1,13 @@
 ﻿import { useCallback, useEffect, useMemo, useState } from "react";
-import { Award, CircleCheck, CircleX, Download, Eye, Send } from "lucide-react";
+import {
+  Award,
+  CircleCheck,
+  CircleX,
+  Download,
+  Eye,
+  Send,
+  UserX,
+} from "lucide-react";
 import Button from "../../../../components/ui/Button";
 import ExportDataModal, {
   type ExportColumnDef,
@@ -15,13 +23,18 @@ import useCountUp from "../../../../hooks/useCountUp";
 import {
   getTrainees,
   getTrainingReviewSummary,
+  handleIncompleteTrainee,
   issueCertificates,
   setTraineeEvalStatus,
   type TrainingReviewSummary,
 } from "../../../../services/trainingService";
 import { getCampaigns } from "../../../../services/recruitmentService";
 import type { RecruitmentCampaign } from "../../../../types/recruitment";
-import type { Trainee, TraineeEvalStatus } from "../../../../types/training";
+import type {
+  PenaltyActionType,
+  Trainee,
+  TraineeEvalStatus,
+} from "../../../../types/training";
 import type { EmailRecipient } from "../../../../types/email";
 import { traineeToEmailRecipient } from "../../../../utils/emailRecipients";
 
@@ -136,6 +149,11 @@ function TrainingReviewPage() {
   const [emailOpen, setEmailOpen] = useState(false);
   const [emailRecipients, setEmailRecipients] = useState<EmailRecipient[]>([]);
   const [detailTrainee, setDetailTrainee] = useState<Trainee | null>(null);
+  const [penaltyTarget, setPenaltyTarget] = useState<Trainee | null>(null);
+  const [penaltyAction, setPenaltyAction] =
+    useState<PenaltyActionType>("final_reminder");
+  const [penaltyReason, setPenaltyReason] = useState("");
+  const [penaltySaving, setPenaltySaving] = useState(false);
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -305,6 +323,32 @@ function TrainingReviewPage() {
       await load();
     } catch (err) {
       showToast(err instanceof Error ? err.message : "Cập nhật thất bại.");
+    }
+  };
+
+  const handlePenalty = async () => {
+    if (!penaltyTarget || !penaltyReason.trim()) {
+      showToast("Vui lòng nhập lý do xử lý.");
+      return;
+    }
+    setPenaltySaving(true);
+    try {
+      await handleIncompleteTrainee(penaltyTarget.id, {
+        action: penaltyAction,
+        reason: penaltyReason.trim(),
+      });
+      showToast(
+        penaltyAction === "remove_from_club"
+          ? `Đã loại ${penaltyTarget.fullName} khỏi CLB.`
+          : `Đã gửi nhắc lần cuối tới ${penaltyTarget.fullName}.`,
+      );
+      setPenaltyTarget(null);
+      setPenaltyReason("");
+      await load();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Xử lý thất bại.");
+    } finally {
+      setPenaltySaving(false);
     }
   };
 
@@ -607,6 +651,23 @@ function TrainingReviewPage() {
                                 <Icon icon={CircleX} size={17} />
                               </button>
                             )}
+                            {(t.evalStatus === "failed" ||
+                              t.evalStatus === "studying") &&
+                              t.status !== "removed" && (
+                              <button
+                                type="button"
+                                aria-label={`Xử lý không hoàn thành: ${t.fullName}`}
+                                title="Nhắc / loại khỏi CLB"
+                                className="flex h-8 w-8 items-center justify-center rounded-full text-amber-600 shadow-extruded-sm transition-colors hover:bg-amber-500/10"
+                                onClick={() => {
+                                  setPenaltyTarget(t);
+                                  setPenaltyAction("final_reminder");
+                                  setPenaltyReason("");
+                                }}
+                              >
+                                <Icon icon={UserX} size={17} />
+                              </button>
+                            )}
                             {t.evalStatus === "certified" && (
                               <span
                                 className="flex h-8 w-8 items-center justify-center text-sky-500"
@@ -724,6 +785,63 @@ function TrainingReviewPage() {
                 <span className="text-sm text-muted">Kết luận của BCN</span>
                 <EvalBadge status={detailTrainee.evalStatus} />
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {penaltyTarget && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          role="presentation"
+        >
+          <button
+            type="button"
+            className="absolute inset-0 bg-foreground/35 backdrop-blur-[2px]"
+            aria-label="Đóng"
+            onClick={() => setPenaltyTarget(null)}
+          />
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="relative z-10 w-full max-w-md space-y-4 rounded-card bg-background p-5 shadow-extruded"
+          >
+            <h2 className="font-display text-xl font-extrabold">
+              Xử lý không hoàn thành
+            </h2>
+            <p className="text-sm text-muted">
+              {penaltyTarget.fullName} — nhắc lần cuối hoặc loại khỏi CLB
+            </p>
+            <Select
+              value={penaltyAction}
+              onChange={(v) => setPenaltyAction(v as PenaltyActionType)}
+              options={[
+                { value: "final_reminder", label: "Nhắc nhở lần cuối" },
+                { value: "remove_from_club", label: "Loại khỏi CLB" },
+              ]}
+            />
+            <textarea
+              className="neu-input min-h-[88px] w-full text-sm"
+              placeholder="Lý do *"
+              value={penaltyReason}
+              onChange={(e) => setPenaltyReason(e.target.value)}
+            />
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setPenaltyTarget(null)}
+              >
+                Huỷ
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                disabled={penaltySaving}
+                onClick={() => void handlePenalty()}
+              >
+                Xác nhận
+              </Button>
             </div>
           </div>
         </div>

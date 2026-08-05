@@ -140,6 +140,14 @@ function ApplicationTable({
                   <span className="text-sm font-medium">
                     {app.totalScore.toFixed(1)}
                     <span className="text-muted font-normal"> /10</span>
+                    {app.needsManualReview && (
+                      <span
+                        className="ml-1 text-amber-600"
+                        title="Điểm reviewer chênh lệch >30% — cần BCN xem lại"
+                      >
+                        ⚠
+                      </span>
+                    )}
                   </span>
                 ) : (
                   <span className="text-muted">--</span>

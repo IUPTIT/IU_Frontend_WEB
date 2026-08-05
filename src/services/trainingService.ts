@@ -1,9 +1,9 @@
-// Training (Đào tạo) — programs/teams/trainees gọi API thật (/api/v1/training).
-// Phần tasks/submissions/progress (portal Leader & Member) backend CHƯA có
-// endpoint — vẫn dùng mock, sẽ nối API ở PR sau.
+// Training (Đào tạo thành viên mới) — programs / teams / tasks / progress / chat
 import { api } from "../api/client";
 import type {
+  PenaltyActionType,
   Trainee,
+  TrainingChatMessage,
   TrainingGroup,
   TrainingMentor,
   TrainingProgram,
@@ -11,11 +11,6 @@ import type {
   TrainingTask,
   TrainingTaskSubmission,
 } from "../types/training";
-import {
-  mockTaskSubmissions,
-  mockTrainingProgress,
-  mockTrainingTasks,
-} from "../mocks/training.mock";
 
 // ---- Kiểu backend ----
 
@@ -534,6 +529,36 @@ export async function createTrainingProgram(
   return toProgram(program);
 }
 
+export async function updateTrainingProgram(
+  id: string,
+  input: SaveProgramInput,
+): Promise<TrainingProgram> {
+  const { program } = await api.patch<{ program: BackendProgram }>(
+    `/training/programs/${id}`,
+    {
+      name: input.name,
+      department: input.departmentName || input.departmentId,
+      stages: input.stages.map((s) => ({
+        stageId: s.id,
+        name: s.name,
+        order: s.order,
+        weekLabel: s.weekLabel ?? "",
+        durationWeeks: s.durationWeeks ?? null,
+      })),
+      lessons: input.lessons.map((l) => ({
+        lessonId: l.id,
+        stageId: l.stageId,
+        title: l.title,
+        content: l.content ?? "",
+        attachmentUrl: l.attachmentUrl ?? "",
+        kind: l.kind ?? null,
+        durationLabel: l.durationLabel ?? "",
+      })),
+    },
+  );
+  return toProgram(program);
+}
+
 // ---- Groups ----
 
 export async function getTrainingGroups(
@@ -583,6 +608,24 @@ export async function createTrainingGroup(
   return toGroup(group);
 }
 
+export async function updateTrainingGroup(
+  id: string,
+  input: Partial<{
+    name: string;
+    programId: string | null;
+    department: string;
+    specialtyLabel: string;
+    mentorId: string | null;
+    memberIds: string[];
+  }>,
+): Promise<TrainingGroup> {
+  const { group } = await api.patch<{ group: BackendGroup }>(
+    `/training/groups/${id}`,
+    input,
+  );
+  return toGroup(group);
+}
+
 // ---- Đánh giá tổng kết ----
 
 export type TrainingReviewSummary = {
@@ -611,6 +654,15 @@ export async function saveMentorTraineeReview(
   await api.patch(`/training/trainees/${traineeId}/mentor-review`, input);
 }
 
+export async function confirmTrainingCompletion(
+  traineeId: string,
+  note?: string,
+): Promise<void> {
+  await api.post(`/training/trainees/${traineeId}/confirm-completion`, {
+    note: note ?? "",
+  });
+}
+
 export async function setTraineeEvalStatus(
   traineeId: string,
   evalStatus: NonNullable<Trainee["evalStatus"]>,
@@ -624,32 +676,141 @@ export async function issueCertificates(
   return api.post<{ issued: number }>("/training/certificates", { traineeIds });
 }
 
+export async function handleIncompleteTrainee(
+  traineeId: string,
+  input: { action: PenaltyActionType; reason: string },
+): Promise<void> {
+  await api.post(`/training/trainees/${traineeId}/incomplete-action`, input);
+}
+
 export async function notifyTrainingGroups(
   groupIds: string[],
 ): Promise<{ sent: number }> {
-  // Email gửi qua module email (SendEmailModal) — hàm này chỉ trả số lượng
-  return { sent: groupIds.length };
+  return api.post<{ sent: number }>("/training/groups/notify", { groupIds });
 }
 
-// ---- Tasks / submissions / progress — CHƯA có backend, vẫn mock ----
-// TODO: nối API khi backend có module training tasks
+/** Cập nhật deadline / nội dung task (Leader UC #2) */
+export async function updateMentorTask(
+  taskId: string,
+  input: {
+    title?: string;
+    description?: string;
+    attachmentUrl?: string;
+    deadline?: string | null;
+  },
+): Promise<void> {
+  await api.patch(`/training/tasks/${taskId}`, input);
+}
+
+// ---- Tasks / submissions / progress (API thật) ----
 
 export async function getTrainingTasks(
   groupId?: string,
 ): Promise<TrainingTask[]> {
-  if (!groupId) return mockTrainingTasks;
-  return mockTrainingTasks.filter((t) => t.groupId === groupId);
+  const tasks = await getMentorTasks(groupId);
+  return tasks.map((t) => ({
+    id: t.id,
+    groupId: t.groupId ?? "",
+    title: t.title,
+    description: t.description ?? "",
+    assigneeIds: t.assignments.map((a) => a.traineeId),
+    attachmentUrl: t.attachmentUrl,
+    deadline: t.deadline ?? "",
+    createdBy: "",
+    createdAt: t.createdAt,
+  }));
 }
 
 export async function getTaskSubmissions(
   taskId?: string,
 ): Promise<TrainingTaskSubmission[]> {
-  if (!taskId) return mockTaskSubmissions;
-  return mockTaskSubmissions.filter((s) => s.taskId === taskId);
+  const tasks = await getMentorTasks();
+  const list = taskId ? tasks.filter((t) => t.id === taskId) : tasks;
+  return list.flatMap((t) =>
+    t.assignments
+      .filter((a) => a.status !== "assigned")
+      .map((a) => ({
+        id: `${t.id}-${a.traineeId}`,
+        taskId: t.id,
+        traineeId: a.traineeId,
+        linkUrl: a.submissionUrl,
+        note: a.submissionNote,
+        submittedAt: a.submittedAt ?? "",
+        score: a.score,
+        feedback: a.feedback,
+        status:
+          a.status === "approved"
+            ? ("graded" as const)
+            : a.status === "rejected"
+              ? ("todo" as const)
+              : ("submitted" as const),
+      })),
+  );
 }
 
 export async function getMyTrainingProgress(
-  traineeId: string,
+  _traineeId?: string,
 ): Promise<TrainingProgress> {
-  return { ...mockTrainingProgress, traineeId };
+  const { progress } = await api.get<{
+    progress: TrainingProgress & { submittedOrDone?: number };
+  }>("/training/me/progress");
+  return {
+    traineeId: progress.traineeId,
+    percentComplete: progress.percentComplete,
+    completedTasks: progress.completedTasks,
+    totalTasks: progress.totalTasks,
+  };
+}
+
+// ---- Chat nhóm training ----
+
+type BackendMessage = {
+  _id: string;
+  groupId: string;
+  content: string;
+  createdAt: string;
+  senderId: { _id: string; name: string; role?: string } | string;
+};
+
+export async function getGroupMessages(
+  groupId: string,
+): Promise<TrainingChatMessage[]> {
+  const { messages } = await api.get<{ messages: BackendMessage[] }>(
+    `/training/groups/${groupId}/messages`,
+  );
+  return messages
+    .map((m) => ({
+      id: m._id,
+      groupId: m.groupId,
+      senderId: typeof m.senderId === "string" ? m.senderId : m.senderId._id,
+      senderName:
+        typeof m.senderId === "string" ? "Thành viên" : m.senderId.name,
+      content: m.content,
+      createdAt: m.createdAt,
+    }))
+    .reverse();
+}
+
+export async function sendGroupMessage(
+  groupId: string,
+  content: string,
+): Promise<TrainingChatMessage> {
+  const { message } = await api.post<{ message: BackendMessage }>(
+    `/training/groups/${groupId}/messages`,
+    { content },
+  );
+  return {
+    id: message._id,
+    groupId: message.groupId,
+    senderId:
+      typeof message.senderId === "string"
+        ? message.senderId
+        : message.senderId._id,
+    senderName:
+      typeof message.senderId === "string"
+        ? "Thành viên"
+        : message.senderId.name,
+    content: message.content,
+    createdAt: message.createdAt,
+  };
 }

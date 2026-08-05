@@ -17,6 +17,8 @@ import {
   getCampaignResultSummary,
   getCampaigns,
   notifyFinalResults,
+  rejectFinalCandidates,
+  assignOfficialDepartment,
   type CampaignResultSummary,
 } from "../../../../services/recruitmentService";
 import type { Application, RecruitmentCampaign } from "../../../../types/recruitment";
@@ -166,6 +168,7 @@ function RecruitmentResultsPage() {
   const [toast, setToast] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [convertIds, setConvertIds] = useState<string[] | null>(null);
+  const [rejectIds, setRejectIds] = useState<string[] | null>(null);
   const [emailOpen, setEmailOpen] = useState(false);
   const [emailRecipients, setEmailRecipients] = useState<EmailRecipient[]>([]);
   const [emailTemplateId, setEmailTemplateId] = useState<string | undefined>("tpl-passed");
@@ -232,23 +235,24 @@ function RecruitmentResultsPage() {
   const selectedCampaign = campaigns.find((c) => c.id === campaignId);
   const campaignName = selectedCampaign?.name ?? "";
 
-  const acceptedList = useMemo(
-    () => applications.filter((a) => a.finalResult === "pass" || a.status === "accepted"),
+  // Pool kết quả cuối: đã Pass PV (chờ chốt / đã trúng / không trúng tuyển)
+  const decisionList = useMemo(
+    () => applications.filter((a) => a.interviewResult === "pass"),
     [applications],
   );
 
   const departments = useMemo(() => {
     const map = new Map<string, string>();
-    for (const a of acceptedList) map.set(a.preferredDepartmentId, a.preferredDepartmentName);
+    for (const a of decisionList) map.set(a.preferredDepartmentId, a.preferredDepartmentName);
     return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
-  }, [acceptedList]);
+  }, [decisionList]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     const scoreMin =
       applied.scoreMin.trim() === "" ? null : Number.parseFloat(applied.scoreMin);
 
-    return acceptedList.filter((a) => {
+    return decisionList.filter((a) => {
       if (q && !a.fullName.toLowerCase().includes(q) && !a.email.toLowerCase().includes(q)) {
         return false;
       }
@@ -261,7 +265,7 @@ function RecruitmentResultsPage() {
       }
       return true;
     });
-  }, [acceptedList, search, applied]);
+  }, [decisionList, search, applied]);
 
   // Đổi tìm kiếm / bộ lọc → về trang 1 (adjust state during render)
   const [prevFilterKey, setPrevFilterKey] = useState("");
@@ -315,13 +319,25 @@ function RecruitmentResultsPage() {
   const handleConvert = async () => {
     const ids = targetIds().filter((id) => {
       const app = applications.find((a) => a.id === id);
-      return app && (app.finalResult === "pass" || app.status === "accepted");
+      return app && app.status === "interview_passed";
     });
     if (ids.length === 0) {
-      showToast("Chọn ít nhất một ứng viên trúng tuyển để chuyển đổi.");
+      showToast("Chọn ứng viên đang ở trạng thái Đạt phỏng vấn để xác nhận trúng tuyển.");
       return;
     }
     setConvertIds(ids);
+  };
+
+  const handleReject = () => {
+    const ids = targetIds().filter((id) => {
+      const app = applications.find((a) => a.id === id);
+      return app && app.status === "interview_passed";
+    });
+    if (ids.length === 0) {
+      showToast("Chọn ứng viên đang ở trạng thái Đạt phỏng vấn để đánh dấu không trúng tuyển.");
+      return;
+    }
+    setRejectIds(ids);
   };
 
   const confirmConvert = async () => {
@@ -330,10 +346,23 @@ function RecruitmentResultsPage() {
     try {
       const res = await convertAcceptedToMembers(convertIds);
       await reload(campaignId);
-      showToast(`Đã chuyển ${res.converted} ứng viên thành Member.`);
+      showToast(`Đã xác nhận trúng tuyển ${res.converted} ứng viên (nâng Member + bàn giao training).`);
     } finally {
       setBusy(false);
       setConvertIds(null);
+    }
+  };
+
+  const confirmReject = async () => {
+    if (!rejectIds) return;
+    setBusy(true);
+    try {
+      const res = await rejectFinalCandidates(rejectIds);
+      await reload(campaignId);
+      showToast(`Đã đánh dấu không trúng tuyển ${res.rejected} ứng viên.`);
+    } finally {
+      setBusy(false);
+      setRejectIds(null);
     }
   };
 
@@ -341,20 +370,29 @@ function RecruitmentResultsPage() {
     <>
       <ConfirmDialog
         open={convertIds !== null}
-        title="Chuyển thành Member"
-        message={`Chuyển ${convertIds?.length ?? 0} ứng viên trúng tuyển thành thành viên chính thức?`}
-        confirmLabel="Chuyển đổi"
+        title="Xác nhận trúng tuyển"
+        message={`Xác nhận ${convertIds?.length ?? 0} ứng viên trúng tuyển? Hệ thống sẽ nâng role Member và đẩy vào danh sách training.`}
+        confirmLabel="Trúng tuyển"
         loading={busy}
         onConfirm={confirmConvert}
         onClose={() => setConvertIds(null)}
       />
+      <ConfirmDialog
+        open={rejectIds !== null}
+        title="Không trúng tuyển"
+        message={`Đánh dấu ${rejectIds?.length ?? 0} ứng viên không trúng tuyển? Tài khoản ứng viên sẽ bị vô hiệu hoá.`}
+        confirmLabel="Không trúng tuyển"
+        loading={busy}
+        onConfirm={confirmReject}
+        onClose={() => setRejectIds(null)}
+      />
       <section className="flex flex-wrap items-end justify-between gap-4">
         <div className="min-w-0 space-y-3">
           <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
-            Kết quả &amp; Chuyển đổi
+            Kết quả cuối cùng
           </h1>
           <div className="flex flex-wrap items-center gap-2 text-muted">
-            <span className="text-sm sm:text-base">Tổng kết đợt tuyển dụng</span>
+            <span className="text-sm sm:text-base">Tổng hợp sau 2 vòng — xác nhận trúng tuyển</span>
             <Select
               value={campaignId}
               options={campaigns.map((c) => ({ value: c.id, label: c.name }))}
@@ -379,6 +417,15 @@ function RecruitmentResultsPage() {
             Gửi email hàng loạt
           </Button>
           <Button
+            variant="secondary"
+            size="sm"
+            className="!h-11"
+            disabled={busy}
+            onClick={handleReject}
+          >
+            Không trúng tuyển
+          </Button>
+          <Button
             variant="primary"
             size="sm"
             className="!h-11"
@@ -386,7 +433,7 @@ function RecruitmentResultsPage() {
             onClick={() => void handleConvert()}
             leftIcon={<Icon icon={UserPlus} size={16} />}
           >
-            Chuyển đổi thành Member
+            Xác nhận trúng tuyển
           </Button>
         </div>
       </section>
@@ -477,7 +524,9 @@ function RecruitmentResultsPage() {
 
       <section className="neu-card !p-0 overflow-hidden">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-black/5 px-5 py-4">
-          <h2 className="font-display text-lg font-bold text-foreground">Danh sách Trúng Tuyển</h2>
+          <h2 className="font-display text-lg font-bold text-foreground">
+            Ứng viên đã qua 2 vòng
+          </h2>
           <p className="text-sm text-muted">
             Hiển thị <span className="font-semibold text-foreground">{filtered.length}</span>
             {selectedIds.size > 0 && (
@@ -530,7 +579,7 @@ function RecruitmentResultsPage() {
                 {paged.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="px-4 py-16 text-center text-muted">
-                      Không có ứng viên trúng tuyển phù hợp bộ lọc.
+                      Không có ứng viên đạt phỏng vấn phù hợp bộ lọc.
                     </td>
                   </tr>
                 ) : (
@@ -558,12 +607,45 @@ function RecruitmentResultsPage() {
                             </div>
                           </div>
                         </td>
-                        <td className="px-3 py-4 text-sm text-foreground">{app.preferredDepartmentName}</td>
+                        <td className="px-3 py-4 text-sm text-foreground">
+                          {app.status === "interview_passed" &&
+                          app.departmentPreferences.length > 1 ? (
+                            <select
+                              className="neu-input !h-10 !text-sm max-w-full"
+                              value={app.preferredDepartmentName}
+                              onChange={async (e) => {
+                                const dept = e.target.value;
+                                await assignOfficialDepartment(app.id, dept);
+                                await reload(campaignId);
+                                showToast(`Đã chuyển ${app.fullName} sang ban ${dept}.`);
+                              }}
+                              aria-label={`Đổi ban cho ${app.fullName}`}
+                            >
+                              {app.departmentPreferences.map((p) => (
+                                <option key={p.priority} value={p.department}>
+                                  NV{p.priority}: {p.department}
+                                </option>
+                              ))}
+                            </select>
+                          ) : (
+                            app.preferredDepartmentName
+                          )}
+                        </td>
                         <td className="px-3 py-4 text-center text-sm font-bold text-foreground">
                           {score != null ? score.toFixed(1) : "--"}
                         </td>
                         <td className="px-3 py-4 text-center">
-                          <NotifyBadge status={app.resultNotifyStatus} />
+                          {app.status === "interview_passed" ? (
+                            <span className="inline-flex rounded-full bg-amber-500/15 px-3 py-1 text-xs font-semibold text-amber-700">
+                              Chờ kết quả cuối
+                            </span>
+                          ) : app.status === "accepted" ? (
+                            <NotifyBadge status={app.resultNotifyStatus ?? "converted"} />
+                          ) : (
+                            <span className="inline-flex rounded-full bg-red-500/15 px-3 py-1 text-xs font-semibold text-red-700">
+                              Không trúng tuyển
+                            </span>
+                          )}
                         </td>
                         <td className="relative px-3 py-4 text-center">
                           <Button
@@ -580,7 +662,7 @@ function RecruitmentResultsPage() {
                             </svg>
                           </Button>
                           {menuId === app.id && (
-                            <div className="absolute right-4 top-12 z-20 w-48 rounded-2xl bg-background p-2 shadow-extruded ring-1 ring-black/5 text-left">
+                            <div className="absolute right-4 top-12 z-20 w-52 rounded-2xl bg-background p-2 shadow-extruded ring-1 ring-black/5 text-left">
                               <button
                                 type="button"
                                 className="block w-full rounded-xl px-3 py-2 text-sm hover:bg-accent/10"
@@ -588,18 +670,30 @@ function RecruitmentResultsPage() {
                               >
                                 Gửi email
                               </button>
-                              <button
-                                type="button"
-                                className="block w-full rounded-xl px-3 py-2 text-sm hover:bg-accent/10"
-                                onClick={async () => {
-                                  setMenuId(null);
-                                  await convertAcceptedToMembers([app.id]);
-                                  await reload(campaignId);
-                                  showToast(`Đã chuyển ${app.fullName} thành Member.`);
-                                }}
-                              >
-                                Chuyển thành Member
-                              </button>
+                              {app.status === "interview_passed" && (
+                                <>
+                                  <button
+                                    type="button"
+                                    className="block w-full rounded-xl px-3 py-2 text-sm text-accent hover:bg-accent/10"
+                                    onClick={() => {
+                                      setMenuId(null);
+                                      setConvertIds([app.id]);
+                                    }}
+                                  >
+                                    Trúng tuyển
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="block w-full rounded-xl px-3 py-2 text-sm text-red-600 hover:bg-red-500/10"
+                                    onClick={() => {
+                                      setMenuId(null);
+                                      setRejectIds([app.id]);
+                                    }}
+                                  >
+                                    Không trúng tuyển
+                                  </button>
+                                </>
+                              )}
                             </div>
                           )}
                         </td>

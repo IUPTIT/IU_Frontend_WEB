@@ -5,9 +5,10 @@ import Pagination from "../../../../components/ui/Pagination";
 import Select from "../../../../components/ui/Select";
 import { ROUTES } from "../../../../constants/routes";
 import { usePortalUi } from "../../../../context/usePortalUi";
-import { getApplications, getCampaigns } from "../../../../services/recruitmentService";
+import { getApplications, getCampaigns, bulkDecideCvByThreshold } from "../../../../services/recruitmentService";
 import type { Application, ApplicationStatus, RecruitmentCampaign } from "../../../../types/recruitment";
 import { formatDate } from "../../../../utils/formatDate";
+import ConfirmDialog from "../../../../components/ui/ConfirmDialog";
 import ApplicationFilterBar, {
   type ApplicationFilterDraft,
 } from "./components/ApplicationFilterBar";
@@ -70,12 +71,13 @@ function buildApplicationExportColumns(
       getValue: (r) => getApplicationStatusLabel(r.status),
       getFilterKey: (r) => r.status,
       filterOptions: [
-        { value: "submitted", label: "Mới nộp" },
-        { value: "screening", label: "Đang đánh giá" },
-        { value: "interview", label: "Chờ phỏng vấn" },
+        { value: "submitted", label: "Chờ xét duyệt" },
+        { value: "interview", label: "Đạt vòng đơn" },
+        { value: "cv_failed", label: "Không đạt vòng đơn" },
         { value: "interview_passed", label: "Đạt phỏng vấn" },
-        { value: "accepted", label: "Đã đậu" },
-        { value: "rejected", label: "Loại" },
+        { value: "interview_failed", label: "Không đạt phỏng vấn" },
+        { value: "accepted", label: "Trúng tuyển" },
+        { value: "rejected", label: "Không trúng tuyển" },
       ],
       defaultSelected: true,
     },
@@ -100,6 +102,9 @@ function RecruitmentApplicationsPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [exportOpen, setExportOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [bulkThreshold, setBulkThreshold] = useState("7");
+  const [bulkBusy, setBulkBusy] = useState(false);
 
   const [draftFilter, setDraftFilter] = useState<ApplicationFilterDraft>(EMPTY_FILTER);
   const [appliedFilter, setAppliedFilter] = useState<ApplicationFilterDraft>(EMPTY_FILTER);
@@ -231,8 +236,38 @@ function RecruitmentApplicationsPage() {
     });
   };
 
+  const confirmBulkDecide = async () => {
+    const threshold = Number.parseFloat(bulkThreshold);
+    if (!campaignId || Number.isNaN(threshold)) {
+      showToast("Ngưỡng điểm không hợp lệ.");
+      return;
+    }
+    setBulkBusy(true);
+    try {
+      const res = await bulkDecideCvByThreshold(campaignId, threshold, true);
+      await loadApplications(campaignId);
+      showToast(
+        `Duyệt hàng loạt: Pass ${res.passed}, Fail ${res.failed}, bỏ qua ${res.skipped} (ngưỡng ${threshold}/10).`,
+      );
+      setBulkOpen(false);
+    } catch {
+      showToast("Duyệt hàng loạt thất bại — kiểm tra lại.");
+    } finally {
+      setBulkBusy(false);
+    }
+  };
+
   return (
     <>
+      <ConfirmDialog
+        open={bulkOpen}
+        title="Duyệt hàng loạt theo ngưỡng điểm"
+        message={`Hồ sơ Chờ xét duyệt đã có điểm ≥ ${bulkThreshold || "?"}/10 → Đạt vòng đơn; thấp hơn → Không đạt. Hồ sơ chưa chấm sẽ bỏ qua.`}
+        confirmLabel="Duyệt hàng loạt"
+        loading={bulkBusy}
+        onConfirm={confirmBulkDecide}
+        onClose={() => setBulkOpen(false)}
+      />
       <section className="flex flex-wrap items-end justify-between gap-4">
         <div className="min-w-0 space-y-3">
           <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
@@ -253,6 +288,21 @@ function RecruitmentApplicationsPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              min={0}
+              max={10}
+              step={0.5}
+              className="neu-input !h-11 !w-20 text-sm"
+              value={bulkThreshold}
+              onChange={(e) => setBulkThreshold(e.target.value)}
+              aria-label="Ngưỡng điểm Pass"
+            />
+            <Button variant="secondary" size="sm" className="!h-11" onClick={() => setBulkOpen(true)}>
+              Duyệt theo ngưỡng
+            </Button>
+          </div>
           <p className="text-sm text-muted">
             Tổng số:{" "}
             <span className="font-bold text-foreground">{filtered.length}</span>

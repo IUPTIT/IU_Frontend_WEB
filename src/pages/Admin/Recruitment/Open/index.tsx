@@ -12,6 +12,7 @@ import {
   getFormQuestions,
   setCampaignActive,
   updateCampaign,
+  completeCampaign,
 } from "../../../../services/recruitmentService";
 import type { RecruitmentCampaign } from "../../../../types/recruitment";
 import ConfirmDialog from "../../../../components/ui/ConfirmDialog";
@@ -89,6 +90,16 @@ function RecruitmentOpenPage() {
       return;
     }
     setDeleteTarget(campaign);
+  };
+
+  const handleComplete = async (campaign: RecruitmentCampaign) => {
+    try {
+      await completeCampaign(campaign.id);
+      await load();
+      showToast(`Đã đánh dấu hoàn tất: ${campaign.name}`);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Không thể hoàn tất đợt tuyển.");
+    }
   };
 
   const confirmDelete = async () => {
@@ -301,6 +312,7 @@ function RecruitmentOpenPage() {
             onToggleActive={handleToggle}
             onEdit={handleEdit}
             onDelete={handleDelete}
+            onComplete={handleComplete}
           />
           <Pagination page={safePage} totalPages={totalPages} onChange={setPage} />
         </>

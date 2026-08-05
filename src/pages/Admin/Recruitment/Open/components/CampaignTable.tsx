@@ -27,6 +27,7 @@ type Props = {
   onToggleActive: (id: string, active: boolean) => void;
   onEdit: (campaign: RecruitmentCampaign) => void;
   onDelete: (campaign: RecruitmentCampaign) => void;
+  onComplete?: (campaign: RecruitmentCampaign) => void;
 };
 
 const COLUMNS: DataTableColumn[] = [
@@ -45,7 +46,15 @@ function displayDate(iso: string | null) {
 
 const columnHelper = createColumnHelper<RecruitmentCampaign>();
 
-function CampaignTable({ campaigns, page, pageSize, onToggleActive, onEdit, onDelete }: Props) {
+function CampaignTable({
+  campaigns,
+  page,
+  pageSize,
+  onToggleActive,
+  onEdit,
+  onDelete,
+  onComplete,
+}: Props) {
   const startIndex = (page - 1) * pageSize;
   const { widths, setWidth } = useColumnWidths(COLUMNS);
 
@@ -98,6 +107,16 @@ function CampaignTable({ campaigns, page, pageSize, onToggleActive, onEdit, onDe
           const c = info.row.original;
           return (
             <div className="flex items-center justify-center gap-2">
+              {c.status === "closed" && onComplete && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="!h-9 !px-2 text-xs"
+                  onClick={() => onComplete(c)}
+                >
+                  Hoàn tất
+                </Button>
+              )}
               <Button variant="icon" size="sm" aria-label={`Sửa ${c.name}`} onClick={() => onEdit(c)}>
                 <Icon icon={Pencil} size={16} />
               </Button>
@@ -109,7 +128,7 @@ function CampaignTable({ campaigns, page, pageSize, onToggleActive, onEdit, onDe
         },
       }),
     ],
-    [startIndex, onToggleActive, onEdit, onDelete],
+    [startIndex, onToggleActive, onEdit, onDelete, onComplete],
   );
 
   const table = useReactTable({

@@ -6,6 +6,7 @@ type Props = {
   application: PublicApplication;
   withdrawing: boolean;
   onWithdraw: () => void;
+  onEdit: () => void;
 };
 
 const POSITIVE: PublicApplicationStatus[] = ["passed_screening", "passed_interview", "accepted"];
@@ -26,13 +27,11 @@ function Row({ label, value }: { label: string; value: string }) {
   );
 }
 
-function ApplicationStatusCard({ application, withdrawing, onWithdraw }: Props) {
+function ApplicationStatusCard({ application, withdrawing, onWithdraw, onEdit }: Props) {
   const [confirmingWithdraw, setConfirmingWithdraw] = useState(false);
 
-  // Chốt "bây giờ" một lần lúc mount — đủ chính xác cho việc so hạn nộp
   const [now] = useState(() => Date.now());
   const beforeDeadline = now < new Date(application.campaign.closeAt).getTime();
-  // Chỉ rút được khi còn "Chờ xét duyệt" và còn hạn nộp (mục 1.5 nghiệp vụ)
   const editable = application.status === "pending" && beforeDeadline;
 
   return (
@@ -58,9 +57,17 @@ function ApplicationStatusCard({ application, withdrawing, onWithdraw }: Props) 
 
       {editable ? (
         <div className="mt-6 flex flex-col gap-3 md:flex-row">
+          <button
+            type="button"
+            onClick={onEdit}
+            className="flex-1 rounded-full bg-[hsl(var(--landing-accent))] py-3 font-medium text-white transition-opacity hover:opacity-90"
+          >
+            Sửa hồ sơ
+          </button>
           {confirmingWithdraw ? (
             <div className="flex flex-1 gap-2">
               <button
+                type="button"
                 onClick={onWithdraw}
                 disabled={withdrawing}
                 className="flex-1 rounded-full border border-red-400/60 bg-red-500/20 py-3 font-medium text-red-300 transition-colors hover:bg-red-500/30 disabled:opacity-50"
@@ -68,6 +75,7 @@ function ApplicationStatusCard({ application, withdrawing, onWithdraw }: Props) 
                 {withdrawing ? "Đang rút đơn..." : "Xác nhận rút đơn"}
               </button>
               <button
+                type="button"
                 onClick={() => setConfirmingWithdraw(false)}
                 disabled={withdrawing}
                 className="landing-btn-secondary liquid-glass rounded-full px-5"
@@ -77,6 +85,7 @@ function ApplicationStatusCard({ application, withdrawing, onWithdraw }: Props) 
             </div>
           ) : (
             <button
+              type="button"
               onClick={() => setConfirmingWithdraw(true)}
               className="flex-1 rounded-full border border-red-400/40 py-3 font-medium text-red-400 transition-colors hover:bg-red-500/10"
             >

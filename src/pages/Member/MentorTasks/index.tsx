@@ -395,12 +395,13 @@ function CreateTaskForm({
  */
 function MentorTasksPage() {
   const { user } = useAuth();
-  const isMentor = user?.isMentor === true;
+  const canManage =
+    user?.isMentor === true || user?.role === "leader" || user?.role === "bcn";
 
   const [tasks, setTasks] = useState<MentorTask[]>([]);
   const [groups, setGroups] = useState<TrainingGroup[]>([]);
   const [teamTrainees, setTeamTrainees] = useState<Trainee[]>([]);
-  const [loading, setLoading] = useState(isMentor);
+  const [loading, setLoading] = useState(canManage);
   const [creating, setCreating] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
@@ -415,11 +416,14 @@ function MentorTasksPage() {
       getTrainingGroups(),
       getMyTeamTrainees(),
     ]);
-    return { t, g: g.filter((x) => x.mentorId === user?.id), tt };
-  }, [user?.id]);
+    // Leader/mentor: chỉ nhóm mình dẫn; BCN xem tất cả
+    const myGroups =
+      user?.role === "bcn" ? g : g.filter((x) => x.mentorId === user?.id);
+    return { t, g: myGroups, tt };
+  }, [user?.id, user?.role]);
 
   useEffect(() => {
-    if (!isMentor) return;
+    if (!canManage) return;
     let alive = true;
     void load()
       .then(({ t, g, tt }) => {
@@ -432,7 +436,7 @@ function MentorTasksPage() {
     return () => {
       alive = false;
     };
-  }, [isMentor, load]);
+  }, [canManage, load]);
 
   const reload = () => {
     void load().then(({ t, g, tt }) => {
@@ -442,7 +446,7 @@ function MentorTasksPage() {
     });
   };
 
-  if (!isMentor) {
+  if (!canManage) {
     return (
       <section className="neu-card !p-10 text-center space-y-3">
         <h1 className="font-display text-2xl font-extrabold">Task cho team</h1>

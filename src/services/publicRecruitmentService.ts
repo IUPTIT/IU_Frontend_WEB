@@ -333,3 +333,47 @@ export function lookupApplication(query: string): Promise<PublicApplication> {
 export function withdrawApplication(code: string, email: string): Promise<void> {
   return api.delete(`/public/applications/${encodeURIComponent(code)}`, { email });
 }
+
+export type EditApplicationPayload = {
+  email: string;
+  fullName?: string;
+  studentId?: string;
+  className?: string;
+  faculty?: string;
+  phone?: string;
+  dateOfBirth?: string;
+  avatarUrl?: string;
+  cvUrl?: string;
+  wishes?: string[];
+  answers?: Record<string, string | string[]>;
+};
+
+/** Sửa hồ sơ trước hạn — chỉ khi còn Chờ xét duyệt & chưa chấm */
+export function editApplication(
+  code: string,
+  payload: EditApplicationPayload,
+): Promise<PublicApplication> {
+  const body: Record<string, unknown> = { email: payload.email };
+  if (payload.fullName !== undefined) body.fullName = payload.fullName;
+  if (payload.studentId !== undefined) body.studentId = payload.studentId;
+  if (payload.className !== undefined) body.className = payload.className;
+  if (payload.faculty !== undefined) body.faculty = payload.faculty;
+  if (payload.phone !== undefined) body.phone = payload.phone;
+  if (payload.dateOfBirth !== undefined) body.dateOfBirth = payload.dateOfBirth;
+  if (payload.avatarUrl) body.avatarUrl = payload.avatarUrl;
+  if (payload.cvUrl) body.cvUrl = payload.cvUrl;
+  if (payload.wishes?.length) {
+    body.departmentPreferences = payload.wishes
+      .filter(Boolean)
+      .map((department, i) => ({ department, priority: i + 1 }));
+  }
+  if (payload.answers) {
+    body.answers = Object.entries(payload.answers).map(([fieldId, value]) => ({ fieldId, value }));
+  }
+  return api
+    .put<{ application: BackendApplication }>(
+      `/public/applications/${encodeURIComponent(code)}/edit`,
+      body,
+    )
+    .then((d) => toApplication(d.application));
+}

@@ -20,6 +20,10 @@ import {
   getPassedScreeningApplications,
   notifyInterviewResults,
   rescheduleInterviewSlot,
+  listUnbookedApplications,
+  assignInterviewSlot,
+  markUnbookedNoShow,
+  type UnbookedApplication,
 } from "../../../../services/recruitmentService";
 import type {
   Application,
@@ -121,6 +125,10 @@ function RecruitmentInterviewsPage() {
   const [deletingSlot, setDeletingSlot] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [exportRows, setExportRows] = useState<InterviewResultRowUi[]>([]);
+  const [unbooked, setUnbooked] = useState<UnbookedApplication[]>([]);
+  const [assignAppId, setAssignAppId] = useState("");
+  const [assignSlotId, setAssignSlotId] = useState("");
+  const [unbookedBusy, setUnbookedBusy] = useState(false);
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -154,14 +162,16 @@ function RecruitmentInterviewsPage() {
   const reloadSlots = useCallback(async (cid: string) => {
     if (!cid) return;
     try {
-      const [all, dates, apps] = await Promise.all([
+      const [all, dates, apps, waiting] = await Promise.all([
         getInterviewSlots(cid),
         getInterviewDatesWithSlots(cid),
         getPassedScreeningApplications(cid),
+        listUnbookedApplications(cid),
       ]);
       setSlots(all);
       setMarkedDates(new Set(dates));
       setCandidates(apps);
+      setUnbooked(waiting);
     } finally {
       setLoading(false);
     }
@@ -405,6 +415,104 @@ function RecruitmentInterviewsPage() {
         <p className="rounded-2xl bg-accent/10 px-4 py-3 text-sm text-accent" role="status">
           {toast}
         </p>
+      )}
+
+      {tab === "schedule" && unbooked.length > 0 && (
+        <section className="neu-card !p-5 space-y-4">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h2 className="font-display text-lg font-bold">Chưa đặt lịch phỏng vấn</h2>
+              <p className="text-sm text-muted">
+                {unbooked.length} ứng viên đã Pass vòng đơn — BCN có thể gán ca hoặc đánh dấu vắng
+                không đặt lịch.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Select
+                value={assignAppId}
+                options={[
+                  { value: "", label: "Chọn ứng viên" },
+                  ...unbooked.map((a) => ({
+                    value: a._id,
+                    label: `${a.fullName} (${a.applicationCode ?? a.email})`,
+                  })),
+                ]}
+                onChange={setAssignAppId}
+                className="min-w-[200px]"
+                placeholder="Ứng viên"
+              />
+              <Select
+                value={assignSlotId}
+                options={[
+                  { value: "", label: "Chọn ca còn chỗ" },
+                  ...slots
+                    .filter((s) => !s.applicationId)
+                    .map((s) => ({
+                      value: s.id.split("::")[0],
+                      label: `${s.date} ${s.startTime} · ${s.locationOrLink}`,
+                    })),
+                ]}
+                onChange={setAssignSlotId}
+                className="min-w-[220px]"
+                placeholder="Ca"
+              />
+              <Button
+                variant="primary"
+                size="sm"
+                disabled={!assignAppId || !assignSlotId || unbookedBusy}
+                onClick={async () => {
+                  setUnbookedBusy(true);
+                  try {
+                    await assignInterviewSlot(assignAppId, assignSlotId);
+                    showToast("Đã gán ca phỏng vấn.");
+                    setAssignAppId("");
+                    setAssignSlotId("");
+                    await reloadSlots(campaignId);
+                  } catch {
+                    showToast("Gán ca thất bại — ca có thể đã hết chỗ.");
+                  } finally {
+                    setUnbookedBusy(false);
+                  }
+                }}
+              >
+                Gán ca
+              </Button>
+            </div>
+          </div>
+          <ul className="divide-y divide-black/5">
+            {unbooked.map((a) => (
+              <li key={a._id} className="flex flex-wrap items-center justify-between gap-3 py-3">
+                <div>
+                  <p className="font-semibold text-foreground">{a.fullName}</p>
+                  <p className="text-xs text-muted">
+                    {a.email}
+                    {a.bookingReminderSentAt ? " · đã nhắc email" : ""}
+                  </p>
+                </div>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  disabled={unbookedBusy}
+                  onClick={async () => {
+                    if (!window.confirm(`Đánh dấu ${a.fullName} vắng không đặt lịch (Fail PV)?`)) return;
+                    setUnbookedBusy(true);
+                    try {
+                      await markUnbookedNoShow(a._id);
+                      showToast(`Đã Fail PV: ${a.fullName}`);
+                      await reloadSlots(campaignId);
+                    } catch {
+                      showToast("Thao tác thất bại.");
+                    } finally {
+                      setUnbookedBusy(false);
+                    }
+                  }}
+                >
+                  Vắng không đặt lịch
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
 
       {tab === "schedule" && (

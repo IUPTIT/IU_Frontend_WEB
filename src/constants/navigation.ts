@@ -41,18 +41,6 @@ export const SIDEBAR_CONFIG: Record<Role, SidebarConfig> = {
                 label: "Vòng phỏng vấn",
                 path: ROUTES.admin.recruitment.interviews,
               },
-              // Vòng training — admin chỉ chia đội + đánh giá; lộ trình do mentor tự tạo
-              {
-                id: "training-teams",
-                label: "Chia đội training",
-                path: ROUTES.admin.training.teams,
-              },
-              {
-                id: "training-review",
-                label: "Tổng kết training",
-                path: ROUTES.admin.training.review,
-              },
-              // Kết quả cuối (trúng tuyển chính thức) — bước chốt sau vòng training
               {
                 id: "recruitment-results",
                 label: "Kết quả",
@@ -66,12 +54,34 @@ export const SIDEBAR_CONFIG: Record<Role, SidebarConfig> = {
             icon: "members",
             path: ROUTES.admin.members,
           },
-          // Đào tạo CLB (bồi dưỡng thành viên chính thức) — khác với Vòng training tuyển chọn
+          // Đào tạo thành viên mới (sau trúng tuyển) — không gộp vào Tuyển dụng
           {
-            id: "club-training",
+            id: "training",
             label: "Đào tạo",
             icon: "training",
-            path: ROUTES.admin.clubTraining,
+            path: ROUTES.admin.training.trainees,
+            children: [
+              {
+                id: "training-trainees",
+                label: "Danh sách tân binh",
+                path: ROUTES.admin.training.trainees,
+              },
+              {
+                id: "training-programs",
+                label: "Lộ trình training",
+                path: ROUTES.admin.training.programs,
+              },
+              {
+                id: "training-teams",
+                label: "Chia đội",
+                path: ROUTES.admin.training.teams,
+              },
+              {
+                id: "training-review",
+                label: "Đánh giá tổng kết",
+                path: ROUTES.admin.training.review,
+              },
+            ],
           },
           {
             id: "settings",
@@ -146,18 +156,18 @@ export const SIDEBAR_CONFIG: Record<Role, SidebarConfig> = {
         items: [
           {
             id: "training",
-            label: "Đào tạo",
+            label: "Đào tạo thành viên mới",
             icon: "training",
             path: ROUTES.leader.training.groups,
             children: [
               {
                 id: "training-groups",
-                label: "Quản lý Nhóm",
+                label: "Quản lý nhóm",
                 path: ROUTES.leader.training.groups,
               },
               {
                 id: "training-tasks",
-                label: "Task Training",
+                label: "Task training",
                 path: ROUTES.leader.training.tasks,
               },
               {
@@ -238,25 +248,25 @@ export const SIDEBAR_CONFIG: Record<Role, SidebarConfig> = {
       },
       {
         id: "dao-tao",
-        label: "ĐÀO TẠO",
+        label: "ĐÀO TẠO THÀNH VIÊN MỚI",
         // Khu tự học của member thường — mentor dẫn team, không học khu này
         hideForMentor: true,
         items: [
           {
             id: "training-roadmap",
-            label: "Lộ trình của tôi",
+            label: "Lộ trình & nhóm",
             icon: "roadmap",
             path: ROUTES.member.training.roadmap,
           },
           {
             id: "training-tasks",
-            label: "Nhiệm vụ & Bài tập",
+            label: "Task training",
             icon: "tasks",
             path: ROUTES.member.training.tasks,
           },
           {
             id: "training-progress",
-            label: "Tiến độ & Kết quả",
+            label: "Tiến độ & Trao đổi",
             icon: "progress",
             path: ROUTES.member.training.progress,
           },
@@ -310,7 +320,7 @@ export const SIDEBAR_CONFIG: Record<Role, SidebarConfig> = {
           },
           {
             id: "training",
-            label: "Vòng training",
+            label: "Đào tạo",
             icon: "training",
             path: ROUTES.candidate.training,
           },

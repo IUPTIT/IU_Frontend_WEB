@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ChevronRight, Shuffle, Volume2 } from "lucide-react";
+import { ChevronRight, Pencil, Shuffle, Volume2 } from "lucide-react";
 import Button from "../../../../components/ui/Button";
 import Badge from "../../../../components/ui/Badge";
 import Icon from "../../../../components/ui/Icon";
@@ -7,6 +7,7 @@ import Avatar from "../../../../components/ui/Avatar";
 import Select from "../../../../components/ui/Select";
 import { usePortalUi } from "../../../../context/usePortalUi";
 import MentorManageModal from "./components/MentorManageModal";
+import EditGroupModal from "./components/EditGroupModal";
 import {
   autoAssignTeams,
   getMentors,
@@ -206,10 +207,12 @@ function GroupDetailModal({
   group,
   trainees,
   onClose,
+  onEdit,
 }: {
   group: TrainingGroup | null;
   trainees: Trainee[];
   onClose: () => void;
+  onEdit: () => void;
 }) {
   if (!group) return null;
   const members = trainees.filter((t) => t.groupId === group.id);
@@ -288,6 +291,16 @@ function GroupDetailModal({
             )}
           </ul>
         </div>
+        <footer className="border-t border-black/5 px-5 py-4 sm:px-6">
+          <Button
+            variant="primary"
+            className="w-full"
+            leftIcon={<Icon icon={Pencil} size={16} />}
+            onClick={onEdit}
+          >
+            Chỉnh sửa nhóm / mentor
+          </Button>
+        </footer>
       </div>
     </div>
   );
@@ -315,6 +328,7 @@ function TrainingTeamsPage() {
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [mentorModalOpen, setMentorModalOpen] = useState(false);
   const [detailGroup, setDetailGroup] = useState<TrainingGroup | null>(null);
+  const [editGroup, setEditGroup] = useState<TrainingGroup | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
@@ -518,6 +532,23 @@ function TrainingTeamsPage() {
         group={detailGroup}
         trainees={trainees}
         onClose={() => setDetailGroup(null)}
+        onEdit={() => {
+          setEditGroup(detailGroup);
+          setDetailGroup(null);
+        }}
+      />
+
+      <EditGroupModal
+        open={editGroup !== null}
+        group={editGroup}
+        trainees={trainees}
+        mentors={mentors}
+        programs={programs}
+        onClose={() => setEditGroup(null)}
+        onSaved={(msg) => {
+          showToast(msg);
+          void load();
+        }}
       />
 
       <RandomAssignModal

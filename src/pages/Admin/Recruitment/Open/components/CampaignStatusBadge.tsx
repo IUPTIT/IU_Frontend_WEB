@@ -2,8 +2,9 @@ import type { CampaignStatusLabel, RecruitmentCampaign } from "../../../../../ty
 import { getCampaignStatusLabel } from "./campaignStatus";
 
 const statusClass: Record<CampaignStatusLabel, string> = {
-  "Đang diễn ra": "bg-accent/15 text-accent",
-  "Đã kết thúc": "bg-muted/15 text-muted",
+  "Đang mở": "bg-accent/15 text-accent",
+  "Đã đóng": "bg-muted/15 text-muted",
+  "Đã hoàn tất": "bg-emerald-500/15 text-emerald-700",
   Nháp: "bg-accent-light/25 text-accent",
 };
 

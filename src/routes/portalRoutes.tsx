@@ -12,6 +12,8 @@ import AdminRecruitmentResultsPage from "../pages/Admin/Recruitment/Results";
 import AdminMembersPage from "../pages/Admin/Members";
 import AdminClubTrainingPage from "../pages/Admin/ClubTraining";
 import AdminTrainingTeamsPage from "../pages/Admin/Training/Teams";
+import AdminTrainingProgramsPage from "../pages/Admin/Training/Programs";
+import AdminTrainingTraineesPage from "../pages/Admin/Training/Trainees";
 import AdminTrainingReviewPage from "../pages/Admin/Training/Review";
 import AdminSettingsPage from "../pages/Admin/Settings";
 import AdminEmailConfigPage from "../pages/Admin/Settings/Email";
@@ -47,6 +49,8 @@ const PAGE_MAP: Record<string, ReactNode> = {
   [ROUTES.admin.recruitment.results]: <AdminRecruitmentResultsPage />,
   [ROUTES.admin.members]: <AdminMembersPage />,
   [ROUTES.admin.clubTraining]: <AdminClubTrainingPage />,
+  [ROUTES.admin.training.trainees]: <AdminTrainingTraineesPage />,
+  [ROUTES.admin.training.programs]: <AdminTrainingProgramsPage />,
   [ROUTES.admin.training.teams]: <AdminTrainingTeamsPage />,
   [ROUTES.admin.training.review]: <AdminTrainingReviewPage />,
   [ROUTES.admin.settings]: <AdminSettingsPage />,

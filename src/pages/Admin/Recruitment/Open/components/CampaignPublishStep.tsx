@@ -135,7 +135,7 @@ function CampaignPublishStep({ draft, onChange, onBack, onSaveDraft, onPublish }
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-sm font-medium">Kích hoạt ngay</p>
-                  <p className="text-xs text-muted">Đợt tuyển chuyển sang Đang diễn ra</p>
+                  <p className="text-xs text-muted">Đợt tuyển chuyển sang Đang mở</p>
                 </div>
                 <Toggle
                   checked={draft.activateOnPublish}

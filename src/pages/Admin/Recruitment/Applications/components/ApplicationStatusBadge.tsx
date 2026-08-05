@@ -3,12 +3,13 @@ import { badgeToneClass, type BadgeTone } from "../../../../../components/ui/bad
 import { getApplicationStatusLabel, type ApplicationStatusLabel } from "./applicationStatus";
 
 const statusTone: Record<ApplicationStatusLabel, BadgeTone> = {
-  "Mới nộp": "violet",
-  "Đang đánh giá": "accent",
-  "Chờ phỏng vấn": "success",
+  "Chờ xét duyệt": "violet",
+  "Đạt vòng đơn": "success",
+  "Không đạt vòng đơn": "danger",
   "Đạt phỏng vấn": "info",
-  "Đã đậu": "info",
-  Loại: "danger",
+  "Không đạt phỏng vấn": "danger",
+  "Trúng tuyển": "info",
+  "Không trúng tuyển": "danger",
 };
 
 function ApplicationStatusBadge({ status }: { status: ApplicationStatus }) {
