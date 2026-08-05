@@ -74,7 +74,13 @@ function RescheduleModal({ open, slot, onClose, onSubmit }: Props) {
       <div role="dialog" aria-modal="true" className="relative z-10 w-full max-w-md rounded-card bg-background shadow-extruded">
         <header className="border-b border-black/5 px-5 py-4">
           <h2 className="font-display text-xl font-extrabold">Sửa ca phỏng vấn</h2>
-          {slot.candidateName && <p className="mt-1 text-sm text-muted">{slot.candidateName}</p>}
+          {slot.candidateName && (
+            <p className="mt-1 text-sm text-muted">{slot.candidateName}</p>
+          )}
+          <p className="mt-1 text-sm text-muted">
+            {slot.startTime} · {slot.bookedCount ?? 0}/{slot.capacity ?? 1} chỗ ·{" "}
+            {slot.interviewers.length} người PV
+          </p>
         </header>
         <div className="space-y-4 p-5">
           <div className="grid gap-4 sm:grid-cols-2">

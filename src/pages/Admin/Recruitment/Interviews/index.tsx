@@ -125,6 +125,7 @@ function RecruitmentInterviewsPage() {
   const [deletingSlot, setDeletingSlot] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [exportRows, setExportRows] = useState<InterviewResultRowUi[]>([]);
+  const [resultRows, setResultRows] = useState<InterviewResultRowUi[]>([]);
   const [unbooked, setUnbooked] = useState<UnbookedApplication[]>([]);
   const [assignAppId, setAssignAppId] = useState("");
   const [assignSlotId, setAssignSlotId] = useState("");
@@ -162,16 +163,18 @@ function RecruitmentInterviewsPage() {
   const reloadSlots = useCallback(async (cid: string) => {
     if (!cid) return;
     try {
-      const [all, dates, apps, waiting] = await Promise.all([
+      const [all, dates, apps, waiting, results] = await Promise.all([
         getInterviewSlots(cid),
         getInterviewDatesWithSlots(cid),
         getPassedScreeningApplications(cid),
         listUnbookedApplications(cid),
+        getInterviewResults(cid).catch(() => [] as InterviewResultRowUi[]),
       ]);
       setSlots(all);
       setMarkedDates(new Set(dates));
       setCandidates(apps);
       setUnbooked(waiting);
+      setResultRows(results);
     } finally {
       setLoading(false);
     }
@@ -195,9 +198,9 @@ function RecruitmentInterviewsPage() {
         if (statusFilter && s.status !== statusFilter) return false;
         if (!q) return true;
         return (
-          (s.candidateName ?? "").toLowerCase().includes(q) ||
+          s.locationOrLink.toLowerCase().includes(q) ||
           s.interviewers.some((i) => i.name.toLowerCase().includes(q)) ||
-          s.locationOrLink.toLowerCase().includes(q)
+          s.startTime.includes(q)
         );
       })
       .sort((a, b) => a.startTime.localeCompare(b.startTime));
@@ -210,14 +213,17 @@ function RecruitmentInterviewsPage() {
     return { total, missing, scheduled };
   }, [daySlots]);
 
-  const resultRows = useMemo(() => {
-    return slots
-      .filter((s) => s.applicationId)
-      .map((s) => {
-        const app = candidates.find((c) => c.id === s.applicationId);
-        return { slot: s, app };
-      });
-  }, [slots, candidates]);
+  const decidedResults = useMemo(
+    () =>
+      resultRows.filter(
+        (r) =>
+          r.applicationStatus === "passed_interview" ||
+          r.applicationStatus === "failed_interview" ||
+          r.applicationStatus === "admitted" ||
+          r.applicationStatus === "rejected",
+      ),
+    [resultRows],
+  );
 
   const dateLabel = (() => {
     const parts = selectedDate.split("-").map(Number);
@@ -318,24 +324,25 @@ function RecruitmentInterviewsPage() {
                 className="!h-11"
                 leftIcon={<Icon icon={Send} size={16} />}
                 onClick={() => {
-                  const rows = daySlots
-                    .map((slot) => ({
-                      slot,
-                      app: candidates.find((c) => c.id === slot.applicationId),
-                    }))
-                    .filter((r): r is { slot: InterviewSlot; app: Application } => !!r.app);
+                  const dayBookings = resultRows.filter((r) => r.slotDate === selectedDate);
+                  const rows = dayBookings
+                    .map((r) => {
+                      const app = candidates.find((c) => c.id === r.applicationId);
+                      return app ? { row: r, app } : null;
+                    })
+                    .filter((x): x is { row: InterviewResultRowUi; app: Application } => !!x);
                   if (rows.length === 0) {
-                    showToast("Chưa có ứng viên trong lịch ngày này để gửi thư mời.");
+                    showToast("Chưa có ứng viên đặt lịch ngày này để gửi thư mời.");
                     return;
                   }
                   setEmailRecipients(
-                    rows.map(({ slot, app }) =>
+                    rows.map(({ row, app }) =>
                       applicationToEmailRecipient(app, {
-                        interview_date: formatDate(slot.date),
-                        interview_time: slot.startTime,
-                        location: slot.locationOrLink,
-                        meeting_link: slot.locationOrLink.startsWith("http")
-                          ? slot.locationOrLink
+                        interview_date: formatDate(row.slotDate),
+                        interview_time: row.slotTime,
+                        location: row.location,
+                        meeting_link: row.location.startsWith("http")
+                          ? row.location
                           : "https://meet.google.com/iu-club",
                       }),
                     ),
@@ -381,22 +388,24 @@ function RecruitmentInterviewsPage() {
               className="!h-11"
               leftIcon={<Icon icon={Send} size={16} />}
               onClick={() => {
-                const rows = resultRows.filter(
-                  (r): r is { slot: InterviewSlot; app: Application } =>
-                    !!r.app && (r.app.interviewResult === "pass" || r.app.interviewResult === "fail"),
-                );
+                const rows = decidedResults
+                  .map((r) => {
+                    const app = candidates.find((c) => c.id === r.applicationId);
+                    return app ? { row: r, app } : null;
+                  })
+                  .filter((x): x is { row: InterviewResultRowUi; app: Application } => !!x);
                 if (rows.length === 0) {
                   showToast("Chưa có ứng viên đã duyệt kết quả PV để gửi email.");
                   return;
                 }
                 setEmailRecipients(
-                  rows.map(({ slot, app }) =>
+                  rows.map(({ row, app }) =>
                     applicationToEmailRecipient(app, {
-                      interview_date: formatDate(slot.date),
-                      interview_time: slot.startTime,
-                      location: slot.locationOrLink,
-                      meeting_link: slot.locationOrLink.startsWith("http")
-                        ? slot.locationOrLink
+                      interview_date: formatDate(row.slotDate),
+                      interview_time: row.slotTime,
+                      location: row.location,
+                      meeting_link: row.location.startsWith("http")
+                        ? row.location
                         : "https://meet.google.com/iu-club",
                     }),
                   ),
@@ -446,10 +455,10 @@ function RecruitmentInterviewsPage() {
                 options={[
                   { value: "", label: "Chọn ca còn chỗ" },
                   ...slots
-                    .filter((s) => !s.applicationId)
+                    .filter((s) => (s.bookedCount ?? 0) < (s.capacity ?? 1))
                     .map((s) => ({
-                      value: s.id.split("::")[0],
-                      label: `${s.date} ${s.startTime} · ${s.locationOrLink}`,
+                      value: s.id,
+                      label: `${s.date} ${s.startTime} · ${s.bookedCount ?? 0}/${s.capacity ?? 1} · ${s.locationOrLink}`,
                     })),
                 ]}
                 onChange={setAssignSlotId}
@@ -569,7 +578,7 @@ function RecruitmentInterviewsPage() {
                     onReschedule={setRescheduleSlot}
                     onDelete={setDeleteSlotTarget}
                     onOpenCandidates={(s) =>
-                      navigate(ROUTES.admin.recruitment.interviewSlot(s.id.split("::")[0]))
+                      navigate(ROUTES.admin.recruitment.interviewSlot(s.id))
                     }
                   />
                 ))}
@@ -582,12 +591,13 @@ function RecruitmentInterviewsPage() {
       {tab === "results" && (
         <div className="neu-card overflow-hidden !p-0">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[720px] text-left">
+            <table className="w-full min-w-[900px] text-left">
               <thead>
                 <tr className="bg-accent/15 text-sm text-accent">
                   <th className="px-4 py-3.5 font-semibold">Ứng viên</th>
                   <th className="px-3 py-3.5 font-semibold">Ngày / Giờ</th>
-                  <th className="px-3 py-3.5 font-semibold">Người PV</th>
+                  <th className="px-3 py-3.5 font-semibold">Ai chấm / điểm</th>
+                  <th className="px-3 py-3.5 font-semibold text-center">TB</th>
                   <th className="px-3 py-3.5 font-semibold text-center">Kết quả PV</th>
                   <th className="px-3 py-3.5 font-semibold text-center">Thao tác</th>
                 </tr>
@@ -595,47 +605,56 @@ function RecruitmentInterviewsPage() {
               <tbody>
                 {resultRows.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-4 py-16 text-center text-muted">
+                    <td colSpan={6} className="px-4 py-16 text-center text-muted">
                       Chưa có lịch phỏng vấn cho đợt {campaignName}.
                     </td>
                   </tr>
                 ) : (
-                  resultRows.map(({ slot, app }) => (
-                    <tr key={slot.id} className="hover:bg-accent/[0.04]">
-                      <td className="px-4 py-4">
-                        <p className="font-semibold">{slot.candidateName}</p>
-                        <p className="text-xs text-muted">{slot.candidateDepartment}</p>
-                      </td>
-                      <td className="px-3 py-4 text-sm text-muted">
-                        {formatDate(slot.date)} · {slot.startTime}
-                      </td>
-                      <td className="px-3 py-4 text-sm">
-                        {slot.interviewers.map((i) => i.name).join(", ") || "—"}
-                      </td>
-                      <td className="px-3 py-4 text-center text-sm">
-                        {app?.interviewResult === "pass"
-                          ? "Đạt"
-                          : app?.interviewResult === "fail"
-                            ? "Không đạt"
-                            : "Chờ"}
-                      </td>
-                      <td className="px-3 py-4 text-center">
-                        <button
-                          type="button"
-                          title="Phỏng vấn & chấm điểm"
-                          aria-label="Phỏng vấn & chấm điểm"
-                          disabled={!slot.bookingId}
-                          className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-muted shadow-extruded-sm transition-all duration-300 ease-out hover:text-accent active:shadow-inset-sm disabled:opacity-40 focus-visible:ring-2 ring-accent ring-offset-2 ring-offset-background"
-                          onClick={() =>
-                            slot.bookingId &&
-                            navigate(ROUTES.admin.recruitment.interviewNote(slot.bookingId))
-                          }
-                        >
-                          <Icon icon={ClipboardCheck} size={15} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))
+                  resultRows.map((row) => {
+                    const decided =
+                      row.applicationStatus === "passed_interview" ||
+                      row.applicationStatus === "admitted"
+                        ? "Đạt"
+                        : row.applicationStatus === "failed_interview" ||
+                            row.applicationStatus === "rejected"
+                          ? "Không đạt"
+                          : "Chờ duyệt";
+                    return (
+                      <tr key={`${row.applicationId}-${row.slotDate}-${row.slotTime}`} className="hover:bg-accent/[0.04]">
+                        <td className="px-4 py-4">
+                          <p className="font-semibold">{row.fullName}</p>
+                          <p className="text-xs text-muted">
+                            {row.applicationCode} · {row.department}
+                          </p>
+                        </td>
+                        <td className="px-3 py-4 text-sm text-muted">
+                          {formatDate(row.slotDate)} · {row.slotTime}
+                        </td>
+                        <td className="px-3 py-4 text-sm text-muted max-w-xs">
+                          {row.reviewerNotes || "—"}
+                        </td>
+                        <td className="px-3 py-4 text-center text-sm font-bold">
+                          {row.averageScore != null ? row.averageScore.toFixed(1) : "—"}
+                        </td>
+                        <td className="px-3 py-4 text-center text-sm">{decided}</td>
+                        <td className="px-3 py-4 text-center">
+                          <button
+                            type="button"
+                            title="Sửa / duyệt kết quả"
+                            aria-label="Sửa / duyệt kết quả"
+                            disabled={!row.bookingId}
+                            className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-muted shadow-extruded-sm transition-all duration-300 ease-out hover:text-accent active:shadow-inset-sm disabled:opacity-40 focus-visible:ring-2 ring-accent ring-offset-2 ring-offset-background"
+                            onClick={() =>
+                              row.bookingId &&
+                              navigate(ROUTES.admin.recruitment.interviewNote(row.bookingId))
+                            }
+                          >
+                            <Icon icon={ClipboardCheck} size={15} />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
@@ -647,11 +666,14 @@ function RecruitmentInterviewsPage() {
         open={batchOpen}
         onClose={() => setBatchOpen(false)}
         defaultDate={selectedDate}
+        interviewers={interviewers}
         onSubmit={async (payload) => {
           const created = await createBatchInterviewSlots({ campaignId, ...payload });
           await reloadSlots(campaignId);
           setSelectedDate(payload.date);
-          showToast(`Đã tạo ${created.length} ca phỏng vấn — ứng viên có thể vào đặt lịch.`);
+          showToast(
+            `Đã tạo ${created.length} ca · ${payload.interviewerIds.length} người PV phụ trách mỗi ca.`,
+          );
         }}
       />
 

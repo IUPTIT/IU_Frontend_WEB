@@ -1,48 +1,66 @@
 import { useState } from "react";
 import Button from "../../../../../components/ui/Button";
+import type { InterviewerRef } from "../../../../../types/recruitment";
 
 type Props = {
   open: boolean;
   onClose: () => void;
   defaultDate: string;
+  interviewers: InterviewerRef[];
   onSubmit: (payload: {
     date: string;
     startTimes: string[];
     durationMinutes: number;
     locationOrLink: string;
     capacity: number;
+    interviewerIds: string[];
   }) => Promise<void>;
 };
 
 const TIME_PRESETS = ["08:00", "09:00", "10:00", "11:00", "14:00", "15:00", "16:00"];
 
 /**
- * Tạo ca phỏng vấn TRỐNG cho tất cả ứng viên đã pass vòng đơn tự đặt lịch —
- * không gán sẵn ứng viên, không yêu cầu người phỏng vấn (phân công sau).
+ * Tạo ca phỏng vấn — admin gắn nhiều người PV cho CẢ CA
+ * (chung cho mọi ứng viên đặt vào ca, không 1-1 ứng viên–interviewer).
  */
-function BatchScheduleModal({ open, onClose, defaultDate, onSubmit }: Props) {
+function BatchScheduleModal({
+  open,
+  onClose,
+  defaultDate,
+  interviewers,
+  onSubmit,
+}: Props) {
   const [date, setDate] = useState(defaultDate);
   const [location, setLocation] = useState("Phòng 302");
   const [duration, setDuration] = useState(45);
   const [capacity, setCapacity] = useState(1);
   const [times, setTimes] = useState<string[]>(["08:00", "09:00"]);
+  const [selectedInterviewers, setSelectedInterviewers] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  // Reset form mỗi lần mở modal (adjust state during render)
   const [prevOpen, setPrevOpen] = useState(open);
   if (open !== prevOpen) {
     setPrevOpen(open);
     if (open) {
       setDate(defaultDate);
       setError(null);
+      setSelectedInterviewers([]);
     }
   }
 
   if (!open) return null;
 
   const toggleTime = (t: string) => {
-    setTimes((prev) => (prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t].sort()));
+    setTimes((prev) =>
+      prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t].sort(),
+    );
+  };
+
+  const toggleInterviewer = (id: string) => {
+    setSelectedInterviewers((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
   };
 
   const handleSave = async () => {
@@ -58,6 +76,10 @@ function BatchScheduleModal({ open, onClose, defaultDate, onSubmit }: Props) {
       setError("Chọn ít nhất một khung giờ.");
       return;
     }
+    if (selectedInterviewers.length === 0) {
+      setError("Chọn ít nhất một người phỏng vấn cho ca.");
+      return;
+    }
     const safeDuration = Math.min(120, Math.max(15, duration || 45));
     const safeCapacity = Math.min(20, Math.max(1, capacity || 1));
     setDuration(safeDuration);
@@ -71,6 +93,7 @@ function BatchScheduleModal({ open, onClose, defaultDate, onSubmit }: Props) {
         durationMinutes: safeDuration,
         locationOrLink: location.trim(),
         capacity: safeCapacity,
+        interviewerIds: selectedInterviewers,
       });
       onClose();
     } catch (err) {
@@ -82,7 +105,12 @@ function BatchScheduleModal({ open, onClose, defaultDate, onSubmit }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="presentation">
-      <button type="button" className="absolute inset-0 bg-foreground/35 backdrop-blur-[2px]" aria-label="Đóng" onClick={onClose} />
+      <button
+        type="button"
+        className="absolute inset-0 bg-foreground/35 backdrop-blur-[2px]"
+        aria-label="Đóng"
+        onClick={onClose}
+      />
       <div
         role="dialog"
         aria-modal="true"
@@ -102,14 +130,20 @@ function BatchScheduleModal({ open, onClose, defaultDate, onSubmit }: Props) {
 
         <div className="space-y-5 overflow-y-auto p-5">
           <p className="rounded-2xl bg-accent/8 px-4 py-3 text-sm text-muted">
-            Ca tạo ra áp dụng cho <b className="text-foreground">tất cả ứng viên đã pass vòng đơn</b> —
-            ứng viên tự vào tài khoản chọn ca. Người phỏng vấn phân công sau trên từng ca.
+            Ca áp dụng cho <b className="text-foreground">tất cả ứng viên đã pass vòng đơn</b> —
+            họ tự chọn ca. Người PV bạn chọn phụ trách <b className="text-foreground">cả ca</b>{" "}
+            (nhiều người cùng phỏng vấn hết số chỗ), không gắn 1 ứng viên – 1 người.
           </p>
 
           <div className="grid gap-4 sm:grid-cols-3">
             <label className="block space-y-1.5">
               <span className="neu-field-label">Ngày phỏng vấn *</span>
-              <input type="date" className="neu-input !h-11" value={date} onChange={(e) => setDate(e.target.value)} />
+              <input
+                type="date"
+                className="neu-input !h-11"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+              />
             </label>
             <label className="block space-y-1.5">
               <span className="neu-field-label">Thời lượng (phút) *</span>
@@ -144,7 +178,6 @@ function BatchScheduleModal({ open, onClose, defaultDate, onSubmit }: Props) {
                 className="neu-input !h-11"
                 value={Number.isFinite(capacity) && capacity > 0 ? capacity : ""}
                 onChange={(e) => {
-                  // Cho phép xóa trắng khi gõ — không ép về 1 giữa chừng (tránh 1 + 10 = 110)
                   const raw = e.target.value;
                   if (raw === "") {
                     setCapacity(0);
@@ -171,13 +204,50 @@ function BatchScheduleModal({ open, onClose, defaultDate, onSubmit }: Props) {
                     type="button"
                     onClick={() => toggleTime(t)}
                     className={`rounded-full px-3 py-1.5 text-sm font-medium transition-all ${
-                      on ? "bg-accent/20 text-accent shadow-inset-sm" : "shadow-extruded-sm text-muted"
+                      on
+                        ? "bg-accent/20 text-accent shadow-inset-sm"
+                        : "shadow-extruded-sm text-muted"
                     }`}
                   >
                     {t}
                   </button>
                 );
               })}
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <span className="neu-field-label">
+              Người phỏng vấn phụ trách ca * ({selectedInterviewers.length} đã chọn)
+            </span>
+            <p className="text-xs text-muted">
+              Có thể chọn nhiều người — họ cùng phụ trách hết số ứng viên trong ca.
+            </p>
+            <div className="max-h-44 space-y-2 overflow-y-auto rounded-2xl bg-background p-2 shadow-inset-sm">
+              {interviewers.length === 0 ? (
+                <p className="px-2 py-4 text-center text-sm text-muted">
+                  Chưa có danh sách người PV (Leader / BCN).
+                </p>
+              ) : (
+                interviewers.map((iv) => (
+                  <label
+                    key={iv.id}
+                    className={`flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 transition-all ${
+                      selectedInterviewers.includes(iv.id)
+                        ? "bg-accent/15 text-accent"
+                        : "hover:bg-accent/5"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      className="accent-accent"
+                      checked={selectedInterviewers.includes(iv.id)}
+                      onChange={() => toggleInterviewer(iv.id)}
+                    />
+                    <span className="text-sm font-medium">{iv.name}</span>
+                  </label>
+                ))
+              )}
             </div>
           </div>
 

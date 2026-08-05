@@ -144,9 +144,9 @@ export type InterviewerRef = {
 export type InterviewSlotStatus = "scheduled" | "missing_interviewers" | "done";
 
 export type InterviewSlot = {
-  /** Row id tổng hợp — service tự parse, UI chỉ dùng làm key/tham chiếu */
+  /** ID ca backend (hoặc row id cũ slotId::… — service tự parse) */
   id: string;
-  /** ID booking backend (có khi slot đã gán ứng viên) */
+  /** ID booking backend (chỉ khi view flatten theo ứng viên — legacy) */
   bookingId?: string;
   campaignId: string;
   date: string; // YYYY-MM-DD
@@ -155,11 +155,14 @@ export type InterviewSlot = {
   locationOrLink: string;
   /** Số ứng viên tối đa của ca */
   capacity?: number;
+  /** Số ứng viên đã đặt lịch vào ca */
+  bookedCount?: number;
   applicationId?: string;
   candidateName?: string;
   candidateDepartment?: string;
   interviewers: InterviewerRef[];
-  requiredInterviewers: number;
+  /** @deprecated Không còn bắt buộc số PV tối thiểu — giữ để tương thích */
+  requiredInterviewers?: number;
   status: InterviewSlotStatus;
 };
 

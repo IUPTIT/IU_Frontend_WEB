@@ -15,7 +15,6 @@ function AssignInterviewersModal({ open, slot, interviewers, onClose, onSubmit }
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  // Reset lựa chọn mỗi lần mở modal / đổi slot (adjust state during render)
   const resetKey = open && slot ? slot.id : null;
   const [prevKey, setPrevKey] = useState<string | null>(resetKey);
   if (resetKey !== prevKey) {
@@ -29,12 +28,14 @@ function AssignInterviewersModal({ open, slot, interviewers, onClose, onSubmit }
   if (!open || !slot) return null;
 
   const toggle = (id: string) => {
-    setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+    setSelected((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
   };
 
   const handleSave = async () => {
     if (selected.length === 0) {
-      setError("Chọn ít nhất một người phỏng vấn.");
+      setError("Chọn ít nhất một người phỏng vấn cho ca.");
       return;
     }
     setSaving(true);
@@ -50,18 +51,29 @@ function AssignInterviewersModal({ open, slot, interviewers, onClose, onSubmit }
     }
   };
 
+  const capacity = slot.capacity ?? 1;
+  const booked = slot.bookedCount ?? 0;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="presentation">
-      <button type="button" className="absolute inset-0 bg-foreground/35 backdrop-blur-[2px]" aria-label="Đóng" onClick={onClose} />
+      <button
+        type="button"
+        className="absolute inset-0 bg-foreground/35 backdrop-blur-[2px]"
+        aria-label="Đóng"
+        onClick={onClose}
+      />
       <div
         role="dialog"
         aria-modal="true"
         className="relative z-10 w-full max-w-md overflow-hidden rounded-card bg-background shadow-extruded"
       >
         <header className="border-b border-black/5 px-5 py-4">
-          <h2 className="font-display text-xl font-extrabold">Phân công người phỏng vấn</h2>
+          <h2 className="font-display text-xl font-extrabold">
+            Phân công người phỏng vấn
+          </h2>
           <p className="mt-1 text-sm text-muted">
-            Slot {slot.startTime} · {slot.candidateName} (cần {slot.requiredInterviewers} người)
+            Ca {slot.startTime} · {slot.locationOrLink} · {booked}/{capacity} chỗ — panel
+            chung cho mọi ứng viên trong ca
           </p>
         </header>
         <div className="space-y-2 p-5 max-h-[50vh] overflow-y-auto">
