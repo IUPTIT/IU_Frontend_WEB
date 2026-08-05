@@ -1,7 +1,9 @@
 ﻿import { useCallback, useEffect, useMemo, useState } from "react";
-import { Download, Send } from "lucide-react";
+import { Award, CircleCheck, CircleX, Download, Send } from "lucide-react";
 import Button from "../../../../components/ui/Button";
-import ExportDataModal, { type ExportColumnDef } from "../../../../components/ui/ExportDataModal";
+import ExportDataModal, {
+  type ExportColumnDef,
+} from "../../../../components/ui/ExportDataModal";
 import FilterMenu from "../../../../components/ui/FilterMenu";
 import Icon from "../../../../components/ui/Icon";
 import MetricCard from "../../../../components/ui/MetricCard";
@@ -17,6 +19,8 @@ import {
   setTraineeEvalStatus,
   type TrainingReviewSummary,
 } from "../../../../services/trainingService";
+import { getCampaigns } from "../../../../services/recruitmentService";
+import type { RecruitmentCampaign } from "../../../../types/recruitment";
 import type { Trainee, TraineeEvalStatus } from "../../../../types/training";
 import type { EmailRecipient } from "../../../../types/email";
 import { traineeToEmailRecipient } from "../../../../utils/emailRecipients";
@@ -62,7 +66,9 @@ function EvalBadge({ status }: { status?: TraineeEvalStatus }) {
           ? "bg-rose-500/15 text-rose-700 dark:text-rose-300"
           : "bg-violet-500/15 text-violet-700 dark:text-violet-300";
   return (
-    <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${cls}`}>
+    <span
+      className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${cls}`}
+    >
       {evalLabel(s)}
     </span>
   );
@@ -82,7 +88,8 @@ function StatCard({
   tone?: "default" | "danger" | "success";
 }) {
   const n = useCountUp(value);
-  const metricTone = tone === "danger" ? "rose" : tone === "success" ? "emerald" : "accent";
+  const metricTone =
+    tone === "danger" ? "rose" : tone === "success" ? "emerald" : "accent";
   return (
     <MetricCard
       label={title}
@@ -100,6 +107,18 @@ function StatCard({
 
 function TrainingReviewPage() {
   const { search } = usePortalUi();
+  const [campaigns, setCampaigns] = useState<RecruitmentCampaign[]>([]);
+  // Đợt tuyển: user chọn thì ưu tiên, không thì lấy đợt đang mở / mới nhất
+  const [campaignIdOverride, setCampaignIdOverride] = useState("");
+  const campaignId = useMemo(() => {
+    if (
+      campaignIdOverride &&
+      campaigns.some((c) => c.id === campaignIdOverride)
+    ) {
+      return campaignIdOverride;
+    }
+    return campaigns.find((c) => c.isActive)?.id ?? campaigns[0]?.id ?? "";
+  }, [campaignIdOverride, campaigns]);
   const [trainees, setTrainees] = useState<Trainee[]>([]);
   const [summary, setSummary] = useState<TrainingReviewSummary>({
     totalTrainees: 0,
@@ -125,12 +144,25 @@ function TrainingReviewPage() {
   // loading khởi tạo true — refresh sau thao tác giữ nguyên bảng cũ
   const load = useCallback(async () => {
     try {
-      const [list, sum] = await Promise.all([getTrainees(), getTrainingReviewSummary()]);
+      const [list, sum] = await Promise.all([
+        getTrainees(undefined, campaignId || undefined),
+        getTrainingReviewSummary(campaignId || undefined),
+      ]);
       setTrainees(list);
       setSummary(sum);
     } finally {
       setLoading(false);
     }
+  }, [campaignId]);
+
+  useEffect(() => {
+    let alive = true;
+    void getCampaigns().then((data) => {
+      if (alive) setCampaigns(data.filter((c) => c.status !== "draft"));
+    });
+    return () => {
+      alive = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -146,11 +178,23 @@ function TrainingReviewPage() {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return trainees.filter((t) => {
-      if (q && !t.fullName.toLowerCase().includes(q) && !t.email.toLowerCase().includes(q)) return false;
-      if (quick === "qualified" && t.evalStatus !== "qualified" && t.evalStatus !== "certified") return false;
+      if (
+        q &&
+        !t.fullName.toLowerCase().includes(q) &&
+        !t.email.toLowerCase().includes(q)
+      )
+        return false;
+      if (
+        quick === "qualified" &&
+        t.evalStatus !== "qualified" &&
+        t.evalStatus !== "certified"
+      )
+        return false;
       if (quick === "failed" && t.evalStatus !== "failed") return false;
-      if (applied.departmentId && t.departmentId !== applied.departmentId) return false;
-      if (applied.evalStatus && t.evalStatus !== applied.evalStatus) return false;
+      if (applied.departmentId && t.departmentId !== applied.departmentId)
+        return false;
+      if (applied.evalStatus && t.evalStatus !== applied.evalStatus)
+        return false;
       return true;
     });
   }, [trainees, search, quick, applied]);
@@ -165,12 +209,25 @@ function TrainingReviewPage() {
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
-  const paged = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+  const paged = filtered.slice(
+    (safePage - 1) * PAGE_SIZE,
+    safePage * PAGE_SIZE,
+  );
 
   const exportColumns: ExportColumnDef<Trainee>[] = useMemo(
     () => [
-      { id: "fullName", label: "Họ tên", getValue: (r) => r.fullName, defaultSelected: true },
-      { id: "email", label: "Email", getValue: (r) => r.email, defaultSelected: true },
+      {
+        id: "fullName",
+        label: "Họ tên",
+        getValue: (r) => r.fullName,
+        defaultSelected: true,
+      },
+      {
+        id: "email",
+        label: "Email",
+        getValue: (r) => r.email,
+        defaultSelected: true,
+      },
       {
         id: "department",
         label: "Ban",
@@ -233,10 +290,17 @@ function TrainingReviewPage() {
     showToast(`Đã cấp chứng nhận cho ${res.issued} học viên.`);
   };
 
-  const handleEval = async (traineeId: string, evalStatus: "qualified" | "failed") => {
+  const handleEval = async (
+    traineeId: string,
+    evalStatus: "qualified" | "failed",
+  ) => {
     try {
       await setTraineeEvalStatus(traineeId, evalStatus);
-      showToast(evalStatus === "qualified" ? "Đã đánh dấu Đạt." : "Đã đánh dấu Chưa đạt.");
+      showToast(
+        evalStatus === "qualified"
+          ? "Đã đánh dấu Đạt."
+          : "Đã đánh dấu Chưa đạt.",
+      );
       await load();
     } catch (err) {
       showToast(err instanceof Error ? err.message : "Cập nhật thất bại.");
@@ -250,7 +314,18 @@ function TrainingReviewPage() {
           <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
             Đánh giá &amp; Hoàn thành
           </h1>
-          <p className="mt-2 text-muted">Tổng kết đợt training — theo dõi tiến độ tân binh.</p>
+          <div className="mt-2 flex flex-wrap items-center gap-2 text-muted">
+            <span>Tổng kết đợt training — theo dõi tiến độ tân binh.</span>
+            <Select
+              value={campaignId}
+              options={campaigns.map((c) => ({ value: c.id, label: c.name }))}
+              onChange={setCampaignIdOverride}
+              placeholder="Chọn đợt tuyển"
+              ariaLabel="Bộ lọc theo đợt tuyển"
+              className="min-w-[220px]"
+              triggerClassName="!shadow-extruded-sm !h-10 text-accent !font-semibold"
+            />
+          </div>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button
@@ -273,7 +348,9 @@ function TrainingReviewPage() {
                   ? trainees.filter((t) => selected.has(t.id))
                   : filtered;
               if (list.length === 0) {
-                showToast("Chọn học viên hoặc để trống để gửi theo bộ lọc hiện tại.");
+                showToast(
+                  "Chọn học viên hoặc để trống để gửi theo bộ lọc hiện tại.",
+                );
                 return;
               }
               setEmailRecipients(list.map(traineeToEmailRecipient));
@@ -282,14 +359,22 @@ function TrainingReviewPage() {
           >
             Gửi email
           </Button>
-          <Button variant="primary" size="sm" className="!h-11" onClick={() => void handleIssue()}>
+          <Button
+            variant="primary"
+            size="sm"
+            className="!h-11"
+            onClick={() => void handleIssue()}
+          >
             Cấp chứng nhận hàng loạt
           </Button>
         </div>
       </section>
 
       {toast && (
-        <p className="rounded-2xl bg-accent/10 px-4 py-3 text-sm text-accent" role="status">
+        <p
+          className="rounded-2xl bg-accent/10 px-4 py-3 text-sm text-accent"
+          role="status"
+        >
           {toast}
         </p>
       )}
@@ -336,7 +421,9 @@ function TrainingReviewPage() {
               </button>
             ))}
             <FilterMenu
-              activeCount={(applied.departmentId ? 1 : 0) + (applied.evalStatus ? 1 : 0)}
+              activeCount={
+                (applied.departmentId ? 1 : 0) + (applied.evalStatus ? 1 : 0)
+              }
               onApply={() => setApplied(draft)}
               onReset={() => {
                 setDraft(EMPTY);
@@ -352,7 +439,9 @@ function TrainingReviewPage() {
                     { value: "", label: "Tất cả" },
                     ...departments.map((d) => ({ value: d.id, label: d.name })),
                   ]}
-                  onChange={(departmentId) => setDraft({ ...draft, departmentId })}
+                  onChange={(departmentId) =>
+                    setDraft({ ...draft, departmentId })
+                  }
                 />
               </div>
               <div>
@@ -368,7 +457,10 @@ function TrainingReviewPage() {
                     { value: "failed", label: "Chưa đạt" },
                   ]}
                   onChange={(evalStatus) =>
-                    setDraft({ ...draft, evalStatus: evalStatus as TraineeEvalStatus | "" })
+                    setDraft({
+                      ...draft,
+                      evalStatus: evalStatus as TraineeEvalStatus | "",
+                    })
                   }
                 />
               </div>
@@ -384,12 +476,18 @@ function TrainingReviewPage() {
               <thead>
                 <tr className="bg-accent/15 text-sm text-accent">
                   <th className="px-4 py-3.5 w-10" />
-                  <th className="px-3 py-3.5 font-semibold text-xs uppercase tracking-wide">Học viên</th>
-                  <th className="px-3 py-3.5 font-semibold text-xs uppercase tracking-wide">Ban</th>
+                  <th className="px-3 py-3.5 font-semibold text-xs uppercase tracking-wide">
+                    Học viên
+                  </th>
+                  <th className="px-3 py-3.5 font-semibold text-xs uppercase tracking-wide">
+                    Ban
+                  </th>
                   <th className="px-3 py-3.5 font-semibold text-xs uppercase tracking-wide text-center">
                     Điểm TB
                   </th>
-                  <th className="px-3 py-3.5 font-semibold text-xs uppercase tracking-wide">Tiến độ</th>
+                  <th className="px-3 py-3.5 font-semibold text-xs uppercase tracking-wide">
+                    Tiến độ
+                  </th>
                   <th className="px-3 py-3.5 font-semibold text-xs uppercase tracking-wide text-center">
                     Trạng thái
                   </th>
@@ -401,7 +499,10 @@ function TrainingReviewPage() {
               <tbody>
                 {paged.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-16 text-center text-muted">
+                    <td
+                      colSpan={7}
+                      className="px-4 py-16 text-center text-muted"
+                    >
                       Không có học viên phù hợp bộ lọc.
                     </td>
                   </tr>
@@ -427,11 +528,15 @@ function TrainingReviewPage() {
                             </span>
                             <div>
                               <p className="font-semibold">{t.fullName}</p>
-                              <p className="text-xs text-muted">{t.id.toUpperCase()}</p>
+                              <p className="text-xs text-muted">
+                                {t.id.toUpperCase()}
+                              </p>
                             </div>
                           </div>
                         </td>
-                        <td className="px-3 py-4 text-sm">{t.departmentName}</td>
+                        <td className="px-3 py-4 text-sm">
+                          {t.departmentName}
+                        </td>
                         <td className="px-3 py-4 text-center font-bold">
                           {t.avgScore != null ? t.avgScore.toFixed(1) : "--"}
                         </td>
@@ -452,30 +557,42 @@ function TrainingReviewPage() {
                           <EvalBadge status={t.evalStatus} />
                         </td>
                         <td className="px-3 py-4 text-center">
-                          {t.evalStatus === "studying" || t.evalStatus === "failed" ? (
-                            <button
-                              type="button"
-                              className="text-sm font-medium text-emerald-600 hover:underline"
-                              onClick={() => void handleEval(t.id, "qualified")}
-                            >
-                              Đạt
-                            </button>
-                          ) : null}
-                          {(t.evalStatus === "studying" || t.evalStatus === "qualified") && (
-                            <>
-                              {t.evalStatus === "studying" && <span className="text-muted/40"> · </span>}
+                          <div className="inline-flex items-center gap-1.5">
+                            {(t.evalStatus === "studying" ||
+                              t.evalStatus === "failed") && (
                               <button
                                 type="button"
-                                className="text-sm font-medium text-rose-500 hover:underline"
+                                aria-label={`Đánh dấu ${t.fullName} đạt`}
+                                title="Đạt"
+                                className="flex h-8 w-8 items-center justify-center rounded-full text-emerald-600 shadow-extruded-sm transition-colors hover:bg-emerald-500/10"
+                                onClick={() =>
+                                  void handleEval(t.id, "qualified")
+                                }
+                              >
+                                <Icon icon={CircleCheck} size={17} />
+                              </button>
+                            )}
+                            {(t.evalStatus === "studying" ||
+                              t.evalStatus === "qualified") && (
+                              <button
+                                type="button"
+                                aria-label={`Đánh dấu ${t.fullName} chưa đạt`}
+                                title="Chưa đạt"
+                                className="flex h-8 w-8 items-center justify-center rounded-full text-rose-500 shadow-extruded-sm transition-colors hover:bg-rose-500/10"
                                 onClick={() => void handleEval(t.id, "failed")}
                               >
-                                Chưa đạt
+                                <Icon icon={CircleX} size={17} />
                               </button>
-                            </>
-                          )}
-                          {t.evalStatus === "certified" && (
-                            <span className="text-sm text-muted">Đã cấp CN</span>
-                          )}
+                            )}
+                            {t.evalStatus === "certified" && (
+                              <span
+                                className="flex h-8 w-8 items-center justify-center text-sky-500"
+                                title="Đã cấp chứng nhận"
+                              >
+                                <Icon icon={Award} size={17} />
+                              </span>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     );
@@ -488,10 +605,15 @@ function TrainingReviewPage() {
 
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-black/5 px-5 py-4">
           <p className="text-sm text-muted">
-            Hiển thị {(safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, filtered.length)} trên{" "}
+            Hiển thị {(safePage - 1) * PAGE_SIZE + 1}–
+            {Math.min(safePage * PAGE_SIZE, filtered.length)} trên{" "}
             {filtered.length} tân binh
           </p>
-          <Pagination page={safePage} totalPages={totalPages} onChange={setPage} />
+          <Pagination
+            page={safePage}
+            totalPages={totalPages}
+            onChange={setPage}
+          />
         </div>
       </section>
 

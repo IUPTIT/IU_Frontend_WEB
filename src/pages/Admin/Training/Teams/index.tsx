@@ -4,6 +4,7 @@ import Button from "../../../../components/ui/Button";
 import Badge from "../../../../components/ui/Badge";
 import Icon from "../../../../components/ui/Icon";
 import Avatar from "../../../../components/ui/Avatar";
+import Select from "../../../../components/ui/Select";
 import { usePortalUi } from "../../../../context/usePortalUi";
 import MentorManageModal from "./components/MentorManageModal";
 import {
@@ -14,7 +15,14 @@ import {
   getTrainingPrograms,
   notifyTrainingGroups,
 } from "../../../../services/trainingService";
-import type { Trainee, TrainingGroup, TrainingMentor, TrainingProgram } from "../../../../types/training";
+import { getCampaigns } from "../../../../services/recruitmentService";
+import type { RecruitmentCampaign } from "../../../../types/recruitment";
+import type {
+  Trainee,
+  TrainingGroup,
+  TrainingMentor,
+  TrainingProgram,
+} from "../../../../types/training";
 
 // Chia đội NGẪU NHIÊN: hiển thị mentor & tân binh chưa có đội 2 bên, 1 nút random —
 // backend trộn Fisher–Yates rồi chia round-robin, không chọn tay để đảm bảo khách quan
@@ -24,6 +32,7 @@ function RandomAssignModal({
   programs,
   mentors,
   trainees,
+  campaignId,
   onAssigned,
 }: {
   open: boolean;
@@ -31,12 +40,15 @@ function RandomAssignModal({
   programs: TrainingProgram[];
   mentors: TrainingMentor[];
   trainees: Trainee[];
+  campaignId?: string;
   onAssigned: (msg: string) => void;
 }) {
   const [assigning, setAssigning] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const unassigned = trainees.filter((t) => !t.groupId && t.status !== "removed");
+  const unassigned = trainees.filter(
+    (t) => !t.groupId && t.status !== "removed",
+  );
 
   if (!open) return null;
 
@@ -44,18 +56,25 @@ function RandomAssignModal({
     setError(null);
     setAssigning(true);
     try {
-      const res = await autoAssignTeams(programs[0]?.id);
-      onAssigned(`Đã random chia ${res.assigned} tân binh cho ${res.mentors} mentor.`);
+      const res = await autoAssignTeams(programs[0]?.id, campaignId);
+      onAssigned(
+        `Đã random chia ${res.assigned} tân binh cho ${res.mentors} mentor.`,
+      );
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Chia đội thất bại — thử lại.");
+      setError(
+        err instanceof Error ? err.message : "Chia đội thất bại — thử lại.",
+      );
     } finally {
       setAssigning(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6" role="presentation">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
+      role="presentation"
+    >
       <button
         type="button"
         className="absolute inset-0 bg-foreground/35 backdrop-blur-[2px]"
@@ -70,15 +89,26 @@ function RandomAssignModal({
       >
         <header className="flex items-start justify-between gap-3 border-b border-black/5 px-5 py-4 sm:px-6">
           <div>
-            <h2 id="random-assign-title" className="font-display text-xl font-extrabold">
+            <h2
+              id="random-assign-title"
+              className="font-display text-xl font-extrabold"
+            >
               Chia Đội Ngẫu Nhiên
             </h2>
             <p className="mt-1 text-sm text-muted">
-              Tân binh được trộn random và chia đều cho các mentor — không chọn tay.
+              Tân binh được trộn random và chia đều cho các mentor — không chọn
+              tay.
             </p>
           </div>
           <Button variant="icon" size="sm" aria-label="Đóng" onClick={onClose}>
-            <svg className="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+            <svg
+              className="h-4 w-4"
+              viewBox="0 0 20 20"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              aria-hidden
+            >
               <path d="m6 6 8 8M14 6l-8 8" strokeLinecap="round" />
             </svg>
           </Button>
@@ -92,10 +122,15 @@ function RandomAssignModal({
             </div>
             <ul className="max-h-72 space-y-1 overflow-y-auto rounded-2xl bg-background p-2 shadow-inset-sm">
               {mentors.map((m) => (
-                <li key={m.id} className="flex items-center gap-3 rounded-xl px-3 py-2.5">
+                <li
+                  key={m.id}
+                  className="flex items-center gap-3 rounded-xl px-3 py-2.5"
+                >
                   <Avatar name={m.name} size="sm" />
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-medium">{m.name}</span>
+                    <span className="block truncate text-sm font-medium">
+                      {m.name}
+                    </span>
                     <span className="text-xs text-muted">{m.roleLabel}</span>
                   </span>
                 </li>
@@ -110,16 +145,25 @@ function RandomAssignModal({
 
           <section className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="neu-field-label !mb-0">Tân binh chưa có đội</span>
+              <span className="neu-field-label !mb-0">
+                Tân binh chưa có đội
+              </span>
               <span className="text-xs text-muted">{unassigned.length}</span>
             </div>
             <ul className="max-h-72 space-y-1 overflow-y-auto rounded-2xl bg-background p-2 shadow-inset-sm">
               {unassigned.map((t) => (
-                <li key={t.id} className="flex items-center gap-3 rounded-xl px-3 py-2.5">
+                <li
+                  key={t.id}
+                  className="flex items-center gap-3 rounded-xl px-3 py-2.5"
+                >
                   <Avatar name={t.fullName} size="sm" />
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-medium">{t.fullName}</span>
-                    <span className="text-xs text-muted">{t.cohortLabel ?? t.departmentName}</span>
+                    <span className="block truncate text-sm font-medium">
+                      {t.fullName}
+                    </span>
+                    <span className="text-xs text-muted">
+                      {t.cohortLabel ?? t.departmentName}
+                    </span>
                   </span>
                 </li>
               ))}
@@ -131,7 +175,9 @@ function RandomAssignModal({
             </ul>
           </section>
 
-          {error && <p className="text-sm text-rose-500 sm:col-span-2">{error}</p>}
+          {error && (
+            <p className="text-sm text-rose-500 sm:col-span-2">{error}</p>
+          )}
         </div>
 
         <footer className="flex gap-3 border-t border-black/5 px-5 py-4 sm:px-6">
@@ -141,7 +187,9 @@ function RandomAssignModal({
           <Button
             variant="primary"
             className="flex-1"
-            disabled={assigning || mentors.length === 0 || unassigned.length === 0}
+            disabled={
+              assigning || mentors.length === 0 || unassigned.length === 0
+            }
             onClick={() => void handleAssign()}
             leftIcon={<Icon icon={Shuffle} size={16} />}
           >
@@ -167,7 +215,10 @@ function GroupDetailModal({
   const members = trainees.filter((t) => t.groupId === group.id);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6" role="presentation">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
+      role="presentation"
+    >
       <button
         type="button"
         className="absolute inset-0 bg-foreground/35 backdrop-blur-[2px]"
@@ -182,15 +233,26 @@ function GroupDetailModal({
       >
         <header className="flex items-start justify-between gap-3 border-b border-black/5 px-5 py-4 sm:px-6">
           <div>
-            <h2 id="group-detail-title" className="font-display text-xl font-extrabold">
+            <h2
+              id="group-detail-title"
+              className="font-display text-xl font-extrabold"
+            >
               {group.name}
             </h2>
             <p className="mt-1 text-sm text-muted">
-              {group.specialtyLabel ?? group.departmentName} · Mentor: {group.mentorName ?? "—"}
+              {group.specialtyLabel ?? group.departmentName} · Mentor:{" "}
+              {group.mentorName ?? "—"}
             </p>
           </div>
           <Button variant="icon" size="sm" aria-label="Đóng" onClick={onClose}>
-            <svg className="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+            <svg
+              className="h-4 w-4"
+              viewBox="0 0 20 20"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              aria-hidden
+            >
               <path d="m6 6 8 8M14 6l-8 8" strokeLinecap="round" />
             </svg>
           </Button>
@@ -203,17 +265,26 @@ function GroupDetailModal({
           </div>
           <ul className="space-y-1 rounded-2xl bg-background p-2 shadow-inset-sm">
             {members.map((t) => (
-              <li key={t.id} className="flex items-center gap-3 rounded-xl px-3 py-2.5">
+              <li
+                key={t.id}
+                className="flex items-center gap-3 rounded-xl px-3 py-2.5"
+              >
                 <Avatar name={t.fullName} size="sm" />
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-medium">{t.fullName}</span>
-                  <span className="block truncate text-xs text-muted">{t.email}</span>
+                  <span className="block truncate text-sm font-medium">
+                    {t.fullName}
+                  </span>
+                  <span className="block truncate text-xs text-muted">
+                    {t.email}
+                  </span>
                 </span>
                 <span className="text-xs text-muted">{t.departmentName}</span>
               </li>
             ))}
             {members.length === 0 && (
-              <li className="px-3 py-8 text-center text-sm text-muted">Đội chưa có thành viên.</li>
+              <li className="px-3 py-8 text-center text-sm text-muted">
+                Đội chưa có thành viên.
+              </li>
             )}
           </ul>
         </div>
@@ -224,6 +295,18 @@ function GroupDetailModal({
 
 function TrainingTeamsPage() {
   const { search } = usePortalUi();
+  const [campaigns, setCampaigns] = useState<RecruitmentCampaign[]>([]);
+  // Đợt tuyển: user chọn thì ưu tiên, không thì lấy đợt đang mở / mới nhất
+  const [campaignIdOverride, setCampaignIdOverride] = useState("");
+  const campaignId = useMemo(() => {
+    if (
+      campaignIdOverride &&
+      campaigns.some((c) => c.id === campaignIdOverride)
+    ) {
+      return campaignIdOverride;
+    }
+    return campaigns.find((c) => c.isActive)?.id ?? campaigns[0]?.id ?? "";
+  }, [campaignIdOverride, campaigns]);
   const [groups, setGroups] = useState<TrainingGroup[]>([]);
   const [programs, setPrograms] = useState<TrainingProgram[]>([]);
   const [mentors, setMentors] = useState<TrainingMentor[]>([]);
@@ -243,10 +326,10 @@ function TrainingTeamsPage() {
   const load = useCallback(async () => {
     try {
       const [g, p, m, t] = await Promise.all([
-        getTrainingGroups(),
+        getTrainingGroups(campaignId || undefined),
         getTrainingPrograms(),
         getMentors(),
-        getTrainees(),
+        getTrainees(undefined, campaignId || undefined),
       ]);
       setGroups(g);
       setPrograms(p);
@@ -255,6 +338,17 @@ function TrainingTeamsPage() {
     } finally {
       setLoading(false);
     }
+  }, [campaignId]);
+
+  useEffect(() => {
+    let alive = true;
+    void getCampaigns().then((data) => {
+      // Chỉ đợt đã publish/closed mới có tân binh thực tế
+      if (alive) setCampaigns(data.filter((c) => c.status !== "draft"));
+    });
+    return () => {
+      alive = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -275,7 +369,8 @@ function TrainingTeamsPage() {
   return (
     <>
       <nav className="text-sm text-muted">
-        Đào tạo › Thiết lập chương trình › <span className="text-foreground/80">Chia đội</span>
+        Đào tạo › Thiết lập chương trình ›{" "}
+        <span className="text-foreground/80">Chia đội</span>
       </nav>
 
       <section className="flex flex-wrap items-end justify-between gap-4">
@@ -283,7 +378,18 @@ function TrainingTeamsPage() {
           <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
             Danh sách Đội Training
           </h1>
-          <p className="mt-2 text-muted">Quản lý nhóm tân binh và mentor phụ trách.</p>
+          <div className="mt-2 flex flex-wrap items-center gap-2 text-muted">
+            <span>Quản lý nhóm tân binh và mentor phụ trách.</span>
+            <Select
+              value={campaignId}
+              options={campaigns.map((c) => ({ value: c.id, label: c.name }))}
+              onChange={setCampaignIdOverride}
+              placeholder="Chọn đợt tuyển"
+              ariaLabel="Bộ lọc theo đợt tuyển"
+              className="min-w-[220px]"
+              triggerClassName="!shadow-extruded-sm !h-10 text-accent !font-semibold"
+            />
+          </div>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button
@@ -319,7 +425,10 @@ function TrainingTeamsPage() {
       </section>
 
       {toast && (
-        <p className="rounded-2xl bg-accent/10 px-4 py-3 text-sm text-accent" role="status">
+        <p
+          className="rounded-2xl bg-accent/10 px-4 py-3 text-sm text-accent"
+          role="status"
+        >
           {toast}
         </p>
       )}
@@ -330,23 +439,31 @@ function TrainingTeamsPage() {
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {filtered.map((g) => (
             <article key={g.id} className="neu-card !p-5 space-y-4">
-              <Badge tone="violet">{g.specialtyLabel ?? g.departmentName}</Badge>
+              <Badge tone="violet">
+                {g.specialtyLabel ?? g.departmentName}
+              </Badge>
               <h3 className="font-display text-xl font-bold">{g.name}</h3>
               <div className="rounded-2xl bg-background px-3 py-3 shadow-inset-sm flex items-center gap-3">
                 <Avatar name={g.mentorName ?? "?"} size="md" />
                 <div>
-                  <p className="text-[10px] uppercase tracking-wide text-muted">Mentor phụ trách</p>
+                  <p className="text-[10px] uppercase tracking-wide text-muted">
+                    Mentor phụ trách
+                  </p>
                   <p className="text-sm font-semibold">
                     {g.mentorName ?? "—"}
                     {g.mentorAccepted === false ? (
-                      <span className="ml-1 font-normal text-rose-500">(Chưa nhận)</span>
+                      <span className="ml-1 font-normal text-rose-500">
+                        (Chưa nhận)
+                      </span>
                     ) : null}
                   </p>
                 </div>
               </div>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-[10px] uppercase tracking-wide text-muted">Thành viên</p>
+                  <p className="text-[10px] uppercase tracking-wide text-muted">
+                    Thành viên
+                  </p>
                   <div className="mt-1 flex items-center gap-2">
                     <div className="flex -space-x-2">
                       {trainees
@@ -361,7 +478,9 @@ function TrainingTeamsPage() {
                           />
                         ))}
                     </div>
-                    <span className="text-sm font-medium">{g.memberIds.length}</span>
+                    <span className="text-sm font-medium">
+                      {g.memberIds.length}
+                    </span>
                   </div>
                 </div>
                 <Button
@@ -407,6 +526,7 @@ function TrainingTeamsPage() {
         programs={programs}
         mentors={mentors}
         trainees={trainees}
+        campaignId={campaignId || undefined}
         onAssigned={(msg) => {
           showToast(msg);
           void load();

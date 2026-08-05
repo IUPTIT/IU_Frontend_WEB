@@ -392,12 +392,16 @@ export async function getMyTeamTrainees(): Promise<Trainee[]> {
 
 // ---- Trainees / Mentors ----
 
-export async function getTrainees(departmentId?: string): Promise<Trainee[]> {
-  const query = departmentId
-    ? `?department=${encodeURIComponent(departmentId)}`
-    : "";
+export async function getTrainees(
+  departmentId?: string,
+  campaignId?: string,
+): Promise<Trainee[]> {
+  const params = new URLSearchParams();
+  if (departmentId) params.set("department", departmentId);
+  if (campaignId) params.set("campaignId", campaignId);
+  const qs = params.toString();
   const { trainees } = await api.get<{ trainees: BackendTrainee[] }>(
-    `/training/trainees${query}`,
+    `/training/trainees${qs ? `?${qs}` : ""}`,
   );
   return trainees.map(toTrainee);
 }
@@ -454,9 +458,11 @@ export async function setMentorFlag(
 /** Random chia đều tân binh chưa có team cho các mentor (mỗi team dùng lộ trình riêng của mentor) */
 export async function autoAssignTeams(
   fallbackProgramId?: string,
+  campaignId?: string,
 ): Promise<{ assigned: number; mentors: number; groups: unknown[] }> {
   return api.post("/training/groups/auto-assign", {
     programId: fallbackProgramId || null,
+    campaignId: campaignId || null,
   });
 }
 
@@ -522,9 +528,14 @@ export async function createTrainingProgram(
 
 // ---- Groups ----
 
-export async function getTrainingGroups(): Promise<TrainingGroup[]> {
+export async function getTrainingGroups(
+  campaignId?: string,
+): Promise<TrainingGroup[]> {
+  const query = campaignId
+    ? `?campaignId=${encodeURIComponent(campaignId)}`
+    : "";
   const { groups } = await api.get<{ groups: BackendGroup[] }>(
-    "/training/groups",
+    `/training/groups${query}`,
   );
   return groups.map(toGroup);
 }
@@ -572,9 +583,14 @@ export type TrainingReviewSummary = {
   needsAction: number;
 };
 
-export async function getTrainingReviewSummary(): Promise<TrainingReviewSummary> {
+export async function getTrainingReviewSummary(
+  campaignId?: string,
+): Promise<TrainingReviewSummary> {
+  const query = campaignId
+    ? `?campaignId=${encodeURIComponent(campaignId)}`
+    : "";
   const { summary } = await api.get<{ summary: TrainingReviewSummary }>(
-    "/training/review-summary",
+    `/training/review-summary${query}`,
   );
   return summary;
 }

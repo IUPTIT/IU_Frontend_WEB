@@ -41,11 +41,6 @@ export const SIDEBAR_CONFIG: Record<Role, SidebarConfig> = {
                 label: "Vòng phỏng vấn",
                 path: ROUTES.admin.recruitment.interviews,
               },
-              {
-                id: "recruitment-results",
-                label: "Kết quả",
-                path: ROUTES.admin.recruitment.results,
-              },
               // Vòng training — admin chỉ chia đội + đánh giá; lộ trình do mentor tự tạo
               {
                 id: "training-teams",
@@ -56,6 +51,12 @@ export const SIDEBAR_CONFIG: Record<Role, SidebarConfig> = {
                 id: "training-review",
                 label: "Tổng kết training",
                 path: ROUTES.admin.training.review,
+              },
+              // Kết quả cuối (trúng tuyển chính thức) — bước chốt sau vòng training
+              {
+                id: "recruitment-results",
+                label: "Kết quả",
+                path: ROUTES.admin.recruitment.results,
               },
             ],
           },
