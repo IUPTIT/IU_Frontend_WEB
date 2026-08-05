@@ -35,6 +35,7 @@ export const ROUTES = {
   },
   candidate: {
     interview: "/candidate/interview",
+    training: "/candidate/training",
     profile: "/candidate/profile",
   },
   member: {

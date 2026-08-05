@@ -226,6 +226,12 @@ export const SIDEBAR_CONFIG: Record<Role, SidebarConfig> = {
             path: ROUTES.candidate.interview,
           },
           {
+            id: "training",
+            label: "Vòng training",
+            icon: "training",
+            path: ROUTES.candidate.training,
+          },
+          {
             id: "profile",
             label: "Hồ sơ của tôi",
             icon: "profile",
