@@ -40,6 +40,7 @@ type Props = {
  */
 function RoadmapBuilder({ breadcrumb = "Vòng training › Tạo lộ trình", onCancel, onSaved }: Props) {
   const [name, setName] = useState("Lộ trình training của tôi");
+  const [passThresholdPercent, setPassThresholdPercent] = useState(80);
   const [depts, setDepts] = useState(DEFAULT_DEPTS);
   const [deptId, setDeptId] = useState(DEFAULT_DEPTS[0].id);
   const [saving, setSaving] = useState(false);
@@ -133,6 +134,7 @@ function RoadmapBuilder({ breadcrumb = "Vòng training › Tạo lộ trình", o
         name: name.trim(),
         departmentId: dept.id,
         departmentName: dept.name,
+        passThresholdPercent,
         stages: flatStages,
         lessons,
       });
@@ -160,7 +162,7 @@ function RoadmapBuilder({ breadcrumb = "Vòng training › Tạo lộ trình", o
         </div>
       </header>
 
-      <section className="neu-card !p-6 grid gap-4 sm:grid-cols-2">
+      <section className="neu-card !p-6 grid gap-4 sm:grid-cols-3">
         <label className="space-y-1.5 block">
           <span className="neu-field-label">Tên lộ trình</span>
           <input className="neu-input" value={name} onChange={(e) => setName(e.target.value)} />
@@ -174,6 +176,21 @@ function RoadmapBuilder({ breadcrumb = "Vòng training › Tạo lộ trình", o
             onChange={setDeptId}
           />
         </div>
+        <label className="space-y-1.5 block">
+          <span className="neu-field-label">Ngưỡng Pass (% task đạt)</span>
+          <input
+            type="number"
+            min={0}
+            max={100}
+            className="neu-input"
+            value={passThresholdPercent}
+            onChange={(e) =>
+              setPassThresholdPercent(
+                Math.min(100, Math.max(0, Number(e.target.value) || 0)),
+              )
+            }
+          />
+        </label>
       </section>
 
       <div className="relative space-y-5 pl-2">

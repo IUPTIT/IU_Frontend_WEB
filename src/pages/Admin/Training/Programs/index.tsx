@@ -134,8 +134,8 @@ export default function AdminTrainingProgramsPage() {
                 </div>
               </div>
               <p className="text-sm text-muted">
-                {p.stages.length} giai đoạn · {p.lessons.length} bài học ·{" "}
-                {formatDate(p.createdAt)}
+                {p.stages.length} giai đoạn · {p.lessons.length} bài học · Pass ≥
+                {p.passThresholdPercent ?? 80}% · {formatDate(p.createdAt)}
               </p>
               <ul className="space-y-1.5">
                 {[...p.stages]

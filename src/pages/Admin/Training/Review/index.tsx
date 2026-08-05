@@ -331,6 +331,10 @@ function TrainingReviewPage() {
       showToast("Vui lòng nhập lý do xử lý.");
       return;
     }
+    if (penaltyAction === "extend_once" && penaltyTarget.extendedOnce) {
+      showToast("Tân binh này đã được gia hạn 1 lần.");
+      return;
+    }
     setPenaltySaving(true);
     try {
       await handleIncompleteTrainee(penaltyTarget.id, {
@@ -340,7 +344,9 @@ function TrainingReviewPage() {
       showToast(
         penaltyAction === "remove_from_club"
           ? `Đã loại ${penaltyTarget.fullName} khỏi CLB.`
-          : `Đã gửi nhắc lần cuối tới ${penaltyTarget.fullName}.`,
+          : penaltyAction === "extend_once"
+            ? `Đã gia hạn deadline +7 ngày cho ${penaltyTarget.fullName}.`
+            : `Đã gửi nhắc lần cuối tới ${penaltyTarget.fullName}.`,
       );
       setPenaltyTarget(null);
       setPenaltyReason("");
@@ -810,13 +816,20 @@ function TrainingReviewPage() {
               Xử lý không hoàn thành
             </h2>
             <p className="text-sm text-muted">
-              {penaltyTarget.fullName} — nhắc lần cuối hoặc loại khỏi CLB
+              {penaltyTarget.fullName} — nhắc lần cuối, gia hạn 1 lần, hoặc loại
+              khỏi CLB
             </p>
             <Select
               value={penaltyAction}
               onChange={(v) => setPenaltyAction(v as PenaltyActionType)}
               options={[
                 { value: "final_reminder", label: "Nhắc nhở lần cuối" },
+                {
+                  value: "extend_once",
+                  label: penaltyTarget.extendedOnce
+                    ? "Gia hạn 1 lần (đã dùng)"
+                    : "Gia hạn deadline +7 ngày (1 lần)",
+                },
                 { value: "remove_from_club", label: "Loại khỏi CLB" },
               ]}
             />

@@ -67,7 +67,7 @@ export function traineeToEmailRecipient(t: Trainee): EmailRecipient {
               ? "Chưa đạt"
               : "Đang học",
       program_name: t.cohortLabel ?? "Onboarding",
-      certificate_code: t.evalStatus === "certified" ? `IU-CERT-${t.id.slice(-4).toUpperCase()}` : "—",
+      certificate_code: t.certificateCode || (t.evalStatus === "certified" ? `IU-CERT-${t.id.slice(-4).toUpperCase()}` : "—"),
     },
   };
 }

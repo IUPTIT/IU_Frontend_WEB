@@ -33,6 +33,9 @@ type BackendTrainee = {
     mentorId: { _id: string; name: string } | null;
   } | null;
   cohortLabel: string;
+  certificateCode?: string;
+  certificateIssuedAt?: string | null;
+  extendedOnce?: boolean;
 };
 
 type BackendStage = {
@@ -57,6 +60,7 @@ type BackendProgram = {
   _id: string;
   name: string;
   department: string;
+  passThresholdPercent?: number;
   stages: BackendStage[];
   lessons: BackendLesson[];
   createdBy?: string | null;
@@ -96,6 +100,9 @@ function toTrainee(t: BackendTrainee): Trainee {
     mentorReviewStatus: t.mentorReviewStatus ?? "draft",
     mentorReviewSubmittedAt: t.mentorReviewSubmittedAt ?? undefined,
     cohortLabel: t.cohortLabel || undefined,
+    certificateCode: t.certificateCode || undefined,
+    certificateIssuedAt: t.certificateIssuedAt ?? undefined,
+    extendedOnce: t.extendedOnce ?? false,
   };
 }
 
@@ -106,6 +113,7 @@ function toProgram(p: BackendProgram): TrainingProgram {
     departmentId: p.department,
     departmentName: p.department,
     createdById: p.createdBy ?? undefined,
+    passThresholdPercent: p.passThresholdPercent ?? 80,
     stages: p.stages.map((s) => ({
       id: s.stageId,
       name: s.name,
@@ -496,6 +504,7 @@ export type SaveProgramInput = {
   name: string;
   departmentId: string;
   departmentName: string;
+  passThresholdPercent?: number;
   stages: TrainingProgram["stages"];
   lessons: TrainingProgram["lessons"];
 };
@@ -508,6 +517,7 @@ export async function createTrainingProgram(
     {
       name: input.name,
       department: input.departmentName || input.departmentId,
+      passThresholdPercent: input.passThresholdPercent ?? 80,
       stages: input.stages.map((s) => ({
         stageId: s.id,
         name: s.name,
@@ -538,6 +548,7 @@ export async function updateTrainingProgram(
     {
       name: input.name,
       department: input.departmentName || input.departmentId,
+      passThresholdPercent: input.passThresholdPercent ?? 80,
       stages: input.stages.map((s) => ({
         stageId: s.id,
         name: s.name,
