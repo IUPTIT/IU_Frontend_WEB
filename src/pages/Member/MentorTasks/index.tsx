@@ -7,6 +7,7 @@ import Select from "../../../components/ui/Select";
 import { useAuth } from "../../../context/useAuth";
 import { formatDate } from "../../../utils/formatDate";
 import Avatar from "../../../components/ui/Avatar";
+import TrainingChatPanel from "../../../components/training/TrainingChatPanel";
 import {
   createMentorTask,
   getMentorTasks,
@@ -518,6 +519,30 @@ function MentorTasksPage() {
           <p className="text-sm text-muted">
             Bạn chưa dẫn team nào — chờ Ban Chủ nhiệm chia đội.
           </p>
+        </section>
+      )}
+
+      {groups.length > 0 && (
+        <section className="space-y-4">
+          <div>
+            <h2 className="font-display text-lg font-bold">Trao đổi nhóm</h2>
+            <p className="text-xs text-muted">
+              Nhắn tin với tân binh trong team — tin mới cũng hiện ở chuông
+              thông báo.
+            </p>
+          </div>
+          <div className="grid gap-4 xl:grid-cols-2">
+            {groups.map((g) => (
+              <TrainingChatPanel
+                key={g.id}
+                groupId={g.id}
+                title={g.name}
+                subtitle={
+                  g.specialtyLabel ?? g.departmentName ?? "Nhóm training"
+                }
+              />
+            ))}
+          </div>
         </section>
       )}
 

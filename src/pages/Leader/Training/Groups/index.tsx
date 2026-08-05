@@ -4,19 +4,13 @@ import Avatar from "../../../../components/ui/Avatar";
 import Badge from "../../../../components/ui/Badge";
 import Button from "../../../../components/ui/Button";
 import Icon from "../../../../components/ui/Icon";
+import TrainingChatPanel from "../../../../components/training/TrainingChatPanel";
 import { ChevronRight } from "lucide-react";
 import {
-  getGroupMessages,
   getTrainingGroups,
   getTrainees,
-  sendGroupMessage,
 } from "../../../../services/trainingService";
-import type {
-  Trainee,
-  TrainingChatMessage,
-  TrainingGroup,
-} from "../../../../types/training";
-import { formatDate } from "../../../../utils/formatDate";
+import type { Trainee, TrainingGroup } from "../../../../types/training";
 
 /**
  * Leader quản lý nhóm — card grid kế thừa Admin/Training/Teams
@@ -28,9 +22,6 @@ export default function LeaderTrainingGroupsPage() {
   const [trainees, setTrainees] = useState<Trainee[]>([]);
   const [loading, setLoading] = useState(true);
   const [detail, setDetail] = useState<TrainingGroup | null>(null);
-  const [messages, setMessages] = useState<TrainingChatMessage[]>([]);
-  const [draft, setDraft] = useState("");
-  const [sending, setSending] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -50,31 +41,6 @@ export default function LeaderTrainingGroupsPage() {
       alive = false;
     };
   }, [load]);
-
-  useEffect(() => {
-    if (!detail) {
-      setMessages([]);
-      return;
-    }
-    void getGroupMessages(detail.id)
-      .then(setMessages)
-      .catch(() => setMessages([]));
-  }, [detail]);
-
-  const handleSend = async () => {
-    if (!detail || !draft.trim()) return;
-    setSending(true);
-    try {
-      const msg = await sendGroupMessage(detail.id, draft.trim());
-      setMessages((prev) => [...prev, msg]);
-      setDraft("");
-    } catch (err) {
-      setToast(err instanceof Error ? err.message : "Gửi tin thất bại");
-      window.setTimeout(() => setToast(null), 2500);
-    } finally {
-      setSending(false);
-    }
-  };
 
   return (
     <section className="space-y-6">
@@ -172,7 +138,7 @@ export default function LeaderTrainingGroupsPage() {
           <div
             role="dialog"
             aria-modal="true"
-            className="relative z-10 flex max-h-[min(90vh,680px)] w-full max-w-lg flex-col overflow-hidden rounded-card bg-background shadow-extruded"
+            className="relative z-10 flex max-h-[min(92vh,720px)] w-full max-w-lg flex-col overflow-hidden rounded-card bg-background shadow-extruded"
           >
             <header className="border-b border-black/5 px-5 py-4">
               <h2 className="font-display text-xl font-extrabold">
@@ -202,47 +168,11 @@ export default function LeaderTrainingGroupsPage() {
                   ))}
               </ul>
 
-              <div className="space-y-2">
-                <p className="neu-field-label !mb-0">Tin nhắn nhóm</p>
-                <div className="max-h-48 space-y-2 overflow-y-auto rounded-2xl bg-background p-3 shadow-inset-sm">
-                  {messages.length === 0 && (
-                    <p className="text-center text-xs text-muted py-4">
-                      Chưa có tin nhắn
-                    </p>
-                  )}
-                  {messages.map((m) => (
-                    <div key={m.id} className="text-sm">
-                      <span className="font-semibold">{m.senderName}: </span>
-                      {m.content}
-                      <span className="ml-2 text-[10px] text-muted">
-                        {formatDate(m.createdAt)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-                <div className="flex gap-2">
-                  <input
-                    className="neu-input flex-1 text-sm"
-                    placeholder="Nhắn tới nhóm…"
-                    value={draft}
-                    onChange={(e) => setDraft(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        void handleSend();
-                      }
-                    }}
-                  />
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    disabled={sending || !draft.trim()}
-                    onClick={() => void handleSend()}
-                  >
-                    Gửi
-                  </Button>
-                </div>
-              </div>
+              <TrainingChatPanel
+                groupId={detail.id}
+                title="Tin nhắn nhóm"
+                subtitle="Trao đổi với tân binh trong nhóm"
+              />
             </div>
           </div>
         </div>
