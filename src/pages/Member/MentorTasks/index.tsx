@@ -65,8 +65,9 @@ function EvaluationRow({
   const [note, setNote] = useState(trainee.mentorNote ?? "");
   const [saving, setSaving] = useState(false);
   const evalStatus = trainee.evalStatus ?? "studying";
+  const submitted = trainee.mentorReviewStatus === "submitted";
 
-  const handleSave = async () => {
+  const handleSave = async (submit: boolean) => {
     const parsed = score.trim() === "" ? undefined : Number.parseFloat(score);
     if (parsed != null && (Number.isNaN(parsed) || parsed < 0 || parsed > 10)) {
       onChanged("Điểm phải từ 0 đến 10.");
@@ -81,8 +82,13 @@ function EvaluationRow({
       await saveMentorTraineeReview(trainee.id, {
         score: parsed ?? null,
         note: note.trim(),
+        submit,
       });
-      onChanged(`Đã lưu đánh giá quá trình cho ${trainee.fullName}.`);
+      onChanged(
+        submit
+          ? `Đã gửi kết quả training của ${trainee.fullName} lên BCN.`
+          : `Đã lưu nháp đánh giá cho ${trainee.fullName}.`,
+      );
     } catch (err) {
       onChanged(err instanceof Error ? err.message : "Lưu đánh giá thất bại.");
     } finally {
@@ -98,9 +104,12 @@ function EvaluationRow({
           <p className="text-sm font-semibold">{trainee.fullName}</p>
           <p className="text-xs text-muted">{trainee.email}</p>
         </div>
+        <Badge tone={submitted ? "success" : "muted"}>
+          {submitted ? "Đã gửi BCN" : "Nháp"}
+        </Badge>
         <Badge tone={EVAL_TONE[evalStatus]}>{EVAL_LABEL[evalStatus]}</Badge>
       </div>
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <input
           type="number"
           min={0}
@@ -112,18 +121,27 @@ function EvaluationRow({
           onChange={(e) => setScore(e.target.value)}
         />
         <input
-          className="neu-input !h-9 flex-1 text-sm"
+          className="neu-input !h-9 min-w-[180px] flex-1 text-sm"
           placeholder="Note quá trình: thái độ, tiến bộ, điểm mạnh/yếu..."
           value={note}
           onChange={(e) => setNote(e.target.value)}
         />
         <Button
+          variant="secondary"
+          size="sm"
+          disabled={saving}
+          onClick={() => void handleSave(false)}
+        >
+          Lưu nháp
+        </Button>
+        <Button
           variant="primary"
           size="sm"
           disabled={saving}
-          onClick={() => void handleSave()}
+          onClick={() => void handleSave(true)}
+          leftIcon={<Icon icon={Send} size={14} />}
         >
-          {saving ? "Đang lưu..." : "Lưu"}
+          {saving ? "Đang lưu..." : "Gửi BCN"}
         </Button>
       </div>
     </li>

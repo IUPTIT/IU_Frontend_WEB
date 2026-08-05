@@ -1,5 +1,5 @@
 ﻿import { useCallback, useEffect, useMemo, useState } from "react";
-import { Award, CircleCheck, CircleX, Download, Send } from "lucide-react";
+import { Award, CircleCheck, CircleX, Download, Eye, Send } from "lucide-react";
 import Button from "../../../../components/ui/Button";
 import ExportDataModal, {
   type ExportColumnDef,
@@ -135,6 +135,7 @@ function TrainingReviewPage() {
   const [toast, setToast] = useState<string | null>(null);
   const [emailOpen, setEmailOpen] = useState(false);
   const [emailRecipients, setEmailRecipients] = useState<EmailRecipient[]>([]);
+  const [detailTrainee, setDetailTrainee] = useState<Trainee | null>(null);
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -537,8 +538,21 @@ function TrainingReviewPage() {
                         <td className="px-3 py-4 text-sm">
                           {t.departmentName}
                         </td>
-                        <td className="px-3 py-4 text-center font-bold">
-                          {t.avgScore != null ? t.avgScore.toFixed(1) : "--"}
+                        <td className="px-3 py-4 text-center">
+                          {t.mentorReviewStatus === "submitted" ? (
+                            <span className="font-bold">
+                              {t.avgScore != null
+                                ? t.avgScore.toFixed(1)
+                                : "--"}
+                            </span>
+                          ) : (
+                            <span
+                              className="text-xs text-muted"
+                              title="Mentor chưa gửi kết quả lên BCN"
+                            >
+                              Chờ mentor gửi
+                            </span>
+                          )}
                         </td>
                         <td className="px-3 py-4">
                           <div className="space-y-1 min-w-[120px]">
@@ -558,6 +572,15 @@ function TrainingReviewPage() {
                         </td>
                         <td className="px-3 py-4 text-center">
                           <div className="inline-flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              aria-label={`Xem chi tiết kết quả training của ${t.fullName}`}
+                              title="Xem chi tiết"
+                              className="flex h-8 w-8 items-center justify-center rounded-full text-accent shadow-extruded-sm transition-colors hover:bg-accent/10"
+                              onClick={() => setDetailTrainee(t)}
+                            >
+                              <Icon icon={Eye} size={17} />
+                            </button>
                             {(t.evalStatus === "studying" ||
                               t.evalStatus === "failed") && (
                               <button
@@ -616,6 +639,95 @@ function TrainingReviewPage() {
           />
         </div>
       </section>
+
+      {detailTrainee && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
+          role="presentation"
+        >
+          <button
+            type="button"
+            className="absolute inset-0 bg-foreground/35 backdrop-blur-[2px]"
+            aria-label="Đóng"
+            onClick={() => setDetailTrainee(null)}
+          />
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="trainee-detail-title"
+            className="relative z-10 flex max-h-[min(90vh,600px)] w-full max-w-md flex-col overflow-hidden rounded-card bg-background shadow-extruded"
+          >
+            <header className="flex items-start justify-between gap-3 border-b border-black/5 px-5 py-4 sm:px-6">
+              <div>
+                <h2
+                  id="trainee-detail-title"
+                  className="font-display text-xl font-extrabold"
+                >
+                  {detailTrainee.fullName}
+                </h2>
+                <p className="mt-1 text-sm text-muted">
+                  {detailTrainee.departmentName}
+                  {detailTrainee.mentorName &&
+                    ` · Mentor: ${detailTrainee.mentorName}`}
+                </p>
+              </div>
+              <Button
+                variant="icon"
+                size="sm"
+                aria-label="Đóng"
+                onClick={() => setDetailTrainee(null)}
+              >
+                <Icon icon={CircleX} size={16} />
+              </Button>
+            </header>
+            <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-5 sm:px-6">
+              <div className="flex items-center justify-between rounded-2xl bg-background px-4 py-3 shadow-inset-sm">
+                <span className="text-sm text-muted">Kết quả từ mentor</span>
+                {detailTrainee.mentorReviewStatus === "submitted" ? (
+                  <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                    Đã gửi
+                    {detailTrainee.mentorReviewSubmittedAt &&
+                      ` · ${new Date(detailTrainee.mentorReviewSubmittedAt).toLocaleDateString("vi-VN")}`}
+                  </span>
+                ) : (
+                  <span className="rounded-full bg-foreground/10 px-3 py-1 text-xs font-semibold text-muted">
+                    Mentor chưa gửi
+                  </span>
+                )}
+              </div>
+              {detailTrainee.mentorReviewStatus === "submitted" ? (
+                <>
+                  <div className="flex items-center justify-between rounded-2xl bg-background px-4 py-3 shadow-inset-sm">
+                    <span className="text-sm text-muted">Điểm quá trình</span>
+                    <span className="text-xl font-extrabold text-accent">
+                      {detailTrainee.avgScore != null
+                        ? `${detailTrainee.avgScore.toFixed(1)}/10`
+                        : "--"}
+                    </span>
+                  </div>
+                  <div className="rounded-2xl bg-background px-4 py-3 shadow-inset-sm">
+                    <p className="text-sm text-muted">
+                      Note quá trình của mentor
+                    </p>
+                    <p className="mt-1.5 whitespace-pre-wrap text-sm">
+                      {detailTrainee.mentorNote || "Mentor không ghi note."}
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <p className="px-1 text-sm text-muted">
+                  Mentor còn đang lưu nháp — điểm và note sẽ hiện khi mentor bấm
+                  "Gửi BCN".
+                </p>
+              )}
+              <div className="flex items-center justify-between rounded-2xl bg-background px-4 py-3 shadow-inset-sm">
+                <span className="text-sm text-muted">Kết luận của BCN</span>
+                <EvalBadge status={detailTrainee.evalStatus} />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <ExportDataModal
         open={exportOpen}

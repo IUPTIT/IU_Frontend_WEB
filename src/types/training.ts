@@ -27,6 +27,9 @@ export type Trainee = {
   avgScore?: number;
   /** Note quá trình của mentor */
   mentorNote?: string;
+  /** draft = mentor lưu nháp; submitted = đã gửi kết quả lên BCN */
+  mentorReviewStatus?: "draft" | "submitted";
+  mentorReviewSubmittedAt?: string;
   sessionsDone?: number;
   sessionsTotal?: number;
   evalStatus?: TraineeEvalStatus;
