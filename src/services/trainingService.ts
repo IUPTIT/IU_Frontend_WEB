@@ -461,6 +461,11 @@ export async function getTrainingPrograms(): Promise<TrainingProgram[]> {
   return programs.map(toProgram);
 }
 
+/** Xóa lộ trình (mentor xóa của mình, BCN/Leader xóa tất cả) — team đang dùng được gỡ về null */
+export async function deleteTrainingProgram(id: string): Promise<void> {
+  await api.delete(`/training/programs/${id}`);
+}
+
 export async function getTrainingProgramById(
   id: string,
 ): Promise<TrainingProgram | undefined> {
