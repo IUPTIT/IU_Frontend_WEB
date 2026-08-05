@@ -41,19 +41,14 @@ export const SIDEBAR_CONFIG: Record<Role, SidebarConfig> = {
                 label: "Vòng phỏng vấn",
                 path: ROUTES.admin.recruitment.interviews,
               },
-              {
-                id: "recruitment-results",
-                label: "Kết quả",
-                path: ROUTES.admin.recruitment.results,
-              },
+          {
+            id: "recruitment-results",
+            label: "Kết quả",
+            path: ROUTES.admin.recruitment.results,
+          },
             ],
           },
-          {
-            id: "members",
-            label: "Quản lý thành viên",
-            icon: "members",
-            path: ROUTES.admin.members,
-          },
+          // Members / Permissions / Email Configuration: MOCK FE — ẩn nav đến khi có API thật
           // Đào tạo thành viên mới (sau trúng tuyển) — không gộp vào Tuyển dụng
           {
             id: "training",
@@ -88,24 +83,6 @@ export const SIDEBAR_CONFIG: Record<Role, SidebarConfig> = {
             label: "Cài đặt",
             icon: "settings",
             path: ROUTES.admin.settings,
-            children: [
-              {
-                id: "settings-general",
-                label: "Cài đặt chung",
-                path: ROUTES.admin.settings,
-              },
-              {
-                id: "settings-email",
-                label: "Email Configuration",
-                path: ROUTES.admin.email,
-              },
-            ],
-          },
-          {
-            id: "permissions",
-            label: "Phân quyền",
-            icon: "permissions",
-            path: ROUTES.admin.permissions,
           },
         ],
       },
@@ -330,12 +307,6 @@ export const SIDEBAR_CONFIG: Record<Role, SidebarConfig> = {
             label: "Lịch phỏng vấn",
             icon: "events",
             path: ROUTES.candidate.interview,
-          },
-          {
-            id: "training",
-            label: "Đào tạo",
-            icon: "training",
-            path: ROUTES.candidate.training,
           },
           {
             id: "profile",

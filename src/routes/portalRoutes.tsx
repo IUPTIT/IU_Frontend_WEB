@@ -30,7 +30,6 @@ import LeaderHelpPage from "../pages/Leader/Help";
 
 import CandidateInterviewPage from "../pages/Candidate/Interview";
 import CandidateProfilePage from "../pages/Candidate/Profile";
-import CandidateTrainingPage from "../pages/Candidate/Training";
 
 import MemberOverviewPage from "../pages/Member";
 import MemberMentorTasksPage from "../pages/Member/MentorTasks";
@@ -68,7 +67,6 @@ const PAGE_MAP: Record<string, ReactNode> = {
   [ROUTES.leader.help]: <LeaderHelpPage />,
 
   [ROUTES.candidate.interview]: <CandidateInterviewPage />,
-  [ROUTES.candidate.training]: <CandidateTrainingPage />,
   [ROUTES.candidate.profile]: <CandidateProfilePage />,
 
   [ROUTES.member.overview]: <MemberOverviewPage />,
