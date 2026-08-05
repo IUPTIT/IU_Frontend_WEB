@@ -280,6 +280,108 @@ export async function submitMentorTask(
   await api.post(`/training/tasks/${taskId}/submit`, input);
 }
 
+// ---- Task mentor giao (phía mentor: giao / xem bài nộp / chấm) ----
+
+type BackendMentorSideAssignment = Omit<BackendTaskAssignment, "traineeId"> & {
+  traineeId:
+    | { _id: string; fullName: string; email: string; department: string }
+    | string;
+};
+
+type BackendMentorSideTask = Omit<BackendMentorTask, "assignments"> & {
+  assignments: BackendMentorSideAssignment[];
+};
+
+export type MentorTaskAssignment = {
+  traineeId: string;
+  traineeName: string;
+  traineeEmail?: string;
+  status: BackendTaskAssignment["status"];
+  submissionUrl?: string;
+  submissionNote?: string;
+  submittedAt?: string;
+  feedback?: string;
+  score?: number;
+};
+
+export type MentorTask = {
+  id: string;
+  groupId?: string;
+  groupName?: string;
+  title: string;
+  description?: string;
+  attachmentUrl?: string;
+  deadline?: string;
+  createdAt: string;
+  assignments: MentorTaskAssignment[];
+};
+
+function toMentorTask(t: BackendMentorSideTask): MentorTask {
+  return {
+    id: t._id,
+    groupId: typeof t.groupId === "string" ? t.groupId : t.groupId?._id,
+    groupName: typeof t.groupId === "string" ? undefined : t.groupId?.name,
+    title: t.title,
+    description: t.description || undefined,
+    attachmentUrl: t.attachmentUrl || undefined,
+    deadline: t.deadline ?? undefined,
+    createdAt: t.createdAt,
+    assignments: t.assignments.map((a) => ({
+      traineeId:
+        typeof a.traineeId === "string" ? a.traineeId : a.traineeId._id,
+      traineeName:
+        typeof a.traineeId === "string" ? "Tân binh" : a.traineeId.fullName,
+      traineeEmail:
+        typeof a.traineeId === "string" ? undefined : a.traineeId.email,
+      status: a.status,
+      submissionUrl: a.submissionUrl || undefined,
+      submissionNote: a.submissionNote || undefined,
+      submittedAt: a.submittedAt ?? undefined,
+      feedback: a.feedback || undefined,
+      score: a.score ?? undefined,
+    })),
+  };
+}
+
+/** Task của các team mình dẫn (mentor) hoặc theo team (BCN/Leader) */
+export async function getMentorTasks(groupId?: string): Promise<MentorTask[]> {
+  const query = groupId ? `?groupId=${encodeURIComponent(groupId)}` : "";
+  const { tasks } = await api.get<{ tasks: BackendMentorSideTask[] }>(
+    `/training/tasks${query}`,
+  );
+  return tasks.map(toMentorTask);
+}
+
+/** Mentor giao task cho team (bỏ trống assigneeIds = cả team) */
+export async function createMentorTask(input: {
+  groupId: string;
+  title: string;
+  description?: string;
+  attachmentUrl?: string;
+  deadline?: string;
+}): Promise<void> {
+  await api.post("/training/tasks", {
+    groupId: input.groupId,
+    title: input.title,
+    description: input.description ?? "",
+    attachmentUrl: input.attachmentUrl ?? "",
+    deadline: input.deadline ?? null,
+  });
+}
+
+/** Mentor chấm bài nộp của một trainee trong task */
+export async function reviewMentorTask(
+  taskId: string,
+  traineeId: string,
+  input: { status: "approved" | "rejected"; feedback?: string; score?: number },
+): Promise<void> {
+  await api.patch(`/training/tasks/${taskId}/review/${traineeId}`, {
+    status: input.status,
+    feedback: input.feedback ?? "",
+    score: input.score ?? null,
+  });
+}
+
 // ---- Trainees / Mentors ----
 
 export async function getTrainees(departmentId?: string): Promise<Trainee[]> {

@@ -30,6 +30,7 @@ import CandidateProfilePage from "../pages/Candidate/Profile";
 import CandidateTrainingPage from "../pages/Candidate/Training";
 
 import MemberOverviewPage from "../pages/Member";
+import MemberMentorTasksPage from "../pages/Member/MentorTasks";
 import MemberTrainingRoadmapPage from "../pages/Member/Training/Roadmap";
 import MemberMentorRoadmapPage from "../pages/Member/MentorRoadmap";
 import MemberTrainingTasksPage from "../pages/Member/Training/Tasks";
@@ -66,6 +67,7 @@ const PAGE_MAP: Record<string, ReactNode> = {
 
   [ROUTES.member.overview]: <MemberOverviewPage />,
   [ROUTES.member.mentorRoadmap]: <MemberMentorRoadmapPage />,
+  [ROUTES.member.mentorTasks]: <MemberMentorTasksPage />,
   [ROUTES.member.training.roadmap]: <MemberTrainingRoadmapPage />,
   [ROUTES.member.training.tasks]: <MemberTrainingTasksPage />,
   [ROUTES.member.training.progress]: <MemberTrainingProgressPage />,
@@ -80,7 +82,9 @@ const INTERVIEW_NOTE_RE = /^\/admin\/recruitment\/interviews\/notes\/([^/]+)$/;
 export function renderPortalPage(path: string): ReactNode {
   const detailMatch = path.match(APPLICATION_DETAIL_RE);
   if (detailMatch) {
-    return <AdminRecruitmentApplicationDetailPage applicationId={detailMatch[1]} />;
+    return (
+      <AdminRecruitmentApplicationDetailPage applicationId={detailMatch[1]} />
+    );
   }
   const slotMatch = path.match(INTERVIEW_SLOT_RE);
   if (slotMatch) {
@@ -94,7 +98,9 @@ export function renderPortalPage(path: string): ReactNode {
   return (
     PAGE_MAP[path] ?? (
       <section>
-        <h1 className="font-display text-2xl font-bold">Không tìm thấy trang</h1>
+        <h1 className="font-display text-2xl font-bold">
+          Không tìm thấy trang
+        </h1>
         <p className="text-muted mt-2">Path: {path}</p>
       </section>
     )

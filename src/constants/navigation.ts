@@ -5,19 +5,32 @@ import { ROUTES } from "./routes";
 // Item có `children` → accordion; `section.label` → heading nhóm (CHÍNH, ĐÀO TẠO...).
 export const SIDEBAR_CONFIG: Record<Role, SidebarConfig> = {
   admin: {
-    brand: { initial: "A", title: "Admin Portal", subtitle: "IT Club Management" },
+    brand: {
+      initial: "A",
+      title: "Admin Portal",
+      subtitle: "IT Club Management",
+    },
     sections: [
       {
         id: "main",
         items: [
-          { id: "overview", label: "Tổng quan", icon: "dashboard", path: ROUTES.admin.overview },
+          {
+            id: "overview",
+            label: "Tổng quan",
+            icon: "dashboard",
+            path: ROUTES.admin.overview,
+          },
           {
             id: "recruitment",
             label: "Tuyển dụng",
             icon: "recruitment",
             path: ROUTES.admin.recruitment.open,
             children: [
-              { id: "recruitment-open", label: "Mở đợt tuyển", path: ROUTES.admin.recruitment.open },
+              {
+                id: "recruitment-open",
+                label: "Mở đợt tuyển",
+                path: ROUTES.admin.recruitment.open,
+              },
               {
                 id: "recruitment-applications",
                 label: "Vòng hồ sơ",
@@ -28,9 +41,17 @@ export const SIDEBAR_CONFIG: Record<Role, SidebarConfig> = {
                 label: "Vòng phỏng vấn",
                 path: ROUTES.admin.recruitment.interviews,
               },
-              { id: "recruitment-results", label: "Kết quả", path: ROUTES.admin.recruitment.results },
+              {
+                id: "recruitment-results",
+                label: "Kết quả",
+                path: ROUTES.admin.recruitment.results,
+              },
               // Vòng training — admin chỉ chia đội + đánh giá; lộ trình do mentor tự tạo
-              { id: "training-teams", label: "Chia đội training", path: ROUTES.admin.training.teams },
+              {
+                id: "training-teams",
+                label: "Chia đội training",
+                path: ROUTES.admin.training.teams,
+              },
               {
                 id: "training-review",
                 label: "Tổng kết training",
@@ -38,7 +59,12 @@ export const SIDEBAR_CONFIG: Record<Role, SidebarConfig> = {
               },
             ],
           },
-          { id: "members", label: "Quản lý thành viên", icon: "members", path: ROUTES.admin.members },
+          {
+            id: "members",
+            label: "Quản lý thành viên",
+            icon: "members",
+            path: ROUTES.admin.members,
+          },
           // Đào tạo CLB (bồi dưỡng thành viên chính thức) — khác với Vòng training tuyển chọn
           {
             id: "club-training",
@@ -52,8 +78,16 @@ export const SIDEBAR_CONFIG: Record<Role, SidebarConfig> = {
             icon: "settings",
             path: ROUTES.admin.settings,
             children: [
-              { id: "settings-general", label: "Cài đặt chung", path: ROUTES.admin.settings },
-              { id: "settings-email", label: "Email Configuration", path: ROUTES.admin.email },
+              {
+                id: "settings-general",
+                label: "Cài đặt chung",
+                path: ROUTES.admin.settings,
+              },
+              {
+                id: "settings-email",
+                label: "Email Configuration",
+                path: ROUTES.admin.email,
+              },
             ],
           },
           {
@@ -67,7 +101,12 @@ export const SIDEBAR_CONFIG: Record<Role, SidebarConfig> = {
       {
         id: "footer",
         items: [
-          { id: "help", label: "Trợ giúp", icon: "help", path: ROUTES.admin.help },
+          {
+            id: "help",
+            label: "Trợ giúp",
+            icon: "help",
+            path: ROUTES.admin.help,
+          },
           {
             id: "logout",
             label: "Đăng xuất",
@@ -82,7 +121,11 @@ export const SIDEBAR_CONFIG: Record<Role, SidebarConfig> = {
   },
 
   leader: {
-    brand: { initial: "L", title: "Leader Portal", subtitle: "IT Club Management" },
+    brand: {
+      initial: "L",
+      title: "Leader Portal",
+      subtitle: "IT Club Management",
+    },
     sections: [
       {
         id: "chinh",
@@ -129,13 +172,23 @@ export const SIDEBAR_CONFIG: Record<Role, SidebarConfig> = {
         id: "he-thong",
         label: "HỆ THỐNG",
         items: [
-          { id: "settings", label: "Cài đặt", icon: "settings", path: ROUTES.leader.settings },
+          {
+            id: "settings",
+            label: "Cài đặt",
+            icon: "settings",
+            path: ROUTES.leader.settings,
+          },
         ],
       },
       {
         id: "footer",
         items: [
-          { id: "help", label: "Trợ giúp", icon: "help", path: ROUTES.leader.help },
+          {
+            id: "help",
+            label: "Trợ giúp",
+            icon: "help",
+            path: ROUTES.leader.help,
+          },
           {
             id: "logout",
             label: "Đăng xuất",
@@ -150,19 +203,34 @@ export const SIDEBAR_CONFIG: Record<Role, SidebarConfig> = {
   },
 
   member: {
-    brand: { initial: "M", title: "Member Portal", subtitle: "Hệ thống Quản lý CLB" },
+    brand: {
+      initial: "M",
+      title: "Member Portal",
+      subtitle: "Hệ thống Quản lý CLB",
+    },
     sections: [
       {
         id: "main",
         items: [
-          { id: "overview", label: "Tổng quan", icon: "dashboard", path: ROUTES.member.overview },
-        // Trang mentor — member được đẩy quyền sẽ tạo lộ trình training riêng ở đây
-        {
-          id: "mentor-roadmap",
-          label: "Lộ trình mentor",
-          icon: "roadmap",
-          path: ROUTES.member.mentorRoadmap,
-        },
+          {
+            id: "overview",
+            label: "Tổng quan",
+            icon: "dashboard",
+            path: ROUTES.member.overview,
+          },
+          // Trang mentor — member được đẩy quyền sẽ tạo lộ trình training riêng ở đây
+          {
+            id: "mentor-roadmap",
+            label: "Lộ trình mentor",
+            icon: "roadmap",
+            path: ROUTES.member.mentorRoadmap,
+          },
+          {
+            id: "mentor-tasks",
+            label: "Task cho team",
+            icon: "tasks",
+            path: ROUTES.member.mentorTasks,
+          },
         ],
       },
       {
@@ -193,13 +261,23 @@ export const SIDEBAR_CONFIG: Record<Role, SidebarConfig> = {
         id: "he-thong",
         label: "HỆ THỐNG",
         items: [
-          { id: "settings", label: "Cài đặt", icon: "settings", path: ROUTES.member.settings },
+          {
+            id: "settings",
+            label: "Cài đặt",
+            icon: "settings",
+            path: ROUTES.member.settings,
+          },
         ],
       },
       {
         id: "footer",
         items: [
-          { id: "help", label: "Trợ giúp", icon: "help", path: ROUTES.member.help },
+          {
+            id: "help",
+            label: "Trợ giúp",
+            icon: "help",
+            path: ROUTES.member.help,
+          },
           {
             id: "logout",
             label: "Đăng xuất",
