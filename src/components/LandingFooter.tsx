@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
+import logoMark from "../assets/logo-mark.png";
 
 const CONTACTS = [
   { icon: "phone", label: "098 981 14 24", href: "tel:0989811424" },
@@ -97,7 +98,10 @@ function LandingFooter() {
     <footer className="relative z-10 border-t border-white/10 bg-[hsl(var(--landing-background)/0.85)] backdrop-blur-md">
       <div className="mx-auto grid max-w-6xl gap-10 px-8 py-14 md:grid-cols-[1.2fr_1fr_1fr_1fr]">
         <div>
-          <p className="landing-display text-2xl font-bold text-purple-400">IU CLUB</p>
+          <div className="flex items-center gap-2.5">
+            <img src={logoMark} alt="" className="h-9 w-auto" aria-hidden />
+            <p className="landing-display text-2xl font-bold text-purple-400">IU CLUB</p>
+          </div>
           <ul className="mt-5 space-y-3">
             {CONTACTS.map((contact) => (
               <li key={contact.label}>

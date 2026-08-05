@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import StatsCards from "./components/StatsCards";
+import JourneyStrip from "./components/JourneyStrip";
 import RecruitmentFunnel from "./components/RecruitmentFunnel";
 import SubmissionChart from "./components/SubmissionChart";
 import ScoreChart from "./components/ScoreChart";
@@ -28,7 +29,7 @@ function buildReportRows(seasonId: string): ReportRow[] {
       id: `kpi-${card.id}`,
       section: "KPI",
       metric: card.label,
-      value: String(card.value),
+      value: `${card.value}${card.suffix ?? ""}`,
       note: card.badge ?? "",
     });
   }
@@ -150,6 +151,12 @@ function AdminPage() {
           {exportMsg}
         </p>
       )}
+
+      <JourneyStrip
+        stages={season.recruitmentFunnel}
+        periodLabel={season.label}
+        totalMembers={season.totalMembers}
+      />
 
       <StatsCards cards={season.statCards} />
 

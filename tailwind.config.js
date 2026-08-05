@@ -14,10 +14,23 @@ export default {
           light: "#8B84FF",
           secondary: "#38B2AC",
         },
+        // Thương hiệu — khớp logo-v2 (tím → magenta)
+        brand: {
+          DEFAULT: "#7C3AED",
+          from: "#6E2CE6",
+          to: "#E0348C",
+        },
+      },
+      backgroundImage: {
+        "brand-gradient": "linear-gradient(135deg, #6E2CE6 0%, #E0348C 100%)",
       },
       fontFamily: {
         display: ['"Plus Jakarta Sans"', "sans-serif"],
         sans: ['"DM Sans"', "sans-serif"],
+        // IU Club Studio — chữ tiêu đề & số liệu KPI khu quản lý
+        grotesk: ['"Space Grotesk"', '"Plus Jakarta Sans"', "sans-serif"],
+        // Data / mã / ngày / điểm — instrument face
+        mono: ['"Geist Mono"', "ui-monospace", "SFMono-Regular", "monospace"],
       },
       borderRadius: {
         card: "32px",

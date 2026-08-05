@@ -17,6 +17,8 @@ export type DashboardSeason = {
   dailySubmissions: WeeklySubmission[];
   trainingScores: TrainingScore[];
   traineeTotal: number;
+  /** Tổng thành viên chính thức của CLB — điểm cuối "Hành trình thành viên" */
+  totalMembers: number;
   traineeDepartments: TraineeDepartment[];
   pendingReview: PendingReview;
 };
@@ -26,11 +28,12 @@ export const DASHBOARD_SEASONS: DashboardSeason[] = [
   {
     id: "fall-2023",
     label: "Mùa Thu 2023",
+    // KPI bổ sung — KHÔNG lặp số của phễu "Hành trình thành viên"
     statCards: [
-      { id: "applications", label: "Tổng hồ sơ nhận", value: 342, badge: "+12%", badgeTone: "accent", icon: "file" },
-      { id: "interviewed", label: "Đã phỏng vấn", value: 128, badge: "37% tỷ lệ qua đơn", badgeTone: "purple", icon: "chat" },
-      { id: "trainees", label: "Đang đào tạo (Trainee)", value: 45, badge: "Đang diễn ra", badgeTone: "green", icon: "graduation" },
-      { id: "members", label: "Tổng thành viên CLB", value: 187, badge: "+45 (Dự kiến)", badgeTone: "green", icon: "members" },
+      { id: "pass-rate", label: "Tỷ lệ vượt vòng", value: 37, suffix: "%", badge: "+4%", badgeTone: "accent", icon: "percent" },
+      { id: "sessions", label: "Buổi training tuần này", value: 6, badge: "Tuần 5/8", badgeTone: "purple", icon: "calendar" },
+      { id: "avg-score", label: "Điểm TB đánh giá", value: 8.8, decimals: 1, badge: "+0.7", badgeTone: "green", icon: "star" },
+      { id: "mentors", label: "Mentor đang dẫn", value: 9, badge: "4 đội", badgeTone: "muted", icon: "mentor" },
     ],
     recruitmentFunnel: [
       { id: "applied", label: "Nộp đơn", value: 342, percent: 100, tone: "accent" },
@@ -64,6 +67,7 @@ export const DASHBOARD_SEASONS: DashboardSeason[] = [
       { session: "Buổi 6", avgScore: 8.8 },
     ],
     traineeTotal: 45,
+    totalMembers: 187,
     traineeDepartments: [
       { id: "professional", label: "Chuyên Môn", percent: 40, tone: "accent" },
       { id: "media", label: "Truyền Thông", percent: 30, tone: "purple" },
@@ -79,11 +83,12 @@ export const DASHBOARD_SEASONS: DashboardSeason[] = [
   {
     id: "spring-2024",
     label: "Mùa Xuân 2024",
+    // KPI bổ sung — KHÔNG lặp số của phễu "Hành trình thành viên"
     statCards: [
-      { id: "applications", label: "Tổng hồ sơ nhận", value: 210, badge: "+5%", badgeTone: "accent", icon: "file" },
-      { id: "interviewed", label: "Đã phỏng vấn", value: 86, badge: "41% tỷ lệ qua đơn", badgeTone: "purple", icon: "chat" },
-      { id: "trainees", label: "Đang đào tạo (Trainee)", value: 32, badge: "Đang diễn ra", badgeTone: "green", icon: "graduation" },
-      { id: "members", label: "Tổng thành viên CLB", value: 201, badge: "+32 (Dự kiến)", badgeTone: "green", icon: "members" },
+      { id: "pass-rate", label: "Tỷ lệ vượt vòng", value: 41, suffix: "%", badge: "+3%", badgeTone: "accent", icon: "percent" },
+      { id: "sessions", label: "Buổi training tuần này", value: 6, badge: "Tuần 4/8", badgeTone: "purple", icon: "calendar" },
+      { id: "avg-score", label: "Điểm TB đánh giá", value: 8.4, decimals: 1, badge: "+0.4", badgeTone: "green", icon: "star" },
+      { id: "mentors", label: "Mentor đang dẫn", value: 7, badge: "3 đội", badgeTone: "muted", icon: "mentor" },
     ],
     recruitmentFunnel: [
       { id: "applied", label: "Nộp đơn", value: 210, percent: 100, tone: "accent" },
@@ -117,6 +122,7 @@ export const DASHBOARD_SEASONS: DashboardSeason[] = [
       { session: "Buổi 6", avgScore: 8.4 },
     ],
     traineeTotal: 32,
+    totalMembers: 201,
     traineeDepartments: [
       { id: "professional", label: "Chuyên Môn", percent: 45, tone: "accent" },
       { id: "media", label: "Truyền Thông", percent: 25, tone: "purple" },

@@ -92,31 +92,19 @@ function EmailConfigurationPage() {
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-8 animate-fade-in">
-      {/* Soft hero */}
-      <header className="relative overflow-hidden rounded-card bg-gradient-to-br from-accent/20 via-sky-500/10 to-background p-6 sm:p-8 shadow-extruded ring-1 ring-accent/15">
-        <div
-          className="pointer-events-none absolute -right-8 -top-10 h-40 w-40 rounded-full bg-accent/20 blur-3xl"
-          aria-hidden
-        />
-        <div
-          className="pointer-events-none absolute -bottom-12 left-1/3 h-32 w-32 rounded-full bg-sky-400/15 blur-3xl"
-          aria-hidden
-        />
-        <div className="relative flex flex-col items-center gap-5 text-center sm:flex-row sm:text-left">
-          <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[1.35rem] bg-accent/25 text-accent shadow-extruded-sm ring-1 ring-accent/30">
-            <Icon icon={Mail} size={28} />
-          </span>
-          <div className="min-w-0 space-y-1.5">
-            <p className="text-xs font-semibold uppercase tracking-wider text-accent">
-              Hệ thống email
-            </p>
-            <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">
-              Email Configuration
-            </h1>
-            <p className="text-sm sm:text-base text-muted max-w-xl mx-auto sm:mx-0">
-              Cấu hình SMTP, mẫu email, placeholder và lịch sử gửi — không cần sửa mã nguồn.
-            </p>
-          </div>
+      {/* Header phẳng — đồng bộ instrument-panel */}
+      <header className="flex flex-col items-center gap-4 text-center sm:flex-row sm:text-left">
+        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-accent/12 text-accent">
+          <Icon icon={Mail} size={26} />
+        </span>
+        <div className="min-w-0 space-y-1.5">
+          <p className="eyebrow">Hệ thống email</p>
+          <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">
+            Email Configuration
+          </h1>
+          <p className="text-sm sm:text-base text-muted max-w-xl mx-auto sm:mx-0">
+            Cấu hình SMTP, mẫu email, placeholder và lịch sử gửi — không cần sửa mã nguồn.
+          </p>
         </div>
       </header>
 
@@ -313,24 +301,24 @@ function SmtpPanel({ onToast }: { onToast: (m: string) => void }) {
       </section>
 
       <aside className="space-y-4">
-        <div
-          className={`rounded-card p-5 shadow-extruded ring-1 transition-colors ${
-            cfg.enabled
-              ? "bg-gradient-to-br from-emerald-500/20 to-background ring-emerald-500/25"
-              : "bg-gradient-to-br from-rose-500/15 to-background ring-rose-500/20"
-          }`}
-        >
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted">Trạng thái</p>
-          <p className={`mt-2 font-display text-2xl font-extrabold ${cfg.enabled ? "text-emerald-600 dark:text-emerald-300" : "text-rose-500"}`}>
-            {cfg.enabled ? "Đang bật" : "Đang tắt"}
-          </p>
+        <div className="neu-card !p-5">
+          <p className="eyebrow">Trạng thái</p>
+          <div className="mt-2 flex items-center gap-2">
+            <span
+              className={`h-2 w-2 shrink-0 rounded-full ${cfg.enabled ? "bg-emerald-500" : "bg-rose-500"}`}
+              aria-hidden
+            />
+            <p className={`font-display text-2xl font-extrabold ${cfg.enabled ? "text-emerald-600 dark:text-emerald-300" : "text-rose-500"}`}>
+              {cfg.enabled ? "Đang bật" : "Đang tắt"}
+            </p>
+          </div>
           <p className="mt-2 text-xs text-muted leading-relaxed">
             {cfg.enabled
               ? "Hệ thống sẵn sàng gửi thư qua SMTP đã cấu hình."
               : "Bật SMTP để các nút gửi email hoạt động."}
           </p>
         </div>
-        <div className="rounded-card bg-background p-5 shadow-extruded ring-1 ring-black/5 space-y-2">
+        <div className="neu-card !p-5 space-y-2">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted">Khuyến nghị</p>
           <ul className="text-xs text-muted space-y-1.5 list-disc pl-4">
             <li>Port 587 + TLS cho Gmail và hầu hết nhà cung cấp</li>
