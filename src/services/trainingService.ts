@@ -382,6 +382,14 @@ export async function reviewMentorTask(
   });
 }
 
+/** Tân binh trong các team mình dẫn (mentor) — để đánh giá cuối vòng training */
+export async function getMyTeamTrainees(): Promise<Trainee[]> {
+  const { trainees } = await api.get<{ trainees: BackendTrainee[] }>(
+    "/training/my-team",
+  );
+  return trainees.map(toTrainee);
+}
+
 // ---- Trainees / Mentors ----
 
 export async function getTrainees(departmentId?: string): Promise<Trainee[]> {

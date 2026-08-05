@@ -6,15 +6,18 @@ import Icon from "../../../components/ui/Icon";
 import Select from "../../../components/ui/Select";
 import { useAuth } from "../../../context/useAuth";
 import { formatDate } from "../../../utils/formatDate";
+import Avatar from "../../../components/ui/Avatar";
 import {
   createMentorTask,
   getMentorTasks,
+  getMyTeamTrainees,
   getTrainingGroups,
   reviewMentorTask,
+  setTraineeEvalStatus,
   type MentorTask,
   type MentorTaskAssignment,
 } from "../../../services/trainingService";
-import type { TrainingGroup } from "../../../types/training";
+import type { Trainee, TrainingGroup } from "../../../types/training";
 
 const STATUS_LABEL: Record<MentorTaskAssignment["status"], string> = {
   assigned: "Chưa nộp",
@@ -32,6 +35,81 @@ const STATUS_TONE: Record<
   approved: "success",
   rejected: "danger",
 };
+
+const EVAL_LABEL: Record<string, string> = {
+  studying: "Đang training",
+  qualified: "Đạt vòng training",
+  failed: "Trượt vòng training",
+  certified: "Đã cấp chứng nhận",
+};
+
+const EVAL_TONE: Record<string, "accent" | "success" | "danger" | "info"> = {
+  studying: "accent",
+  qualified: "success",
+  failed: "danger",
+  certified: "info",
+};
+
+// Đánh giá cuối vòng: mentor chốt Đạt/Trượt, BCN cấp chứng nhận & đẩy lên member sau
+function EvaluationRow({
+  trainee,
+  onChanged,
+}: {
+  trainee: Trainee;
+  onChanged: (msg: string) => void;
+}) {
+  const [saving, setSaving] = useState(false);
+  const evalStatus = trainee.evalStatus ?? "studying";
+  const locked = evalStatus === "certified";
+
+  const handleEval = async (status: "qualified" | "failed") => {
+    setSaving(true);
+    try {
+      await setTraineeEvalStatus(trainee.id, status);
+      onChanged(
+        status === "qualified"
+          ? `Đã đánh giá ${trainee.fullName} ĐẠT vòng training.`
+          : `Đã đánh giá ${trainee.fullName} TRƯỢT vòng training.`,
+      );
+    } catch (err) {
+      onChanged(err instanceof Error ? err.message : "Đánh giá thất bại.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <li className="flex flex-wrap items-center gap-3 rounded-2xl bg-background p-3 shadow-inset-sm">
+      <Avatar name={trainee.fullName} size="sm" />
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-semibold">{trainee.fullName}</p>
+        <p className="text-xs text-muted">{trainee.email}</p>
+      </div>
+      <Badge tone={EVAL_TONE[evalStatus]}>{EVAL_LABEL[evalStatus]}</Badge>
+      {!locked && (
+        <div className="flex gap-2">
+          <Button
+            variant={evalStatus === "qualified" ? "secondary" : "primary"}
+            size="sm"
+            disabled={saving || evalStatus === "qualified"}
+            onClick={() => void handleEval("qualified")}
+          >
+            Đạt
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            className="!text-rose-600"
+            disabled={saving || evalStatus === "failed"}
+            onClick={() => void handleEval("failed")}
+          >
+            Trượt
+          </Button>
+        </div>
+      )}
+    </li>
+  );
+}
 
 // Chấm 1 bài nộp: điểm + nhận xét + duyệt/trả lại
 function ReviewRow({
@@ -284,6 +362,7 @@ function MentorTasksPage() {
 
   const [tasks, setTasks] = useState<MentorTask[]>([]);
   const [groups, setGroups] = useState<TrainingGroup[]>([]);
+  const [teamTrainees, setTeamTrainees] = useState<Trainee[]>([]);
   const [loading, setLoading] = useState(isMentor);
   const [creating, setCreating] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -294,18 +373,23 @@ function MentorTasksPage() {
   };
 
   const load = useCallback(async () => {
-    const [t, g] = await Promise.all([getMentorTasks(), getTrainingGroups()]);
-    return { t, g: g.filter((x) => x.mentorId === user?.id) };
+    const [t, g, tt] = await Promise.all([
+      getMentorTasks(),
+      getTrainingGroups(),
+      getMyTeamTrainees(),
+    ]);
+    return { t, g: g.filter((x) => x.mentorId === user?.id), tt };
   }, [user?.id]);
 
   useEffect(() => {
     if (!isMentor) return;
     let alive = true;
     void load()
-      .then(({ t, g }) => {
+      .then(({ t, g, tt }) => {
         if (!alive) return;
         setTasks(t);
         setGroups(g);
+        setTeamTrainees(tt);
       })
       .finally(() => alive && setLoading(false));
     return () => {
@@ -314,9 +398,10 @@ function MentorTasksPage() {
   }, [isMentor, load]);
 
   const reload = () => {
-    void load().then(({ t, g }) => {
+    void load().then(({ t, g, tt }) => {
       setTasks(t);
       setGroups(g);
+      setTeamTrainees(tt);
     });
   };
 
@@ -400,6 +485,32 @@ function MentorTasksPage() {
           <p className="text-sm text-muted">
             Chưa có task nào — bấm "Giao task mới" để bắt đầu.
           </p>
+        </section>
+      )}
+
+      {teamTrainees.length > 0 && (
+        <section className="neu-card !p-6 space-y-3">
+          <div>
+            <h2 className="font-display text-lg font-bold">
+              Đánh giá tân binh ({teamTrainees.length})
+            </h2>
+            <p className="text-xs text-muted">
+              Chốt Đạt/Trượt cuối vòng training — tân binh Đạt sẽ được Ban Chủ
+              nhiệm cấp chứng nhận và đẩy lên thành viên chính thức.
+            </p>
+          </div>
+          <ul className="space-y-2">
+            {teamTrainees.map((t) => (
+              <EvaluationRow
+                key={t.id}
+                trainee={t}
+                onChanged={(msg) => {
+                  showToast(msg);
+                  reload();
+                }}
+              />
+            ))}
+          </ul>
         </section>
       )}
 
