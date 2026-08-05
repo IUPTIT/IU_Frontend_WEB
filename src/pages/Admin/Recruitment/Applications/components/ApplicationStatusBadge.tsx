@@ -6,6 +6,7 @@ const statusTone: Record<ApplicationStatusLabel, BadgeTone> = {
   "Mới nộp": "violet",
   "Đang đánh giá": "accent",
   "Chờ phỏng vấn": "success",
+  "Đạt phỏng vấn": "info",
   "Đã đậu": "info",
   Loại: "danger",
 };

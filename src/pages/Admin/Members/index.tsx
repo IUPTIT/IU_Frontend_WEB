@@ -92,17 +92,21 @@ function AddMemberDrawer({
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    if (!open) return;
-    setFullName("");
-    setEmail("");
-    setPhone("");
-    setRole("member");
-    setDepartmentId("dept-tech");
-    setGeneration("Gen 4");
-    setStudentId("");
-    setError(null);
-  }, [open]);
+  // Reset form mỗi lần mở modal (adjust state during render)
+  const [prevOpen, setPrevOpen] = useState(open);
+  if (open !== prevOpen) {
+    setPrevOpen(open);
+    if (open) {
+      setFullName("");
+      setEmail("");
+      setPhone("");
+      setRole("member");
+      setDepartmentId("dept-tech");
+      setGeneration("Gen 4");
+      setStudentId("");
+      setError(null);
+    }
+  }
 
   if (!open) return null;
 
@@ -260,9 +264,13 @@ function AdminMembersPage() {
     });
   }, [members, search, applied]);
 
-  useEffect(() => {
+  // Đổi tìm kiếm / bộ lọc → về trang 1 (adjust state during render)
+  const [prevFilterKey, setPrevFilterKey] = useState("");
+  const filterKey = `${search}|${JSON.stringify(applied)}`;
+  if (filterKey !== prevFilterKey) {
+    setPrevFilterKey(filterKey);
     setPage(1);
-  }, [search, applied]);
+  }
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);

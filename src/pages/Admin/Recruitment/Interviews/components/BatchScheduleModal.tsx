@@ -1,47 +1,48 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Button from "../../../../../components/ui/Button";
-import type { Application } from "../../../../../types/recruitment";
 
 type Props = {
   open: boolean;
   onClose: () => void;
-  candidates: Application[];
   defaultDate: string;
   onSubmit: (payload: {
     date: string;
     startTimes: string[];
     durationMinutes: number;
     locationOrLink: string;
-    applicationIds: string[];
+    capacity: number;
   }) => Promise<void>;
 };
 
 const TIME_PRESETS = ["08:00", "09:00", "10:00", "11:00", "14:00", "15:00", "16:00"];
 
-function BatchScheduleModal({ open, onClose, candidates, defaultDate, onSubmit }: Props) {
+/**
+ * Tạo ca phỏng vấn TRỐNG cho tất cả ứng viên đã pass vòng đơn tự đặt lịch —
+ * không gán sẵn ứng viên, không yêu cầu người phỏng vấn (phân công sau).
+ */
+function BatchScheduleModal({ open, onClose, defaultDate, onSubmit }: Props) {
   const [date, setDate] = useState(defaultDate);
   const [location, setLocation] = useState("Phòng 302");
   const [duration, setDuration] = useState(45);
+  const [capacity, setCapacity] = useState(1);
   const [times, setTimes] = useState<string[]>(["08:00", "09:00"]);
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    if (!open) return;
-    setDate(defaultDate);
-    setSelectedIds(candidates.slice(0, Math.min(4, candidates.length)).map((c) => c.id));
-    setError(null);
-  }, [open, defaultDate, candidates]);
+  // Reset form mỗi lần mở modal (adjust state during render)
+  const [prevOpen, setPrevOpen] = useState(open);
+  if (open !== prevOpen) {
+    setPrevOpen(open);
+    if (open) {
+      setDate(defaultDate);
+      setError(null);
+    }
+  }
 
   if (!open) return null;
 
   const toggleTime = (t: string) => {
     setTimes((prev) => (prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t].sort()));
-  };
-
-  const toggleApp = (id: string) => {
-    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   };
 
   const handleSave = async () => {
@@ -57,20 +58,19 @@ function BatchScheduleModal({ open, onClose, candidates, defaultDate, onSubmit }
       setError("Chọn ít nhất một khung giờ.");
       return;
     }
-    if (selectedIds.length === 0) {
-      setError("Chọn ít nhất một ứng viên.");
-      return;
-    }
     setSaving(true);
+    setError(null);
     try {
       await onSubmit({
         date,
         startTimes: times,
         durationMinutes: duration,
         locationOrLink: location.trim(),
-        applicationIds: selectedIds,
+        capacity,
       });
       onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Tạo lịch thất bại — thử lại.");
     } finally {
       setSaving(false);
     }
@@ -87,7 +87,7 @@ function BatchScheduleModal({ open, onClose, candidates, defaultDate, onSubmit }
       >
         <header className="flex items-center justify-between border-b border-black/5 px-5 py-4">
           <h2 id="batch-schedule-title" className="font-display text-xl font-extrabold">
-            Xếp lịch hàng loạt
+            Tạo ca phỏng vấn
           </h2>
           <Button variant="icon" size="sm" aria-label="Đóng" onClick={onClose}>
             <svg className="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">
@@ -97,7 +97,12 @@ function BatchScheduleModal({ open, onClose, candidates, defaultDate, onSubmit }
         </header>
 
         <div className="space-y-5 overflow-y-auto p-5">
-          <div className="grid gap-4 sm:grid-cols-2">
+          <p className="rounded-2xl bg-accent/8 px-4 py-3 text-sm text-muted">
+            Ca tạo ra áp dụng cho <b className="text-foreground">tất cả ứng viên đã pass vòng đơn</b> —
+            ứng viên tự vào tài khoản chọn ca. Người phỏng vấn phân công sau trên từng ca.
+          </p>
+
+          <div className="grid gap-4 sm:grid-cols-3">
             <label className="block space-y-1.5">
               <span className="neu-field-label">Ngày phỏng vấn *</span>
               <input type="date" className="neu-input !h-11" value={date} onChange={(e) => setDate(e.target.value)} />
@@ -111,6 +116,17 @@ function BatchScheduleModal({ open, onClose, candidates, defaultDate, onSubmit }
                 className="neu-input !h-11"
                 value={duration}
                 onChange={(e) => setDuration(Number(e.target.value) || 45)}
+              />
+            </label>
+            <label className="block space-y-1.5">
+              <span className="neu-field-label">Ứng viên tối đa / ca *</span>
+              <input
+                type="number"
+                min={1}
+                max={20}
+                className="neu-input !h-11"
+                value={capacity}
+                onChange={(e) => setCapacity(Math.max(1, Number(e.target.value) || 1))}
               />
             </label>
           </div>
@@ -146,32 +162,6 @@ function BatchScheduleModal({ open, onClose, candidates, defaultDate, onSubmit }
             />
           </label>
 
-          <div className="space-y-2">
-            <span className="neu-field-label">Danh sách ứng viên *</span>
-            <ul className="max-h-48 space-y-1 overflow-y-auto rounded-2xl bg-background p-2 shadow-inset-sm">
-              {candidates.length === 0 ? (
-                <li className="px-3 py-6 text-center text-sm text-muted">Không có ứng viên đạt vòng hồ sơ.</li>
-              ) : (
-                candidates.map((c) => (
-                  <li key={c.id}>
-                    <label className="flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2 hover:bg-accent/8">
-                      <input
-                        type="checkbox"
-                        className="accent-accent"
-                        checked={selectedIds.includes(c.id)}
-                        onChange={() => toggleApp(c.id)}
-                      />
-                      <span className="min-w-0 flex-1">
-                        <span className="block text-sm font-medium">{c.fullName}</span>
-                        <span className="text-xs text-muted">{c.preferredDepartmentName}</span>
-                      </span>
-                    </label>
-                  </li>
-                ))
-              )}
-            </ul>
-          </div>
-
           {error && <p className="text-sm text-rose-500">{error}</p>}
         </div>
 
@@ -180,7 +170,7 @@ function BatchScheduleModal({ open, onClose, candidates, defaultDate, onSubmit }
             Hủy
           </Button>
           <Button variant="primary" disabled={saving} onClick={() => void handleSave()}>
-            Tạo lịch
+            Tạo ca phỏng vấn
           </Button>
         </footer>
       </div>

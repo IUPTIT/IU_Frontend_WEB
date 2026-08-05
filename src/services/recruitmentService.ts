@@ -84,7 +84,16 @@ type BackendApplication = {
   answers: { fieldId: string; value: string | string[] }[];
   submittedAt: string | null;
   createdAt: string;
+  /** Điểm TB vòng đơn / phỏng vấn — backend thang 0-100 */
+  cvScore?: number | null;
+  interviewScore?: number | null;
+  resultNotifyStatus?: "pending" | "email_sent" | "converted";
 };
+
+// UI dùng thang 0-10, backend lưu 0-100 — quy đổi tại MỘT chỗ duy nhất
+function toUiScale(score: number | null | undefined): number | undefined {
+  return score != null ? Number((score / 10).toFixed(1)) : undefined;
+}
 
 // ---- Map backend → types admin UI ----
 
@@ -145,11 +154,13 @@ function toApplication(a: BackendApplication): Application {
   const status: Application["status"] =
     a.status === "draft" || a.status === "pending_review"
       ? "submitted"
-      : a.status === "passed_cv" || a.status === "passed_interview"
+      : a.status === "passed_cv"
         ? "interview"
-        : a.status === "admitted"
-          ? "accepted"
-          : "rejected";
+        : a.status === "passed_interview"
+          ? "interview_passed"
+          : a.status === "admitted"
+            ? "accepted"
+            : "rejected";
 
   const screeningResult: PassFail =
     a.status === "draft" || a.status === "pending_review"
@@ -169,6 +180,14 @@ function toApplication(a: BackendApplication): Application {
     (x, y) => x.priority - y.priority,
   )[0]?.department;
 
+  const attachments: Application["attachments"] = [];
+  if (a.avatarUrl) {
+    attachments.push({ id: `${a._id}-avatar`, label: "Ảnh đại diện", kind: "link", url: a.avatarUrl });
+  }
+  if (a.cvUrl) {
+    attachments.push({ id: `${a._id}-cv`, label: "CV", kind: "pdf", url: a.cvUrl });
+  }
+
   return {
     id: a._id,
     campaignId: campaignIdOf(a),
@@ -182,7 +201,11 @@ function toApplication(a: BackendApplication): Application {
     screeningResult,
     interviewResult,
     finalResult,
+    totalScore: toUiScale(a.cvScore),
+    interviewScore: toUiScale(a.interviewScore),
     submittedAt: a.submittedAt ?? a.createdAt,
+    attachments,
+    resultNotifyStatus: a.resultNotifyStatus ?? "pending",
   };
 }
 
@@ -621,12 +644,14 @@ function toUiSlot(s: BackendSlot, booking: BackendBooking | null): InterviewSlot
     startTime: s.startTime,
     durationMinutes: Math.max(minutesBetween(s.startTime, s.endTime), 0),
     locationOrLink: s.location,
+    capacity: s.capacity,
     applicationId: app?._id,
     candidateName: app?.fullName,
     candidateDepartment: preferred,
     interviewers,
-    requiredInterviewers: 2,
-    status: done ? "done" : interviewers.length < 2 ? "missing_interviewers" : "scheduled",
+    // Không bắt buộc số lượng — chỉ cảnh báo khi ca CHƯA có ai phỏng vấn
+    requiredInterviewers: 1,
+    status: done ? "done" : interviewers.length === 0 ? "missing_interviewers" : "scheduled",
   };
 }
 
@@ -668,37 +693,22 @@ export type BatchScheduleInput = {
   startTimes: string[];
   durationMinutes: number;
   locationOrLink: string;
-  applicationIds: string[];
-  requiredInterviewers?: number;
+  /** Số ứng viên tối đa mỗi ca */
+  capacity?: number;
 };
 
-// Tạo mỗi ứng viên 1 ca (capacity 1) rồi gán luôn ứng viên vào ca đó
+// Tạo ca TRỐNG cho từng khung giờ — ứng viên pass vòng đơn tự vào chọn ca,
+// người phỏng vấn phân công sau (nút "Phân công" trên từng ca)
 export async function createBatchInterviewSlots(input: BatchScheduleInput): Promise<InterviewSlot[]> {
-  // Backend bắt buộc slot có >= 1 người phỏng vấn — mặc định lấy người đầu danh sách,
-  // phân công lại sau bằng nút "Phân công" trên từng ca
-  const interviewers = await getInterviewers();
-  if (!interviewers.length) {
-    throw new Error("Chưa có tài khoản BCN/Leader nào để phân công phỏng vấn");
-  }
-  const defaultInterviewer = interviewers[0].id;
-  const times = input.startTimes.length
-    ? input.startTimes
-    : ["08:00", "09:00", "10:00", "11:00", "14:00", "15:00"];
-
   const created: InterviewSlot[] = [];
-  for (const [i, applicationId] of input.applicationIds.entries()) {
-    const startTime = times[i % times.length];
+  for (const startTime of input.startTimes) {
     const { slot } = await api.post<{ slot: BackendSlot }>("/recruitment/slots", {
       campaignId: input.campaignId,
       date: input.date,
       startTime,
       endTime: addMinutes(startTime, input.durationMinutes),
       location: input.locationOrLink,
-      interviewerIds: [defaultInterviewer],
-      capacity: 1,
-    });
-    await api.post(`/recruitment/applications/${applicationId}/assign-slot`, {
-      slotId: slot._id,
+      capacity: input.capacity ?? 1,
     });
     created.push(toUiSlot(slot, null));
   }
@@ -716,17 +726,267 @@ export async function assignInterviewersToSlot(
   return toUiSlot(slot, null);
 }
 
+export type EditSlotPatch = {
+  date: string;
+  startTime: string;
+  durationMinutes?: number;
+  locationOrLink?: string;
+  capacity?: number;
+};
+
+// Sửa ca: giờ/ngày/địa điểm/sức chứa — không gửi duration thì backend tự giữ thời lượng cũ
 export async function rescheduleInterviewSlot(
   rowId: string,
-  patch: { date: string; startTime: string; reason?: string },
+  patch: EditSlotPatch,
 ): Promise<InterviewSlot | undefined> {
   const { slotId } = parseRowId(rowId);
-  // Không gửi endTime — backend tự dời endTime giữ nguyên thời lượng ca
-  const { slot } = await api.patch<{ slot: BackendSlot }>(`/recruitment/slots/${slotId}`, {
+  const body: Record<string, unknown> = {
     date: patch.date,
     startTime: patch.startTime,
-  });
+  };
+  if (patch.durationMinutes != null) {
+    body.endTime = addMinutes(patch.startTime, patch.durationMinutes);
+  }
+  if (patch.locationOrLink) body.location = patch.locationOrLink;
+  if (patch.capacity != null) body.capacity = patch.capacity;
+  const { slot } = await api.patch<{ slot: BackendSlot }>(
+    `/recruitment/slots/${slotId}`,
+    body,
+  );
   return toUiSlot(slot, null);
+}
+
+// Xoá ca — backend chặn nếu đã có ứng viên đặt lịch
+export async function deleteInterviewSlot(rowId: string): Promise<void> {
+  const { slotId } = parseRowId(rowId);
+  await api.delete(`/recruitment/slots/${slotId}`);
+}
+
+// ---- Chi tiết ca / trang note phỏng vấn / kết quả toàn đợt ----
+
+type BackendBookingApp = {
+  _id: string;
+  fullName: string;
+  email: string;
+  phone?: string;
+  applicationCode: string | null;
+  status: string;
+  departmentPreferences: { department: string; priority: number }[];
+};
+
+export type SlotCandidate = {
+  bookingId: string;
+  applicationId: string;
+  fullName: string;
+  email: string;
+  phone?: string;
+  applicationCode: string;
+  department: string;
+  bookingStatus: "booked" | "changed" | "no_show" | "completed";
+  /** Điểm PV trung bình thang 10 (null = chưa chấm) */
+  interviewScore: number | null;
+  scoreCount: number;
+};
+
+export type SlotInfo = {
+  slotId: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  location: string;
+  capacity: number;
+  interviewers: InterviewerRef[];
+};
+
+function preferredDept(app: BackendBookingApp | null): string {
+  if (!app) return "";
+  return (
+    [...(app.departmentPreferences ?? [])].sort((x, y) => x.priority - y.priority)[0]
+      ?.department ?? ""
+  );
+}
+
+/** Chi tiết 1 ca: thông tin ca + bảng ứng viên đã đặt */
+export async function getSlotCandidates(
+  slotRowId: string,
+): Promise<{ slot: SlotInfo; candidates: SlotCandidate[] }> {
+  const { slotId } = parseRowId(slotRowId);
+  const { slot, bookings } = await api.get<{
+    slot: BackendSlot;
+    bookings: {
+      _id: string;
+      status: SlotCandidate["bookingStatus"];
+      applicationId: BackendBookingApp | null;
+      interviewScore: number | null;
+      scoreCount: number;
+    }[];
+  }>(`/recruitment/slots/${slotId}`);
+
+  return {
+    slot: {
+      slotId: slot._id,
+      date: slot.date.slice(0, 10),
+      startTime: slot.startTime,
+      endTime: slot.endTime,
+      location: slot.location,
+      capacity: slot.capacity,
+      interviewers: (slot.interviewerIds ?? []).map((u) => ({ id: u._id, name: u.name })),
+    },
+    candidates: bookings
+      .filter((b) => b.applicationId)
+      .map((b) => ({
+        bookingId: b._id,
+        applicationId: b.applicationId!._id,
+        fullName: b.applicationId!.fullName,
+        email: b.applicationId!.email,
+        phone: b.applicationId!.phone,
+        applicationCode: b.applicationId!.applicationCode ?? "",
+        department: preferredDept(b.applicationId),
+        bookingStatus: b.status,
+        interviewScore: toUiScale(b.interviewScore) ?? null,
+        scoreCount: b.scoreCount,
+      })),
+  };
+}
+
+export type BookingReviewerScore = {
+  reviewerName: string;
+  /** Thang 10 */
+  totalScore: number;
+  comment: string;
+  attendance: "present" | "absent" | null;
+};
+
+export type BookingDetail = {
+  bookingId: string;
+  applicationId: string;
+  fullName: string;
+  email: string;
+  phone?: string;
+  applicationCode: string;
+  applicationStatus: string;
+  department: string;
+  slot: { slotId: string; date: string; startTime: string; endTime: string; location: string };
+  /** Điểm TB thang 10 + danh sách điểm từng reviewer */
+  averageScore: number | null;
+  reviewerScores: BookingReviewerScore[];
+};
+
+/** Chi tiết booking cho trang note phỏng vấn */
+export async function getBookingDetail(bookingId: string): Promise<BookingDetail> {
+  const { booking, summary } = await api.get<{
+    booking: {
+      _id: string;
+      applicationId: BackendBookingApp;
+      slotId: { _id: string; date: string; startTime: string; endTime: string; location: string };
+    };
+    summary: {
+      average: number;
+      count: number;
+      scores: {
+        scoredBy: { name: string } | string;
+        totalScore: number;
+        comment: string;
+        attendance: "present" | "absent" | null;
+      }[];
+    };
+  }>(`/recruitment/bookings/${bookingId}`);
+
+  const app = booking.applicationId;
+  return {
+    bookingId: booking._id,
+    applicationId: app._id,
+    fullName: app.fullName,
+    email: app.email,
+    phone: app.phone,
+    applicationCode: app.applicationCode ?? "",
+    applicationStatus: app.status,
+    department: preferredDept(app),
+    slot: {
+      slotId: booking.slotId._id,
+      date: booking.slotId.date.slice(0, 10),
+      startTime: booking.slotId.startTime,
+      endTime: booking.slotId.endTime,
+      location: booking.slotId.location,
+    },
+    averageScore: summary.count ? (toUiScale(summary.average) ?? null) : null,
+    reviewerScores: summary.scores.map((s) => ({
+      reviewerName: typeof s.scoredBy === "object" ? s.scoredBy.name : "",
+      totalScore: toUiScale(s.totalScore) ?? 0,
+      comment: s.comment,
+      attendance: s.attendance,
+    })),
+  };
+}
+
+/** Chấm điểm + note trực tiếp theo bookingId (trang note phỏng vấn) */
+export async function saveBookingScore(input: {
+  bookingId: string;
+  applicationId: string;
+  criteriaScores: { criteriaName: string; score: number; maxScore: number }[];
+  comment: string;
+  attendance: "present" | "absent";
+}): Promise<void> {
+  await api.post(`/recruitment/bookings/${input.bookingId}/score`, {
+    applicationId: input.applicationId,
+    round: "interview",
+    criteriaScores: toBackendCriteria(input.criteriaScores),
+    comment: input.comment,
+    attendance: input.attendance,
+  });
+}
+
+export type InterviewResultRow = {
+  applicationCode: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  department: string;
+  slotDate: string;
+  slotTime: string;
+  location: string;
+  bookingStatus: string;
+  /** Thang 10 */
+  averageScore: number | null;
+  reviewerCount: number;
+  /** "Tên: điểm — nhận xét" nối bằng " | " */
+  reviewerNotes: string;
+  applicationStatus: string;
+};
+
+/** Kết quả phỏng vấn TOÀN BỘ ca của đợt — phục vụ xuất file thảo luận */
+export async function getInterviewResults(campaignId: string): Promise<InterviewResultRow[]> {
+  const { results } = await api.get<{
+    results: {
+      booking: { status: string; applicationId: BackendBookingApp | null };
+      slot: { date: string; startTime: string; endTime: string; location: string } | null;
+      averageScore: number | null;
+      scores: { reviewerName: string; totalScore: number; comment: string }[];
+    }[];
+  }>(`/recruitment/campaigns/${campaignId}/interview-results`);
+
+  return results
+    .filter((r) => r.booking.applicationId)
+    .map((r) => {
+      const app = r.booking.applicationId!;
+      return {
+        applicationCode: app.applicationCode ?? "",
+        fullName: app.fullName,
+        email: app.email,
+        phone: app.phone ?? "",
+        department: preferredDept(app),
+        slotDate: r.slot ? r.slot.date.slice(0, 10) : "",
+        slotTime: r.slot ? `${r.slot.startTime} - ${r.slot.endTime}` : "",
+        location: r.slot?.location ?? "",
+        bookingStatus: r.booking.status,
+        averageScore: toUiScale(r.averageScore) ?? null,
+        reviewerCount: r.scores.length,
+        reviewerNotes: r.scores
+          .map((s) => `${s.reviewerName}: ${toUiScale(s.totalScore)}${s.comment ? ` — ${s.comment}` : ""}`)
+          .join(" | "),
+        applicationStatus: app.status,
+      };
+    });
 }
 
 export async function getInterviewCriteria(): Promise<InterviewCriterion[]> {
@@ -808,8 +1068,13 @@ export async function notifyInterviewResults(applicationIds: string[]): Promise<
   return { sent: applicationIds.length };
 }
 
+// Đánh dấu đã gửi email kết quả cuối (lưu backend — hiển thị cột "Trạng thái xử lý")
 export async function notifyFinalResults(applicationIds: string[]): Promise<{ sent: number }> {
-  return { sent: applicationIds.length };
+  const { notified } = await api.post<{ notified: number }>(
+    "/recruitment/applications/notify-final",
+    { applicationIds },
+  );
+  return { sent: notified };
 }
 
 // Xác nhận trúng tuyển cuối — state machine tự enqueue job nâng role candidate → member

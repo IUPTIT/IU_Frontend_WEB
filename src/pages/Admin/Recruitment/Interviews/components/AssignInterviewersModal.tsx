@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Button from "../../../../../components/ui/Button";
 import type { InterviewSlot, InterviewerRef } from "../../../../../types/recruitment";
 
@@ -15,11 +15,16 @@ function AssignInterviewersModal({ open, slot, interviewers, onClose, onSubmit }
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    if (!open || !slot) return;
-    setSelected(slot.interviewers.map((i) => i.id));
-    setError(null);
-  }, [open, slot]);
+  // Reset lựa chọn mỗi lần mở modal / đổi slot (adjust state during render)
+  const resetKey = open && slot ? slot.id : null;
+  const [prevKey, setPrevKey] = useState<string | null>(resetKey);
+  if (resetKey !== prevKey) {
+    setPrevKey(resetKey);
+    if (resetKey && slot) {
+      setSelected(slot.interviewers.map((i) => i.id));
+      setError(null);
+    }
+  }
 
   if (!open || !slot) return null;
 
@@ -33,10 +38,13 @@ function AssignInterviewersModal({ open, slot, interviewers, onClose, onSubmit }
       return;
     }
     setSaving(true);
+    setError(null);
     try {
       const list = interviewers.filter((i) => selected.includes(i.id));
       await onSubmit(slot.id, list);
       onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Phân công thất bại — thử lại.");
     } finally {
       setSaving(false);
     }

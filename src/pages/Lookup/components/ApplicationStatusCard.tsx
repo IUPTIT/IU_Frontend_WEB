@@ -29,7 +29,9 @@ function Row({ label, value }: { label: string; value: string }) {
 function ApplicationStatusCard({ application, withdrawing, onWithdraw }: Props) {
   const [confirmingWithdraw, setConfirmingWithdraw] = useState(false);
 
-  const beforeDeadline = Date.now() < new Date(application.campaign.closeAt).getTime();
+  // Chốt "bây giờ" một lần lúc mount — đủ chính xác cho việc so hạn nộp
+  const [now] = useState(() => Date.now());
+  const beforeDeadline = now < new Date(application.campaign.closeAt).getTime();
   // Chỉ rút được khi còn "Chờ xét duyệt" và còn hạn nộp (mục 1.5 nghiệp vụ)
   const editable = application.status === "pending" && beforeDeadline;
 

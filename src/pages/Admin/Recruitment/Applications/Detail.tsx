@@ -21,6 +21,7 @@ import type {
   ScreeningCriterion,
 } from "../../../../types/recruitment";
 import { applicationToEmailRecipient } from "../../../../utils/emailRecipients";
+import AttachmentPreview from "./components/AttachmentPreview";
 
 type Props = {
   applicationId: string;
@@ -77,7 +78,6 @@ function ApplicationDetailPage({ applicationId }: Props) {
   };
 
   const load = useCallback(async () => {
-    setLoading(true);
     try {
       const [detail, ans, crit, score] = await Promise.all([
         getApplicationById(applicationId),
@@ -153,7 +153,8 @@ function ApplicationDetailPage({ applicationId }: Props) {
       });
       await setScreeningDecision(app.id, result);
       showToast(result === "pass" ? "Đã Pass vòng đơn." : "Đã loại hồ sơ.");
-      await load();
+      // Quyết định xong → quay về bảng danh sách hồ sơ (chờ 1 nhịp cho toast hiện)
+      window.setTimeout(backToList, 900);
     } finally {
       setSaving(false);
     }
@@ -309,24 +310,14 @@ function ApplicationDetailPage({ applicationId }: Props) {
             {(app.attachments?.length ?? 0) === 0 ? (
               <p className="text-sm text-muted">Chưa có tài liệu.</p>
             ) : (
-              <ul className="space-y-2">
+              <ul className="space-y-4">
                 {app.attachments!.map((att) => (
-                  <li key={att.id}>
-                    <a
-                      href={att.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="neu-btn !h-12 w-full !justify-between !px-4 text-sm font-medium"
-                    >
-                      <span className="flex items-center gap-2.5 min-w-0">
-                        <AttachmentIcon kind={att.kind} />
-                        <span className="truncate">{att.label}</span>
-                      </span>
-                      <svg className="h-4 w-4 shrink-0 text-muted" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-                        <path d="M8 4.5H5.5A1.5 1.5 0 0 0 4 6v8.5A1.5 1.5 0 0 0 5.5 16H14a1.5 1.5 0 0 0 1.5-1.5V12" strokeLinecap="round" />
-                        <path d="M11 4.5h4.5V9M10 10l5.5-5.5" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </a>
+                  <li key={att.id} className="space-y-2">
+                    <p className="flex items-center gap-2.5 text-sm font-medium text-foreground">
+                      <AttachmentIcon kind={att.kind} />
+                      {att.label}
+                    </p>
+                    <AttachmentPreview attachment={att} />
                   </li>
                 ))}
               </ul>

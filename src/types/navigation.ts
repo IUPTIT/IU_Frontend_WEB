@@ -1,6 +1,6 @@
 // Types cho điều hướng theo role
 
-export type Role = "admin" | "leader" | "member";
+export type Role = "admin" | "leader" | "member" | "candidate";
 
 export type NavChild = {
   id: string;
@@ -33,6 +33,8 @@ export type NavItem = {
   tone?: "default" | "danger";
   /** logout = gọi AuthContext.logout thay vì navigate */
   action?: "navigate" | "logout";
+  /** Chỉ hiện khi user.isMentor (member được đẩy quyền mentor) */
+  mentorOnly?: boolean;
 };
 
 /** Nhóm menu — `label` là heading section (VD: ĐÀO TẠO, CHÍNH); bỏ trống thì không hiện heading */
@@ -40,6 +42,8 @@ export type NavSection = {
   id: string;
   label?: string;
   items: NavItem[];
+  /** Ẩn cả section với mentor (VD: khu training tân binh không dành cho mentor) */
+  hideForMentor?: boolean;
 };
 
 export type SidebarConfig = {

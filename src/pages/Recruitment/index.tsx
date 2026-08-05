@@ -28,6 +28,8 @@ function RecruitmentPage() {
   const [applicationCode, setApplicationCode] = useState("");
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  // Chốt "bây giờ" một lần lúc mount — đủ chính xác để so giờ mở đơn
+  const [pageLoadedAt] = useState(() => Date.now());
   // Token đơn nháp từ link email (?token=...) — có token thì submit tiếp từ nháp
   const [draftToken, setDraftToken] = useState<string | null>(null);
   const [draftNotice, setDraftNotice] = useState<string | null>(null);
@@ -169,7 +171,7 @@ function RecruitmentPage() {
               )}
 
               <div className="mt-10">
-                {step === "form" && Date.now() < new Date(campaign.openAt).getTime() ? (
+                {step === "form" && pageLoadedAt < new Date(campaign.openAt).getTime() ? (
                   <div className="liquid-glass landing-card-solid mx-auto max-w-xl rounded-3xl p-8 text-center">
                     <p className="text-[hsl(var(--landing-foreground)/0.75)]">
                       Đợt tuyển chưa mở đơn — quay lại khi đến thời gian mở đơn nhé!

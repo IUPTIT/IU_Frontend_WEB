@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Button from "../../../../../components/ui/Button";
 import type { InterviewCriterion, InterviewSlot } from "../../../../../types/recruitment";
 
@@ -20,14 +20,19 @@ function InterviewScoreModal({ open, slot, criteria, onClose, onSave, onPassFail
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    if (!open) return;
-    const init: Record<string, string> = {};
-    for (const c of criteria) init[c.id] = "";
-    setScores(init);
-    setComment("");
-    setError(null);
-  }, [open, criteria, slot?.id]);
+  // Reset điểm mỗi lần mở modal / đổi slot (adjust state during render)
+  const resetKey = open ? (slot?.id ?? "none") : null;
+  const [prevKey, setPrevKey] = useState<string | null>(resetKey);
+  if (resetKey !== prevKey) {
+    setPrevKey(resetKey);
+    if (resetKey) {
+      const init: Record<string, string> = {};
+      for (const c of criteria) init[c.id] = "";
+      setScores(init);
+      setComment("");
+      setError(null);
+    }
+  }
 
   if (!open || !slot) return null;
 
@@ -50,9 +55,12 @@ function InterviewScoreModal({ open, slot, criteria, onClose, onSave, onPassFail
   const handleSave = async () => {
     if (!validate()) return;
     setSaving(true);
+    setError(null);
     try {
       await onSave({ scores, comment });
       onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Lưu điểm thất bại — thử lại.");
     } finally {
       setSaving(false);
     }
@@ -61,10 +69,13 @@ function InterviewScoreModal({ open, slot, criteria, onClose, onSave, onPassFail
   const handleDecision = async (result: "pass" | "fail") => {
     if (!validate()) return;
     setSaving(true);
+    setError(null);
     try {
       await onSave({ scores, comment });
       await onPassFail(result);
       onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Cập nhật kết quả thất bại — thử lại.");
     } finally {
       setSaving(false);
     }

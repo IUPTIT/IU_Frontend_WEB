@@ -25,6 +25,7 @@ const STATUS_OPTIONS: { value: ApplicationStatus | ""; label: string }[] = [
   { value: "submitted", label: getApplicationStatusLabel("submitted") },
   { value: "screening", label: getApplicationStatusLabel("screening") },
   { value: "interview", label: getApplicationStatusLabel("interview") },
+  { value: "interview_passed", label: getApplicationStatusLabel("interview_passed") },
   { value: "accepted", label: getApplicationStatusLabel("accepted") },
   { value: "rejected", label: getApplicationStatusLabel("rejected") },
 ];

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Moon, Sun, Upload } from "lucide-react";
 import Button from "../../components/ui/Button";
 import Toggle from "../../components/ui/Toggle";
@@ -12,6 +12,7 @@ const ROLE_LABEL = {
   admin: "Ban Chủ nhiệm (Admin)",
   leader: "Leader",
   member: "Member / Trainee",
+  candidate: "Ứng viên",
 } as const;
 
 /**
@@ -36,11 +37,14 @@ function SettingsPage() {
   const [toast, setToast] = useState<string | null>(null);
   const [pwdError, setPwdError] = useState<string | null>(null);
 
-  useEffect(() => {
+  // Đồng bộ form khi user đổi (adjust state during render)
+  const [prevUser, setPrevUser] = useState(user);
+  if (user !== prevUser) {
+    setPrevUser(user);
     setName(user?.name ?? "");
     setPhone(user?.phone ?? "");
     setBio(user?.bio ?? "");
-  }, [user]);
+  }
 
   if (!user) return null;
 

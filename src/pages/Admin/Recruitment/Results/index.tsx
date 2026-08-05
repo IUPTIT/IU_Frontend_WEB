@@ -187,31 +187,14 @@ function RecruitmentResultsPage() {
     setMenuId(null);
   };
 
-  const loadCampaigns = useCallback(async () => {
-    const data = await getCampaigns();
-    const usable = data.filter((c) => c.status !== "draft");
-    setCampaigns(usable);
-    setCampaignId((prev) => {
-      if (prev && usable.some((c) => c.id === prev)) return prev;
-      return usable.find((c) => c.isActive)?.id ?? usable[0]?.id ?? "";
-    });
-  }, []);
-
   const reload = useCallback(async (cid: string) => {
-    if (!cid) {
-      setApplications([]);
-      setSummary({ totalApplications: 0, interviewed: 0, accepted: 0 });
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
     try {
-      const [apps, sum] = await Promise.all([
-        getApplications(cid),
-        getCampaignResultSummary(cid),
-      ]);
-      setApplications(apps);
-      setSummary(sum);
+      // Luôn await để mọi setState nằm sau async boundary
+      const [apps, sum] = await (cid
+        ? Promise.all([getApplications(cid), getCampaignResultSummary(cid)])
+        : Promise.resolve([[], { totalApplications: 0, interviewed: 0, accepted: 0 }] as const));
+      setApplications(apps as Application[]);
+      setSummary(sum as CampaignResultSummary);
       setSelectedIds(new Set());
     } finally {
       setLoading(false);
@@ -219,12 +202,31 @@ function RecruitmentResultsPage() {
   }, []);
 
   useEffect(() => {
-    void loadCampaigns();
-  }, [loadCampaigns]);
+    let alive = true;
+    void getCampaigns().then((data) => {
+      if (!alive) return;
+      const usable = data.filter((c) => c.status !== "draft");
+      setCampaigns(usable);
+      setCampaignId((prev) => {
+        if (prev && usable.some((c) => c.id === prev)) return prev;
+        return usable.find((c) => c.isActive)?.id ?? usable[0]?.id ?? "";
+      });
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  // Đổi đợt tuyển → về trang 1 + bật skeleton (adjust state during render)
+  const [prevCampaignId, setPrevCampaignId] = useState(campaignId);
+  if (campaignId !== prevCampaignId) {
+    setPrevCampaignId(campaignId);
+    setPage(1);
+    setLoading(true);
+  }
 
   useEffect(() => {
     void reload(campaignId);
-    setPage(1);
   }, [campaignId, reload]);
 
   const selectedCampaign = campaigns.find((c) => c.id === campaignId);
@@ -261,9 +263,13 @@ function RecruitmentResultsPage() {
     });
   }, [acceptedList, search, applied]);
 
-  useEffect(() => {
+  // Đổi tìm kiếm / bộ lọc → về trang 1 (adjust state during render)
+  const [prevFilterKey, setPrevFilterKey] = useState("");
+  const filterKey = `${search}|${JSON.stringify(applied)}`;
+  if (filterKey !== prevFilterKey) {
+    setPrevFilterKey(filterKey);
     setPage(1);
-  }, [search, applied]);
+  }
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
