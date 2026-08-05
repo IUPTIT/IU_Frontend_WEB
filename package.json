@@ -11,8 +11,13 @@
     "prepare": "git config core.hooksPath .githooks"
   },
   "dependencies": {
+    "@tanstack/react-table": "^8.21.3",
+    "lucide-react": "^1.28.0",
     "react": "^19.2.8",
-    "react-dom": "^19.2.8"
+    "react-datepicker": "^9.1.0",
+    "react-dom": "^19.2.8",
+    "react-router-dom": "^7.18.2",
+    "react-select": "^5.10.2"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
