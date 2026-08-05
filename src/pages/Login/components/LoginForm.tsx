@@ -64,15 +64,23 @@ function LoginForm({ onSubmit }: Props) {
       onSubmit={handleSubmit}
       className={`w-full max-w-sm ${shake ? "animate-shake" : ""}`}
       noValidate
+      autoComplete="on"
     >
       <h1
         className="login-title font-display text-4xl sm:text-5xl font-extrabold tracking-tight text-[#2C3340] animate-fade-up"
         style={{ animationDelay: "40ms" }}
       >
-        Welcome
+        Chào bạn
       </h1>
+      <p
+        className="login-label mt-3 text-sm leading-relaxed text-[#8A94A6] animate-fade-up"
+        style={{ animationDelay: "80ms" }}
+      >
+        Đăng nhập bằng email đã đăng ký — dành cho ứng viên, thành viên và Ban
+        Chủ nhiệm.
+      </p>
 
-      <div className="mt-12 space-y-8">
+      <div className="mt-10 space-y-8">
         <label
           className="block animate-fade-up"
           style={{ animationDelay: "120ms" }}
@@ -80,10 +88,11 @@ function LoginForm({ onSubmit }: Props) {
           <span className="login-label text-sm text-[#8A94A6]">Email</span>
           <input
             type="email"
+            name="email"
             autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="admin@iuclub.edu.vn"
+            placeholder="email@example.com"
             className="login-input mt-2"
           />
         </label>
@@ -92,13 +101,14 @@ function LoginForm({ onSubmit }: Props) {
           className="block animate-fade-up"
           style={{ animationDelay: "200ms" }}
         >
-          <span className="login-label text-sm text-[#8A94A6]">Password</span>
+          <span className="login-label text-sm text-[#8A94A6]">Mật khẩu</span>
           <input
             type="password"
+            name="password"
             autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
+            placeholder="Nhập mật khẩu"
             className="login-input mt-2"
           />
         </label>
@@ -134,7 +144,7 @@ function LoginForm({ onSubmit }: Props) {
             </>
           ) : (
             <>
-              Login
+              Đăng nhập
               <span
                 className="inline-block transition-transform duration-300 group-hover:translate-x-1"
                 aria-hidden
@@ -151,7 +161,7 @@ function LoginForm({ onSubmit }: Props) {
             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4A90E2] rounded"
           onClick={() => void handleForgot()}
         >
-          Forget password?
+          Quên mật khẩu?
         </button>
       </div>
     </form>
