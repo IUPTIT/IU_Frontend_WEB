@@ -46,15 +46,19 @@ function RescheduleModal({ open, slot, onClose, onSubmit }: Props) {
       setError("Địa điểm/Link là bắt buộc.");
       return;
     }
+    const safeDuration = Math.min(120, Math.max(15, duration || 45));
+    const safeCapacity = Math.min(20, Math.max(1, capacity || 1));
+    setDuration(safeDuration);
+    setCapacity(safeCapacity);
     setSaving(true);
     setError(null);
     try {
       await onSubmit(slot.id, {
         date,
         startTime: time,
-        durationMinutes: duration,
+        durationMinutes: safeDuration,
         locationOrLink: location.trim(),
-        capacity,
+        capacity: safeCapacity,
       });
       onClose();
     } catch (err) {
@@ -88,9 +92,21 @@ function RescheduleModal({ open, slot, onClose, onSubmit }: Props) {
                 type="number"
                 min={15}
                 max={120}
+                inputMode="numeric"
                 className="neu-input !h-11"
-                value={duration}
-                onChange={(e) => setDuration(Number(e.target.value) || 45)}
+                value={Number.isFinite(duration) && duration > 0 ? duration : ""}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  if (raw === "") {
+                    setDuration(0);
+                    return;
+                  }
+                  const n = Number(raw);
+                  if (!Number.isNaN(n)) setDuration(n);
+                }}
+                onBlur={() =>
+                  setDuration((d) => Math.min(120, Math.max(15, d || 45)))
+                }
               />
             </label>
             <label className="block space-y-1.5">
@@ -99,9 +115,21 @@ function RescheduleModal({ open, slot, onClose, onSubmit }: Props) {
                 type="number"
                 min={1}
                 max={20}
+                inputMode="numeric"
                 className="neu-input !h-11"
-                value={capacity}
-                onChange={(e) => setCapacity(Math.max(1, Number(e.target.value) || 1))}
+                value={Number.isFinite(capacity) && capacity > 0 ? capacity : ""}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  if (raw === "") {
+                    setCapacity(0);
+                    return;
+                  }
+                  const n = Number(raw);
+                  if (!Number.isNaN(n)) setCapacity(n);
+                }}
+                onBlur={() =>
+                  setCapacity((c) => Math.min(20, Math.max(1, c || 1)))
+                }
               />
             </label>
           </div>
