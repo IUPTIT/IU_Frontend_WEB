@@ -73,6 +73,7 @@ function buildApplicationExportColumns(
         { value: "submitted", label: "Mới nộp" },
         { value: "screening", label: "Đang đánh giá" },
         { value: "interview", label: "Chờ phỏng vấn" },
+        { value: "interview_passed", label: "Đạt phỏng vấn" },
         { value: "accepted", label: "Đã đậu" },
         { value: "rejected", label: "Loại" },
       ],

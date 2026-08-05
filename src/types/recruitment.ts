@@ -58,6 +58,7 @@ export type ApplicationStatus =
   | "submitted"
   | "screening"
   | "interview"
+  | "interview_passed"
   | "accepted"
   | "rejected";
 
