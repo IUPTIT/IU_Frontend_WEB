@@ -1,9 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  CheckCircle2,
   Copy,
   Eye,
-  History,
   Mail,
   Pencil,
   Plus,
@@ -12,7 +10,6 @@ import {
   Settings2,
   Trash2,
   Variable,
-  Wifi,
 } from "lucide-react";
 import Badge from "../../../../components/ui/Badge";
 import Button from "../../../../components/ui/Button";
@@ -27,15 +24,10 @@ import {
   deleteEmailTemplate,
   duplicateEmailTemplate,
   getEmailAutomationRules,
-  getEmailHistory,
   getEmailPlaceholders,
   getEmailTemplates,
-  getSmtpConfig,
   previewEmail,
-  resendEmailHistory,
   restoreEmailAutomationDefaults,
-  saveSmtpConfig,
-  testSmtpConnection,
   updateEmailAutomationRule,
   updateEmailTemplate,
 } from "../../../../services/emailService";
@@ -43,15 +35,11 @@ import type {
   AutomationTiming,
   AutomationTimingUnit,
   EmailAutomationRule,
-  EmailHistoryItem,
   EmailPlaceholder,
   EmailTemplate,
   EmailTemplateCategory,
-  SmtpConfig,
-  SmtpEncryption,
 } from "../../../../types/email";
 import type { BadgeTone } from "../../../../components/ui/Badge";
-import { formatDate } from "../../../../utils/formatDate";
 
 type TabId = "templates" | "automation" | "placeholders" | "smtp";
 

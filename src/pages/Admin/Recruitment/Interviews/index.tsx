@@ -115,7 +115,6 @@ function RecruitmentInterviewsPage() {
   const [statusFilter, setStatusFilter] = useState<"" | "scheduled" | "missing_interviewers" | "done">("");
   const [draftStatus, setDraftStatus] = useState(statusFilter);
   const [loading, setLoading] = useState(true);
-  const [toast, setToast] = useState<string | null>(null);
   const [emailOpen, setEmailOpen] = useState(false);
   const [emailRecipients, setEmailRecipients] = useState<EmailRecipient[]>([]);
   const [emailTpl, setEmailTpl] = useState("tpl-interview");
@@ -443,12 +442,6 @@ function RecruitmentInterviewsPage() {
           )}
         </div>
       </section>
-
-      {toast && (
-        <p className="rounded-2xl bg-accent/10 px-4 py-3 text-sm text-accent" role="status">
-          {toast}
-        </p>
-      )}
 
       {tab === "schedule" && unbooked.length > 0 && (
         <section className="neu-card !p-5 space-y-4">

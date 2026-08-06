@@ -619,13 +619,14 @@ export async function getTrainingGroupById(
 
 export type CreateGroupInput = {
   name: string;
-  programId: string;
-  departmentId: string;
+  programId?: string;
+  departmentId?: string;
   departmentName: string;
   specialtyLabel?: string;
   mentorId?: string;
   mentorName?: string;
   memberIds: string[];
+  campaignId?: string;
 };
 
 export async function createTrainingGroup(
@@ -635,11 +636,12 @@ export async function createTrainingGroup(
     "/training/groups",
     {
       name: input.name,
-      programId: input.programId,
-      department: input.departmentName || input.departmentId,
+      programId: input.programId || null,
+      department: input.departmentName || input.departmentId || "Tổng hợp",
       specialtyLabel: input.specialtyLabel ?? "",
       mentorId: input.mentorId || null,
       memberIds: input.memberIds,
+      campaignId: input.campaignId || null,
     },
   );
   return toGroup(group);

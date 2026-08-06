@@ -94,7 +94,6 @@ export default function AdminMembersPage() {
   const [draftRole, setDraftRole] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [visibleIds, setVisibleIds] = useState(() =>
@@ -113,10 +112,6 @@ export default function AdminMembersPage() {
     [visibleIds],
   );
   const { widths, setWidth } = useColumnWidths(visibleColumns);
-
-  const showToast = (msg: string) => {
-    toastApi.info(msg);
-  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -239,11 +234,6 @@ export default function AdminMembersPage() {
         </p>
       </header>
 
-      {toast && (
-        <p className="rounded-2xl bg-emerald-500/10 px-4 py-3 text-sm text-emerald-700">
-          {toast}
-        </p>
-      )}
       {error && (
         <p className="rounded-2xl bg-rose-500/10 px-4 py-3 text-sm text-rose-600">
           {error}
