@@ -78,7 +78,11 @@ function CampaignGeneralStep({ draft, onChange, onCancel, onNext, lockNameAndOpe
                 placeholder="VD: Tuyển Gen 4 - Fall 2024"
                 value={draft.name}
                 disabled={lockNameAndOpen}
-                title={lockNameAndOpen ? "Đợt đã xuất bản — không sửa được tên" : undefined}
+                title={
+                  lockNameAndOpen
+                    ? "This recruitment campaign is in use and cannot be modified."
+                    : undefined
+                }
                 onChange={(e) => onChange({ name: e.target.value })}
               />
             </div>
@@ -96,7 +100,11 @@ function CampaignGeneralStep({ draft, onChange, onCancel, onNext, lockNameAndOpe
                   className="neu-input disabled:opacity-50 disabled:cursor-not-allowed"
                   value={draft.openAt}
                   disabled={lockNameAndOpen}
-                  title={lockNameAndOpen ? "Đợt đã xuất bản — không sửa được thời gian mở đơn" : undefined}
+                  title={
+                    lockNameAndOpen
+                      ? "This recruitment campaign is in use and cannot be modified."
+                      : undefined
+                  }
                   onChange={(e) => onChange({ openAt: e.target.value })}
                   aria-label="Thời điểm mở đơn"
                 />
@@ -105,9 +113,15 @@ function CampaignGeneralStep({ draft, onChange, onCancel, onNext, lockNameAndOpe
                 <span className="text-xs text-muted">Đóng đơn (ngày + giờ)</span>
                 <input
                   type="datetime-local"
-                  className="neu-input"
+                  className="neu-input disabled:opacity-50 disabled:cursor-not-allowed"
                   value={draft.closeAt}
                   min={draft.openAt || undefined}
+                  disabled={lockNameAndOpen}
+                  title={
+                    lockNameAndOpen
+                      ? "This recruitment campaign is in use and cannot be modified."
+                      : undefined
+                  }
                   onChange={(e) => onChange({ closeAt: e.target.value })}
                   aria-label="Thời điểm đóng đơn"
                 />
@@ -128,28 +142,37 @@ function CampaignGeneralStep({ draft, onChange, onCancel, onNext, lockNameAndOpe
 
         <div className="space-y-4">
           <h2 className="text-sm font-semibold text-foreground">Chỉ tiêu dự kiến</h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {draft.quotas.map((q) => (
-              <article key={q.departmentId} className="neu-card !p-5 flex flex-col items-center gap-3 text-center">
-                <div className={`flex h-12 w-12 items-center justify-center rounded-full ${toneIconBg[q.tone]}`}>
-                  <QuotaIcon icon={q.icon} />
-                </div>
-                <p className="text-sm font-medium">{q.departmentName}</p>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  className="neu-input text-center !h-10"
-                  value={String(q.quota)}
-                  onChange={(e) => {
-                    // Chỉ giữ chữ số, bỏ số 0 thừa đằng trước (010 → 10)
-                    const digits = e.target.value.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
-                    setQuota(q.departmentId, Number(digits || 0));
-                  }}
-                  aria-label={`Chỉ tiêu ${q.departmentName}`}
-                />
-              </article>
-            ))}
-          </div>
+          <p className="text-xs text-muted">
+            Theo danh sách Ban CLB đang hoạt động. Tạo/sửa Ban ở menu Quản lý Ban.
+          </p>
+          {draft.quotas.length === 0 ? (
+            <p className="rounded-2xl bg-rose-500/10 px-4 py-3 text-sm text-rose-600">
+              Chưa có Ban nào trong hệ thống — thêm Ban trước khi đặt chỉ tiêu.
+            </p>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {draft.quotas.map((q) => (
+                <article key={q.departmentId} className="neu-card !p-5 flex flex-col items-center gap-3 text-center">
+                  <div className={`flex h-12 w-12 items-center justify-center rounded-full ${toneIconBg[q.tone]}`}>
+                    <QuotaIcon icon={q.icon} />
+                  </div>
+                  <p className="text-sm font-medium">{q.departmentName}</p>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    className="neu-input text-center !h-10"
+                    value={String(q.quota)}
+                    onChange={(e) => {
+                      // Chỉ giữ chữ số, bỏ số 0 thừa đằng trước (010 → 10)
+                      const digits = e.target.value.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
+                      setQuota(q.departmentId, Number(digits || 0));
+                    }}
+                    aria-label={`Chỉ tiêu ${q.departmentName}`}
+                  />
+                </article>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

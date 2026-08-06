@@ -29,9 +29,11 @@ function statusBadgeClass(status: SlotCandidate["bookingStatus"]) {
 function InterviewSlotDetailPage({ slotId }: { slotId: string }) {
   const { user } = useAuth();
   const routes =
-    user?.role === "leader"
-      ? ROUTES.leader.recruitment
-      : ROUTES.admin.recruitment;
+    user?.role === "member"
+      ? ROUTES.member.recruitment
+      : user?.role === "leader"
+        ? ROUTES.leader.recruitment
+        : ROUTES.admin.recruitment;
   const { navigate } = usePortalUi();
   const [slot, setSlot] = useState<SlotInfo | null>(null);
   const [candidates, setCandidates] = useState<SlotCandidate[]>([]);

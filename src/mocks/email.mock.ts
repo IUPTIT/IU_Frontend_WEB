@@ -91,10 +91,24 @@ export const EMAIL_PLACEHOLDERS: EmailPlaceholder[] = [
   },
   {
     key: "email",
-    label: "Email liên hệ",
-    description: "Email hỗ trợ / reply",
-    sample: "bcn@iuclub.edu.vn",
+    label: "Email / tài khoản portal",
+    description: "Email đăng ký của ứng viên (đăng nhập)",
+    sample: "ungvien@gmail.com",
     categories: ["recruitment", "training", "general"],
+  },
+  {
+    key: "temp_password",
+    label: "Mật khẩu mặc định",
+    description: "Ngày sinh dạng DDMMYYYY",
+    sample: "15052006",
+    categories: ["recruitment"],
+  },
+  {
+    key: "login_url",
+    label: "Link đăng nhập",
+    description: "URL portal ứng viên",
+    sample: "http://localhost:5173/login",
+    categories: ["recruitment", "general"],
   },
   {
     key: "score",
@@ -177,12 +191,65 @@ export const templatesStore: EmailTemplate[] = [
     updatedAt: now(),
   },
   {
+    id: "tpl-cv-pass",
+    name: "Pass vòng đơn",
+    category: "recruitment",
+    subject: "THÔNG BÁO KẾT QUẢ VÒNG ĐƠN – CLB IU ({{candidate_name}})",
+    body: `<p><strong>THÔNG BÁO KẾT QUẢ VÒNG ĐƠN – CLB IU</strong></p>
+<p>Xin chúc mừng <strong>{{candidate_name}}</strong>!</p>
+<p>Sau quá trình xem xét hồ sơ đăng ký, Ban Tuyển thành viên CLB IU vui mừng thông báo rằng bạn đã <strong>vượt qua Vòng Đơn</strong> và chính thức bước tiếp vào <strong>Vòng Phỏng vấn</strong>.</p>
+<p><strong>Thông tin phỏng vấn:</strong></p>
+<ul>
+<li>Thời gian: <strong>{{interview_time}}</strong></li>
+<li>Địa điểm/Hình thức: <strong>{{location}}</strong></li>
+<li>Ban đăng ký: <strong>{{department}}</strong></li>
+</ul>
+<p>Vui lòng có mặt trước giờ hẹn khoảng <strong>10–15 phút</strong> và mang theo tinh thần tự tin, thoải mái để có một buổi trao đổi hiệu quả.</p>
+<p>Nếu có bất kỳ thắc mắc hoặc không thể tham gia đúng lịch, vui lòng liên hệ Fanpage hoặc Ban Tuyển thành viên CLB IU để được hỗ trợ.</p>
+<p>Hẹn gặp bạn tại Vòng Phỏng vấn!</p>
+<p><strong>Đăng nhập portal:</strong> Tài khoản = {{email}} · Mật khẩu mặc định = ngày sinh DDMMYYYY ({{temp_password}}) — bắt buộc đổi lần đầu · {{login_url}}</p>
+<p><strong>CLB IU – Learn • Connect • Create</strong></p>`,
+    status: "active",
+    createdAt: now(),
+    updatedAt: now(),
+  },
+  {
+    id: "tpl-cv-fail",
+    name: "Trượt vòng đơn",
+    category: "recruitment",
+    subject: "THÔNG BÁO KẾT QUẢ VÒNG ĐƠN – CLB IU ({{candidate_name}})",
+    body: `<p><strong>THÔNG BÁO KẾT QUẢ VÒNG ĐƠN – CLB IU</strong></p>
+<p>Chào <strong>{{candidate_name}}</strong>,</p>
+<p>CLB IU chân thành cảm ơn bạn đã dành thời gian đăng ký tham gia đợt tuyển thành viên lần này.</p>
+<p>Sau quá trình đánh giá hồ sơ, rất tiếc <strong>bạn chưa phù hợp với yêu cầu của Vòng Đơn</strong> trong đợt tuyển hiện tại.</p>
+<p>Điều này không phản ánh toàn bộ năng lực của bạn. Mỗi vị trí đều có những tiêu chí và nhu cầu khác nhau ở từng thời điểm. CLB hy vọng bạn sẽ tiếp tục phát triển bản thân và mạnh dạn quay trở lại trong những đợt tuyển thành viên tiếp theo.</p>
+<p>Một lần nữa, cảm ơn bạn đã quan tâm đến CLB IU. Chúc bạn luôn học tập tốt và gặt hái nhiều thành công trong thời gian tới.</p>
+<p>Trân trọng,</p>
+<p><strong>Ban Tuyển thành viên CLB IU</strong></p>`,
+    status: "active",
+    createdAt: now(),
+    updatedAt: now(),
+  },
+  {
+    id: "tpl-book-slot",
+    name: "Nhắc đăng ký lịch phỏng vấn",
+    category: "recruitment",
+    subject: "[IU CLUB] Nhắc đăng ký lịch phỏng vấn",
+    body: `<p>Xin chào <strong>{{candidate_name}}</strong>,</p>
+<p>Bạn đã ĐẠT vòng đơn nhưng chưa đăng ký lịch PV.</p>
+<p>Hạn đăng ký: <strong>{{booking_deadline}}</strong></p>
+<p>— {{club_name}}</p>`,
+    status: "active",
+    createdAt: now(),
+    updatedAt: now(),
+  },
+  {
     id: "tpl-reminder",
-    name: "Reminder",
+    name: "Nhắc lịch phỏng vấn sắp diễn ra",
     category: "recruitment",
     subject: "[IU CLUB] Nhắc lịch phỏng vấn",
     body: `<p>Xin chào <strong>{{candidate_name}}</strong>,</p>
-<p>Nhắc bạn lịch PV: <strong>{{interview_time}}</strong> ngày {{interview_date}} tại {{location}}.</p>
+<p>Nhắc bạn lịch PV sắp tới: <strong>{{interview_time}}</strong> ngày {{interview_date}} tại {{location}}.</p>
 <p>Link: {{meeting_link}}</p>
 <p>— {{club_name}}</p>`,
     status: "active",
@@ -210,19 +277,6 @@ export const templatesStore: EmailTemplate[] = [
 <p>Chúc mừng bạn đã hoàn thành chương trình <strong>{{program_name}}</strong>.</p>
 <p>Kết quả: {{result}} · Điểm: {{score}}</p>
 <p>Mã chứng nhận: {{certificate_code}}</p>
-<p>— {{club_name}}</p>`,
-    status: "active",
-    createdAt: now(),
-    updatedAt: now(),
-  },
-  {
-    id: "tpl-screening",
-    name: "Screening Update",
-    category: "recruitment",
-    subject: "[IU CLUB] Cập nhật vòng hồ sơ",
-    body: `<p>Xin chào <strong>{{candidate_name}}</strong>,</p>
-<p>Hồ sơ của bạn tại ban {{department}} đã được cập nhật.</p>
-<p>Kết quả vòng hồ sơ: <strong>{{result}}</strong> · Điểm ĐG: {{score}}</p>
 <p>— {{club_name}}</p>`,
     status: "active",
     createdAt: now(),

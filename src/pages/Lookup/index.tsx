@@ -15,12 +15,14 @@ function LookupPage() {
   const [searching, setSearching] = useState(false);
   const [withdrawing, setWithdrawing] = useState(false);
   const [withdrawn, setWithdrawn] = useState(false);
+  const [withdrawError, setWithdrawError] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
 
   const handleSearch = async (query: string) => {
     setSearching(true);
     setNotFound(false);
     setWithdrawn(false);
+    setWithdrawError(null);
     setEditing(false);
     try {
       setResult(await lookupApplication(query));
@@ -35,13 +37,16 @@ function LookupPage() {
   const handleWithdraw = async () => {
     if (!result || withdrawing) return;
     setWithdrawing(true);
+    setWithdrawError(null);
     try {
       await withdrawApplication(result.code, result.email);
       setResult(null);
       setWithdrawn(true);
       setEditing(false);
-    } catch {
-      // giữ nguyên kết quả cũ nếu rút thất bại
+    } catch (err) {
+      setWithdrawError(
+        err instanceof Error ? err.message : "Rút đơn thất bại — thử lại.",
+      );
     } finally {
       setWithdrawing(false);
     }
@@ -75,6 +80,7 @@ function LookupPage() {
               <ApplicationStatusCard
                 application={result}
                 withdrawing={withdrawing}
+                withdrawError={withdrawError}
                 onWithdraw={handleWithdraw}
                 onEdit={() => setEditing(true)}
               />

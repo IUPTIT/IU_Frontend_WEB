@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useAuth } from "../../../../context/useAuth";
 import { usePortalUi } from "../../../../context/usePortalUi";
 import { ROUTES } from "../../../../constants/routes";
 import { getMyInterviewSlots } from "../../../../services/recruitmentService";
@@ -7,11 +8,16 @@ import { formatDate } from "../../../../utils/formatDate";
 import InterviewSlotCard from "../../../Admin/Recruitment/Interviews/components/InterviewSlotCard";
 
 /**
- * Leader — Ca phỏng vấn được BCN phân công (Ch.2.5 ◐ Tuyển dụng).
+ * Ca PV được BCN phân công — Leader hoặc Member đều chấm được nếu nằm trong panel.
  * Chỉ xem / chấm; không tạo ca hay phân công panel.
  */
 export default function LeaderRecruitmentInterviewsPage() {
+  const { user } = useAuth();
   const { navigate } = usePortalUi();
+  const slotPath =
+    user?.role === "member"
+      ? ROUTES.member.recruitment.interviewSlot
+      : ROUTES.leader.recruitment.interviewSlot;
   const [slots, setSlots] = useState<InterviewSlot[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -94,7 +100,7 @@ export default function LeaderRecruitmentInterviewsPage() {
                       onReschedule={() => undefined}
                       onDelete={() => undefined}
                       onOpenCandidates={(s) =>
-                        navigate(ROUTES.leader.recruitment.interviewSlot(s.id))
+                        navigate(slotPath(s.id))
                       }
                     />
                   ))}

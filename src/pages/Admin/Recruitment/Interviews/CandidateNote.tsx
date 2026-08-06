@@ -23,9 +23,11 @@ function InterviewCandidateNotePage({ bookingId }: { bookingId: string }) {
   const { user } = useAuth();
   const isBcn = user?.role === "admin";
   const routes =
-    user?.role === "leader"
-      ? ROUTES.leader.recruitment
-      : ROUTES.admin.recruitment;
+    user?.role === "member"
+      ? ROUTES.member.recruitment
+      : user?.role === "leader"
+        ? ROUTES.leader.recruitment
+        : ROUTES.admin.recruitment;
   const { navigate } = usePortalUi();
   const [detail, setDetail] = useState<BookingDetail | null>(null);
   const [criteria, setCriteria] = useState<InterviewCriterion[]>([]);

@@ -32,17 +32,40 @@ export function applicationToEmailRecipient(
       position: "Member",
       club_name: "IU CLUB",
       contact_name: "Ban Chủ nhiệm",
-      phone: "0901 234 567",
-      email: "bcn@iuclub.edu.vn",
+      phone: app.phone || "—",
       score: app.interviewScore?.toFixed(1) ?? app.totalScore?.toFixed(1) ?? "—",
       result,
       interview_date: extras?.interview_date ?? "—",
-      interview_time: extras?.interview_time ?? "—",
-      location: extras?.location ?? "IU Campus",
-      meeting_link: extras?.meeting_link ?? "https://meet.google.com/iu-club",
+      interview_time:
+        extras?.interview_time ??
+        "Đăng nhập portal để chọn ca phỏng vấn phù hợp",
+      location:
+        extras?.location ??
+        "Sẽ hiển thị khi bạn đăng ký lịch (hoặc Ban Tuyển thông báo)",
+      meeting_link: extras?.meeting_link ?? "",
+      booking_deadline: extras?.booking_deadline ?? "theo thông báo đợt tuyển",
       ...extras,
+      // Luôn ghi đè sau extras — tài khoản = email ứng viên, MK = DOB
+      email: app.email,
+      temp_password:
+        passwordFromDob(app.dateOfBirth) || extras?.temp_password || "",
+      login_url:
+        extras?.login_url ||
+        `${typeof window !== "undefined" ? window.location.origin : ""}/login`,
     },
   };
+}
+
+/** MK mặc định = ngày sinh DDMMYYYY */
+export function passwordFromDob(dateOfBirth?: string | null): string {
+  if (!dateOfBirth) return "";
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(dateOfBirth).slice(0, 10));
+  if (m) return `${m[3]}${m[2]}${m[1]}`;
+  const d = new Date(dateOfBirth);
+  if (Number.isNaN(d.getTime())) return "";
+  const dd = String(d.getUTCDate()).padStart(2, "0");
+  const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
+  return `${dd}${mm}${d.getUTCFullYear()}`;
 }
 
 export function traineeToEmailRecipient(t: Trainee): EmailRecipient {

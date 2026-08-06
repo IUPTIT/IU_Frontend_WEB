@@ -13,8 +13,8 @@ type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
 const variantClass: Record<ButtonVariant, string> = {
   primary: "neu-btn-primary",
   secondary: "neu-btn",
-  soft: "inline-flex items-center justify-center gap-2 rounded-full font-bold bg-accent/15 text-accent shadow-extruded-sm transition-all duration-300 ease-out hover:-translate-y-px hover:bg-accent/20 hover:shadow-extruded active:translate-y-[0.5px] active:shadow-inset-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-  ghost: "inline-flex items-center justify-center gap-2 rounded-2xl font-medium text-muted transition-all duration-300 ease-out hover:text-foreground hover:shadow-extruded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+  soft: "inline-flex items-center justify-center gap-2 rounded-full font-bold bg-accent/15 text-accent shadow-extruded-sm transition-all duration-300 ease-out hover:-translate-y-px hover:bg-accent/20 hover:shadow-extruded active:translate-y-[0.5px] active:shadow-inset-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:bg-accent/15 disabled:hover:shadow-extruded-sm",
+  ghost: "inline-flex items-center justify-center gap-2 rounded-2xl font-medium text-muted transition-all duration-300 ease-out hover:text-foreground hover:shadow-extruded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:text-muted disabled:hover:shadow-none",
   icon: "neu-btn !px-0 rounded-full text-accent",
   "danger-icon": "neu-btn !px-0 rounded-full text-red-500",
 };

@@ -37,6 +37,8 @@ export type EmailTemplate = {
   /** HTML / plain text với {{placeholders}} */
   body: string;
   status: EmailTemplateStatus;
+  /** Ổn định cho prefills (tpl-passed, …) */
+  slug?: string | null;
   updatedAt: string;
   createdAt: string;
 };
@@ -76,6 +78,41 @@ export type EmailPreviewResult = {
   bodyHtml: string;
 };
 
+/** Quy tắc gửi email tự động (PA3) */
+export type AutomationTiming =
+  | "immediate"
+  | "delay_after_event"
+  | "before_deadline"
+  | "before_slot";
+
+export type AutomationTimingUnit = "days" | "hours";
+
+export type EmailAutomationRule = {
+  id: string;
+  ruleKey: string;
+  eventKey: string;
+  name: string;
+  enabled: boolean;
+  templateSlug: string;
+  timing: AutomationTiming;
+  timingValue: number;
+  timingUnit: AutomationTimingUnit;
+  params: Record<string, unknown>;
+  sortOrder: number;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type UpdateEmailAutomationRuleInput = {
+  name?: string;
+  enabled?: boolean;
+  templateSlug?: string;
+  timing?: AutomationTiming;
+  timingValue?: number;
+  timingUnit?: AutomationTimingUnit;
+  params?: Record<string, unknown>;
+};
+
 export type SendTestRequest = {
   to: string;
   subject: string;
@@ -94,5 +131,6 @@ export type SendEmailRequest = {
 export type SendEmailResult = {
   sent: number;
   failed: number;
+  logged?: number;
   historyIds: string[];
 };

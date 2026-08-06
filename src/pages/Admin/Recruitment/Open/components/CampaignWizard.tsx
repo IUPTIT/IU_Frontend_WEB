@@ -43,6 +43,14 @@ function CampaignWizard({ onCancel, onPublished, initialDraft, locks }: Props) {
       setError("Ngày đóng đơn phải sau ngày mở đơn.");
       return false;
     }
+    if (draft.quotas.length === 0) {
+      setError("Chưa có Ban CLB — tạo Ban trước khi đặt chỉ tiêu.");
+      return false;
+    }
+    if (!draft.quotas.some((q) => q.quota > 0)) {
+      setError("Cần ít nhất 1 ban có chỉ tiêu ≥ 1.");
+      return false;
+    }
     return true;
   };
 

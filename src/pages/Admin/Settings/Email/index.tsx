@@ -1,21 +1,21 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  CheckCircle2,
   Copy,
   Eye,
-  History,
   Mail,
   Pencil,
   Plus,
+  RotateCcw,
   Server,
+  Settings2,
   Trash2,
   Variable,
-  Wifi,
 } from "lucide-react";
 import Badge from "../../../../components/ui/Badge";
 import Button from "../../../../components/ui/Button";
 import ConfirmDialog from "../../../../components/ui/ConfirmDialog";
 import Icon from "../../../../components/ui/Icon";
+import Input from "../../../../components/ui/Input";
 import Modal from "../../../../components/ui/Modal";
 import Select from "../../../../components/ui/Select";
 import Toggle from "../../../../components/ui/Toggle";
@@ -23,34 +23,31 @@ import {
   createEmailTemplate,
   deleteEmailTemplate,
   duplicateEmailTemplate,
-  getEmailHistory,
+  getEmailAutomationRules,
   getEmailPlaceholders,
   getEmailTemplates,
-  getSmtpConfig,
   previewEmail,
-  resendEmailHistory,
-  saveSmtpConfig,
-  testSmtpConnection,
+  restoreEmailAutomationDefaults,
+  updateEmailAutomationRule,
   updateEmailTemplate,
 } from "../../../../services/emailService";
 import type {
-  EmailHistoryItem,
+  AutomationTiming,
+  AutomationTimingUnit,
+  EmailAutomationRule,
   EmailPlaceholder,
   EmailTemplate,
   EmailTemplateCategory,
-  SmtpConfig,
-  SmtpEncryption,
 } from "../../../../types/email";
 import type { BadgeTone } from "../../../../components/ui/Badge";
-import { formatDate } from "../../../../utils/formatDate";
 
-type TabId = "smtp" | "templates" | "placeholders" | "history";
+type TabId = "templates" | "automation" | "placeholders" | "smtp";
 
 const TABS: { id: TabId; label: string; icon: typeof Server; hint: string }[] = [
-  { id: "smtp", label: "SMTP", icon: Server, hint: "Máy chủ gửi" },
   { id: "templates", label: "Templates", icon: Mail, hint: "Mẫu thư" },
+  { id: "automation", label: "Gửi tự động", icon: Settings2, hint: "Quy tắc" },
   { id: "placeholders", label: "Placeholders", icon: Variable, hint: "Biến động" },
-  { id: "history", label: "Lịch sử", icon: History, hint: "Đã gửi" },
+  { id: "smtp", label: "SMTP", icon: Server, hint: "Máy chủ (.env)" },
 ];
 
 const CATEGORY_OPTS = [
@@ -82,7 +79,7 @@ const EMPTY_TPL: {
 };
 
 function EmailConfigurationPage() {
-  const [tab, setTab] = useState<TabId>("smtp");
+  const [tab, setTab] = useState<TabId>("templates");
   const [toast, setToast] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
@@ -114,7 +111,8 @@ function EmailConfigurationPage() {
               Email Configuration
             </h1>
             <p className="text-sm sm:text-base text-muted max-w-xl mx-auto sm:mx-0">
-              Cấu hình SMTP, mẫu email, placeholder và lịch sử gửi — không cần sửa mã nguồn.
+              Mẫu thư và quy tắc gửi tự động (API thật). SMTP cấu hình trên
+              server qua biến môi trường — không lưu giả lập trên trình duyệt.
             </p>
           </div>
         </div>
@@ -159,187 +157,375 @@ function EmailConfigurationPage() {
       </nav>
 
       <div className="min-h-[320px]">
-        {tab === "smtp" && <SmtpPanel onToast={showToast} />}
+        {tab === "smtp" && <SmtpInfoPanel />}
         {tab === "templates" && <TemplatesPanel onToast={showToast} />}
+        {tab === "automation" && <AutomationPanel onToast={showToast} />}
         {tab === "placeholders" && <PlaceholdersPanel />}
-        {tab === "history" && <HistoryPanel onToast={showToast} />}
       </div>
     </div>
   );
 }
 
-function SmtpPanel({ onToast }: { onToast: (m: string) => void }) {
-  const [cfg, setCfg] = useState<SmtpConfig | null>(null);
+function timingLabel(rule: EmailAutomationRule): string {
+  if (rule.timing === "immediate") return "Ngay khi sự kiện";
+  const unit = rule.timingUnit === "hours" ? "giờ" : "ngày";
+  if (rule.timing === "delay_after_event") {
+    return `Sau ${rule.timingValue} ${unit} kể từ sự kiện`;
+  }
+  if (rule.timing === "before_slot") {
+    return `Trước slot ${rule.timingValue} ${unit}`;
+  }
+  if (rule.timing === "before_deadline") {
+    return `Trước hạn ${rule.timingValue} ${unit}`;
+  }
+  return rule.timing;
+}
+
+const TIMING_OPTS: { value: AutomationTiming; label: string }[] = [
+  { value: "immediate", label: "Ngay khi sự kiện" },
+  { value: "delay_after_event", label: "Sau sự kiện (delay)" },
+  { value: "before_deadline", label: "Trước hạn đăng ký" },
+  { value: "before_slot", label: "Trước giờ PV (slot)" },
+];
+
+const UNIT_OPTS: { value: AutomationTimingUnit; label: string }[] = [
+  { value: "days", label: "Ngày" },
+  { value: "hours", label: "Giờ" },
+];
+
+function AutomationPanel({ onToast }: { onToast: (m: string) => void }) {
+  const [rules, setRules] = useState<EmailAutomationRule[]>([]);
+  const [templates, setTemplates] = useState<EmailTemplate[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState<EmailAutomationRule | null>(null);
   const [saving, setSaving] = useState(false);
+  const [restoreOpen, setRestoreOpen] = useState(false);
+  const [restoring, setRestoring] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [r, t] = await Promise.all([
+        getEmailAutomationRules(),
+        getEmailTemplates(),
+      ]);
+      setRules(r);
+      setTemplates(t.filter((x) => x.status === "active" && x.slug));
+    } catch (err) {
+      onToast(err instanceof Error ? err.message : "Không tải được quy tắc.");
+    } finally {
+      setLoading(false);
+    }
+  }, [onToast]);
 
   useEffect(() => {
-    void getSmtpConfig().then(setCfg);
-  }, []);
+    void load();
+  }, [load]);
 
-  if (!cfg) {
-    return <div className="h-64 animate-pulse rounded-card bg-accent/10 shadow-inset-sm" aria-busy />;
+  const templateOpts = useMemo(
+    () =>
+      templates.map((t) => ({
+        value: t.slug || t.id,
+        label: `${t.name} (${t.slug})`,
+      })),
+    [templates],
+  );
+
+  const saveEdit = async () => {
+    if (!editing) return;
+    setSaving(true);
+    try {
+      const updated = await updateEmailAutomationRule(editing.id, {
+        name: editing.name,
+        enabled: editing.enabled,
+        templateSlug: editing.templateSlug,
+        timing: editing.timing,
+        timingValue: editing.timingValue,
+        timingUnit: editing.timingUnit,
+        params: editing.params,
+      });
+      setRules((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
+      setEditing(null);
+      onToast("Đã lưu quy tắc gửi tự động.");
+    } catch (err) {
+      onToast(err instanceof Error ? err.message : "Lưu thất bại.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const toggleEnabled = async (rule: EmailAutomationRule, enabled: boolean) => {
+    try {
+      const updated = await updateEmailAutomationRule(rule.id, { enabled });
+      setRules((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
+      onToast(enabled ? `Đã bật: ${rule.name}` : `Đã tắt: ${rule.name}`);
+    } catch (err) {
+      onToast(err instanceof Error ? err.message : "Cập nhật thất bại.");
+    }
+  };
+
+  const confirmRestore = async () => {
+    setRestoring(true);
+    try {
+      const next = await restoreEmailAutomationDefaults();
+      setRules(next);
+      setRestoreOpen(false);
+      onToast("Đã khôi phục quy tắc mặc định IU CLUB.");
+    } catch (err) {
+      onToast(err instanceof Error ? err.message : "Khôi phục thất bại.");
+    } finally {
+      setRestoring(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="h-64 animate-pulse rounded-card bg-accent/10 shadow-inset-sm" aria-busy />
+    );
   }
 
-  const save = async () => {
-    setSaving(true);
-    try {
-      await saveSmtpConfig(cfg);
-      onToast("Đã lưu cấu hình SMTP.");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const test = async () => {
-    setSaving(true);
-    try {
-      await saveSmtpConfig(cfg);
-      const res = await testSmtpConnection();
-      onToast(res.message);
-    } finally {
-      setSaving(false);
-    }
-  };
-
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_260px]">
-      <section className="rounded-card bg-gradient-to-br from-background via-background to-accent/[0.06] p-6 sm:p-8 shadow-extruded ring-1 ring-accent/10 space-y-6">
+    <>
+      <ConfirmDialog
+        open={restoreOpen}
+        title="Khôi phục mặc định?"
+        message="Toàn bộ quy tắc gửi tự động sẽ về seed IU CLUB (ghi đè cấu hình hiện tại)."
+        confirmLabel="Khôi phục"
+        tone="danger"
+        loading={restoring}
+        onConfirm={() => void confirmRestore()}
+        onClose={() => setRestoreOpen(false)}
+      />
+
+      <section className="space-y-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-1">
             <h2 className="font-display text-xl font-bold flex items-center gap-2">
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-500/15 text-sky-600 dark:text-sky-300">
-                <Icon icon={Server} size={18} />
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-500/15 text-violet-600">
+                <Icon icon={Settings2} size={18} />
               </span>
-              SMTP Configuration
+              Quy tắc gửi tự động
             </h2>
-            <p className="text-sm text-muted pl-11">Server gửi mail toàn hệ thống.</p>
+            <p className="text-sm text-muted pl-11 max-w-2xl">
+              Bật/tắt, chọn template và thời điểm gửi theo sự kiện. P0 lưu cấu
+              hình; P1 jobs sẽ đọc các quy tắc này (không còn hardcode số ngày).
+            </p>
           </div>
-          <div className="flex items-center gap-3 rounded-2xl bg-background px-4 py-2.5 shadow-inset-sm">
-            <span className="text-sm font-medium text-muted">Bật SMTP</span>
-            <Toggle
-              checked={cfg.enabled}
-              onChange={(enabled) => setCfg({ ...cfg, enabled })}
-              aria-label="Bật SMTP"
-            />
-          </div>
+          <Button
+            variant="secondary"
+            size="sm"
+            leftIcon={<Icon icon={RotateCcw} size={15} />}
+            onClick={() => setRestoreOpen(true)}
+          >
+            Khôi phục mặc định
+          </Button>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <label className="block space-y-1.5 sm:col-span-2">
-            <span className="neu-field-label">SMTP Host</span>
-            <input
-              className="neu-input !h-12"
-              value={cfg.host}
-              onChange={(e) => setCfg({ ...cfg, host: e.target.value })}
-            />
-          </label>
-          <label className="block space-y-1.5">
-            <span className="neu-field-label">SMTP Port</span>
-            <input
-              type="number"
-              className="neu-input !h-12"
-              value={cfg.port}
-              onChange={(e) => setCfg({ ...cfg, port: Number(e.target.value) || 0 })}
-            />
-          </label>
-          <div>
-            <span className="neu-field-label">Encryption</span>
-            <Select
-              width="full"
-              value={cfg.encryption}
-              options={[
-                { value: "none", label: "None" },
-                { value: "ssl", label: "SSL" },
-                { value: "tls", label: "TLS" },
-              ]}
-              onChange={(encryption) => setCfg({ ...cfg, encryption: encryption as SmtpEncryption })}
-              triggerClassName="!h-12"
-            />
-          </div>
-          <label className="block space-y-1.5">
-            <span className="neu-field-label">Username</span>
-            <input
-              className="neu-input !h-12"
-              value={cfg.username}
-              onChange={(e) => setCfg({ ...cfg, username: e.target.value })}
-            />
-          </label>
-          <label className="block space-y-1.5">
-            <span className="neu-field-label">Password</span>
-            <input
-              type="password"
-              className="neu-input !h-12"
-              value={cfg.password}
-              onChange={(e) => setCfg({ ...cfg, password: e.target.value })}
-              autoComplete="new-password"
-            />
-          </label>
-          <label className="block space-y-1.5">
-            <span className="neu-field-label">Sender Name</span>
-            <input
-              className="neu-input !h-12"
-              value={cfg.senderName}
-              onChange={(e) => setCfg({ ...cfg, senderName: e.target.value })}
-            />
-          </label>
-          <label className="block space-y-1.5">
-            <span className="neu-field-label">Sender Email</span>
-            <input
-              type="email"
-              className="neu-input !h-12"
-              value={cfg.senderEmail}
-              onChange={(e) => setCfg({ ...cfg, senderEmail: e.target.value })}
-            />
-          </label>
-          <label className="block space-y-1.5 sm:col-span-2">
-            <span className="neu-field-label">Reply To</span>
-            <input
-              type="email"
-              className="neu-input !h-12"
-              value={cfg.replyTo}
-              onChange={(e) => setCfg({ ...cfg, replyTo: e.target.value })}
-            />
-          </label>
-        </div>
-
-        <div className="flex flex-wrap justify-end gap-3 pt-1">
-          <Button variant="secondary" disabled={saving} onClick={() => void test()} leftIcon={<Icon icon={Wifi} size={16} />}>
-            Test Connection
-          </Button>
-          <Button variant="primary" disabled={saving} onClick={() => void save()} leftIcon={<Icon icon={CheckCircle2} size={16} />}>
-            Lưu cấu hình
-          </Button>
+        <div className="overflow-x-auto rounded-card shadow-extruded ring-1 ring-black/5">
+          <table className="w-full min-w-[720px] text-sm">
+            <thead className="bg-black/[0.03] text-left text-xs uppercase tracking-wide text-muted">
+              <tr>
+                <th className="px-4 py-3">Sự kiện</th>
+                <th className="px-4 py-3">Bật</th>
+                <th className="px-4 py-3">Template</th>
+                <th className="px-4 py-3">Thời điểm</th>
+                <th className="px-4 py-3 text-center">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rules.map((rule) => (
+                <tr key={rule.id} className="border-t border-black/5">
+                  <td className="px-4 py-3">
+                    <p className="font-semibold text-foreground">{rule.name}</p>
+                    <p className="text-xs text-muted font-mono">{rule.eventKey}</p>
+                  </td>
+                  <td className="px-4 py-3">
+                    <Toggle
+                      checked={rule.enabled}
+                      onChange={(v) => void toggleEnabled(rule, v)}
+                      aria-label={`Bật ${rule.name}`}
+                    />
+                  </td>
+                  <td className="px-4 py-3">
+                    <code className="rounded-lg bg-black/5 px-2 py-1 text-xs">
+                      {rule.templateSlug}
+                    </code>
+                  </td>
+                  <td className="px-4 py-3 text-muted">{timingLabel(rule)}</td>
+                  <td className="px-4 py-3 text-center">
+                    <Button
+                      variant="icon"
+                      size="sm"
+                      aria-label={`Sửa ${rule.name}`}
+                      onClick={() => setEditing({ ...rule, params: { ...rule.params } })}
+                    >
+                      <Icon icon={Pencil} size={15} />
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </section>
 
-      <aside className="space-y-4">
-        <div
-          className={`rounded-card p-5 shadow-extruded ring-1 transition-colors ${
-            cfg.enabled
-              ? "bg-gradient-to-br from-emerald-500/20 to-background ring-emerald-500/25"
-              : "bg-gradient-to-br from-rose-500/15 to-background ring-rose-500/20"
-          }`}
-        >
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted">Trạng thái</p>
-          <p className={`mt-2 font-display text-2xl font-extrabold ${cfg.enabled ? "text-emerald-600 dark:text-emerald-300" : "text-rose-500"}`}>
-            {cfg.enabled ? "Đang bật" : "Đang tắt"}
-          </p>
-          <p className="mt-2 text-xs text-muted leading-relaxed">
-            {cfg.enabled
-              ? "Hệ thống sẵn sàng gửi thư qua SMTP đã cấu hình."
-              : "Bật SMTP để các nút gửi email hoạt động."}
-          </p>
-        </div>
-        <div className="rounded-card bg-background p-5 shadow-extruded ring-1 ring-black/5 space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted">Khuyến nghị</p>
-          <ul className="text-xs text-muted space-y-1.5 list-disc pl-4">
-            <li>Port 587 + TLS cho Gmail và hầu hết nhà cung cấp</li>
-            <li>Dùng App Password thay mật khẩu tài khoản</li>
-            <li>Kiểm tra kết nối trước khi gửi hàng loạt</li>
-          </ul>
-        </div>
-      </aside>
-    </div>
+      <Modal
+        open={Boolean(editing)}
+        onClose={() => !saving && setEditing(null)}
+        title={editing ? `Sửa: ${editing.name}` : "Sửa quy tắc"}
+        description={
+          editing
+            ? `eventKey: ${editing.eventKey} · ruleKey: ${editing.ruleKey}`
+            : undefined
+        }
+        size="md"
+        footer={
+          <>
+            <Button variant="secondary" disabled={saving} onClick={() => setEditing(null)}>
+              Huỷ
+            </Button>
+            <Button variant="primary" disabled={saving} onClick={() => void saveEdit()}>
+              {saving ? "Đang lưu…" : "Lưu"}
+            </Button>
+          </>
+        }
+      >
+        {editing && (
+          <div className="space-y-4">
+            <label className="block space-y-1.5">
+              <span className="text-xs font-semibold uppercase text-muted">Tên hiển thị</span>
+              <Input
+                value={editing.name}
+                onChange={(e) => setEditing({ ...editing, name: e.target.value })}
+              />
+            </label>
+            <div className="flex items-center justify-between rounded-2xl bg-black/[0.03] px-4 py-3">
+              <span className="text-sm font-medium">Bật gửi tự động</span>
+              <Toggle
+                checked={editing.enabled}
+                onChange={(enabled) => setEditing({ ...editing, enabled })}
+                aria-label="Bật quy tắc"
+              />
+            </div>
+            <label className="block space-y-1.5">
+              <span className="text-xs font-semibold uppercase text-muted">Template</span>
+              <Select
+                value={editing.templateSlug}
+                onChange={(templateSlug) => setEditing({ ...editing, templateSlug })}
+                options={
+                  templateOpts.length
+                    ? templateOpts
+                    : [{ value: editing.templateSlug, label: editing.templateSlug }]
+                }
+                width="full"
+              />
+            </label>
+            <label className="block space-y-1.5">
+              <span className="text-xs font-semibold uppercase text-muted">Thời điểm</span>
+              <Select
+                value={editing.timing}
+                onChange={(timing) =>
+                  setEditing({
+                    ...editing,
+                    timing: timing as AutomationTiming,
+                    timingValue:
+                      timing === "immediate" ? 0 : Math.max(1, editing.timingValue || 1),
+                  })
+                }
+                options={TIMING_OPTS}
+                width="full"
+              />
+            </label>
+            {editing.timing !== "immediate" && (
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="block space-y-1.5">
+                  <span className="text-xs font-semibold uppercase text-muted">Giá trị</span>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={String(editing.timingValue)}
+                    onChange={(e) =>
+                      setEditing({
+                        ...editing,
+                        timingValue: Number(e.target.value) || 0,
+                      })
+                    }
+                  />
+                </label>
+                <label className="block space-y-1.5">
+                  <span className="text-xs font-semibold uppercase text-muted">Đơn vị</span>
+                  <Select
+                    value={editing.timingUnit}
+                    onChange={(timingUnit) =>
+                      setEditing({
+                        ...editing,
+                        timingUnit: timingUnit as AutomationTimingUnit,
+                      })
+                    }
+                    options={UNIT_OPTS}
+                    width="full"
+                  />
+                </label>
+              </div>
+            )}
+            {editing.eventKey === "book_slot_remind" && (
+              <label className="block space-y-1.5">
+                <span className="text-xs font-semibold uppercase text-muted">
+                  Hạn đăng ký lịch (ngày sau Pass)
+                </span>
+                <Input
+                  type="number"
+                  min={1}
+                  value={String(
+                    Number(editing.params?.bookingWindowDays ?? 7),
+                  )}
+                  onChange={(e) =>
+                    setEditing({
+                      ...editing,
+                      params: {
+                        ...editing.params,
+                        bookingWindowDays: Number(e.target.value) || 7,
+                      },
+                    })
+                  }
+                />
+                <span className="text-xs text-muted">
+                  Phải ≥ số ngày nhắc (timing delay).
+                </span>
+              </label>
+            )}
+          </div>
+        )}
+      </Modal>
+    </>
+  );
+}
+
+function SmtpInfoPanel() {
+  return (
+    <section className="neu-card !p-6 space-y-4 max-w-2xl">
+      <h2 className="font-display text-lg font-bold">Cấu hình SMTP (server)</h2>
+      <p className="text-sm text-muted">
+        Gửi email thật dùng SMTP/SendGrid cấu hình trên Backend (
+        <code className="text-accent">.env</code>
+        ). Không còn lưu SMTP giả trên trình duyệt.
+      </p>
+      <ul className="list-disc space-y-1 pl-5 text-sm text-muted">
+        <li>
+          Biến môi trường BE: <code>SMTP_HOST</code>, <code>SMTP_PORT</code>,{" "}
+          <code>SMTP_USER</code>, <code>SMTP_PASS</code> (hoặc SendGrid API key)
+        </li>
+        <li>
+          Templates và quy tắc tự động ở các tab còn lại đã nối API{" "}
+          <code>/admin/email-*</code>
+        </li>
+        <li>Nút gửi thư trong tuyển dụng / training gọi API gửi thật</li>
+      </ul>
+      <p className="rounded-2xl bg-accent/10 px-4 py-3 text-sm text-accent">
+        Lịch sử gửi chi tiết sẽ bổ sung khi BE có endpoint lịch sử — hiện có thể
+        theo dõi qua log server / nhà cung cấp mail.
+      </p>
+    </section>
   );
 }
 
@@ -677,121 +863,6 @@ function PlaceholdersPanel() {
           </div>
         </div>
       ))}
-    </section>
-  );
-}
-
-function HistoryPanel({ onToast }: { onToast: (m: string) => void }) {
-  const [rows, setRows] = useState<EmailHistoryItem[]>([]);
-  const [detail, setDetail] = useState<EmailHistoryItem | null>(null);
-
-  // load chỉ gọi từ event handler (refresh sau thao tác) — mount dùng .then bên dưới
-  const load = useCallback(async () => {
-    setRows(await getEmailHistory());
-  }, []);
-
-  useEffect(() => {
-    let alive = true;
-    void getEmailHistory().then((data) => alive && setRows(data));
-    return () => {
-      alive = false;
-    };
-  }, []);
-
-  return (
-    <section className="space-y-4">
-      <div className="overflow-hidden rounded-card shadow-extruded ring-1 ring-accent/10">
-        <div className="overflow-x-auto">
-          <table className="data-table w-full min-w-[720px] text-sm">
-            <thead>
-              <tr>
-                <th className="data-table-th px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wide">
-                  Người nhận
-                </th>
-                <th className="data-table-th px-3 py-3.5 text-left text-xs font-semibold uppercase tracking-wide">
-                  Subject
-                </th>
-                <th className="data-table-th px-3 py-3.5 text-center text-xs font-semibold uppercase tracking-wide">
-                  Template
-                </th>
-                <th className="data-table-th px-3 py-3.5 text-center text-xs font-semibold uppercase tracking-wide">
-                  Thời gian
-                </th>
-                <th className="data-table-th px-3 py-3.5 text-center text-xs font-semibold uppercase tracking-wide">
-                  Status
-                </th>
-                <th className="data-table-th px-3 py-3.5 text-center text-xs font-semibold uppercase tracking-wide">
-                  Thao tác
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="data-table-td px-4 py-16 text-center text-muted">
-                    <span className="inline-flex flex-col items-center gap-2">
-                      <Icon icon={Mail} size={28} className="text-accent/50" />
-                      Chưa có lịch sử gửi.
-                    </span>
-                  </td>
-                </tr>
-              ) : (
-                rows.map((h) => (
-                  <tr key={h.id}>
-                    <td className="data-table-td px-4 py-3 text-left">
-                      <p className="font-medium">{h.recipientName}</p>
-                      <p className="text-xs text-muted">{h.recipientEmail}</p>
-                    </td>
-                    <td className="data-table-td px-3 py-3 text-left max-w-[220px] truncate">{h.subject}</td>
-                    <td className="data-table-td px-3 py-3 text-center text-muted">{h.templateName ?? "—"}</td>
-                    <td className="data-table-td px-3 py-3 text-center text-muted">{formatDate(h.sentAt)}</td>
-                    <td className="data-table-td px-3 py-3 text-center">
-                      <Badge tone={h.status === "sent" ? "success" : h.status === "failed" ? "danger" : "warning"}>
-                        {h.status}
-                      </Badge>
-                    </td>
-                    <td className="data-table-td px-3 py-3">
-                      <div className="flex justify-center gap-1">
-                        <Button variant="ghost" size="sm" className="!h-9" onClick={() => setDetail(h)}>
-                          Xem
-                        </Button>
-                        <Button
-                          variant="soft"
-                          size="sm"
-                          className="!h-9"
-                          onClick={async () => {
-                            await resendEmailHistory(h.id);
-                            onToast("Đã gửi lại email.");
-                            void load();
-                          }}
-                        >
-                          Gửi lại
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <Modal open={!!detail} onClose={() => setDetail(null)} title="Nội dung đã gửi" size="md">
-        {detail && (
-          <div className="space-y-3 text-sm">
-            <p>
-              <span className="text-muted">Tới:</span> {detail.recipientName} &lt;{detail.recipientEmail}&gt;
-            </p>
-            <p className="font-semibold">{detail.subject}</p>
-            {detail.error && <p className="text-rose-500">{detail.error}</p>}
-            <div
-              className="rounded-2xl bg-background p-4 shadow-inset-sm"
-              dangerouslySetInnerHTML={{ __html: detail.body }}
-            />
-          </div>
-        )}
-      </Modal>
     </section>
   );
 }

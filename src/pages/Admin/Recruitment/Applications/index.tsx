@@ -1,12 +1,16 @@
 ﻿import { useCallback, useEffect, useMemo, useState } from "react";
+import { Send } from "lucide-react";
 import Button from "../../../../components/ui/Button";
 import ExportDataModal, { type ExportColumnDef } from "../../../../components/ui/ExportDataModal";
+import Icon from "../../../../components/ui/Icon";
 import Pagination from "../../../../components/ui/Pagination";
 import Select from "../../../../components/ui/Select";
+import SendEmailModal from "../../../../components/ui/SendEmailModal";
 import { ROUTES } from "../../../../constants/routes";
 import { usePortalUi } from "../../../../context/usePortalUi";
 import { getApplications, getCampaigns, bulkDecideCvByThreshold } from "../../../../services/recruitmentService";
 import type { Application, ApplicationStatus, RecruitmentCampaign } from "../../../../types/recruitment";
+import { applicationToEmailRecipient } from "../../../../utils/emailRecipients";
 import { formatDate } from "../../../../utils/formatDate";
 import ConfirmDialog from "../../../../components/ui/ConfirmDialog";
 import ApplicationFilterBar, {
@@ -105,6 +109,10 @@ function RecruitmentApplicationsPage() {
   const [bulkOpen, setBulkOpen] = useState(false);
   const [bulkThreshold, setBulkThreshold] = useState("7");
   const [bulkBusy, setBulkBusy] = useState(false);
+  const [emailOpen, setEmailOpen] = useState(false);
+  const [emailKind, setEmailKind] = useState<"pass" | "fail">("pass");
+  /** Người nhận email Pass/Fail — tự lọc theo trạng thái (không phụ thuộc tick) */
+  const [emailApps, setEmailApps] = useState<Application[]>([]);
 
   const [draftFilter, setDraftFilter] = useState<ApplicationFilterDraft>(EMPTY_FILTER);
   const [appliedFilter, setAppliedFilter] = useState<ApplicationFilterDraft>(EMPTY_FILTER);
@@ -120,6 +128,12 @@ function RecruitmentApplicationsPage() {
       // Luôn await để mọi setState nằm sau async boundary (react-hooks/set-state-in-effect)
       const data = await (id ? getApplications(id) : Promise.resolve<Application[]>([]));
       setApplications(data);
+    } catch (err) {
+      showToast(
+        err instanceof Error
+          ? `Không tải được hồ sơ: ${err.message}`
+          : "Không tải được danh sách hồ sơ.",
+      );
     } finally {
       setLoading(false);
     }
@@ -247,7 +261,7 @@ function RecruitmentApplicationsPage() {
       const res = await bulkDecideCvByThreshold(campaignId, threshold, true);
       await loadApplications(campaignId);
       showToast(
-        `Duyệt hàng loạt: Pass ${res.passed}, Fail ${res.failed}, bỏ qua ${res.skipped} (ngưỡng ${threshold}/10).`,
+        `Duyệt hàng loạt: Pass ${res.passed}, Fail ${res.failed}, bỏ qua ${res.skipped} (ngưỡng ${threshold}/10). Hệ thống tự gửi email Pass/Trượt vòng đơn.`,
       );
       setBulkOpen(false);
     } catch {
@@ -255,6 +269,23 @@ function RecruitmentApplicationsPage() {
     } finally {
       setBulkBusy(false);
     }
+  };
+
+  const openBulkEmail = (kind: "pass" | "fail") => {
+    // Pass = status "interview" (Đạt vòng đơn); Fail = "cv_failed"
+    const status = kind === "pass" ? "interview" : "cv_failed";
+    const targets = applications.filter((a) => a.status === status);
+    if (targets.length === 0) {
+      showToast(
+        kind === "pass"
+          ? "Không có hồ sơ Đạt vòng đơn trong đợt này để gửi email."
+          : "Không có hồ sơ Không đạt vòng đơn trong đợt này để gửi email.",
+      );
+      return;
+    }
+    setEmailKind(kind);
+    setEmailApps(targets);
+    setEmailOpen(true);
   };
 
   return (
@@ -303,9 +334,29 @@ function RecruitmentApplicationsPage() {
               Duyệt theo ngưỡng
             </Button>
           </div>
+          <Button
+            variant="soft"
+            size="sm"
+            className="!h-11"
+            leftIcon={<Icon icon={Send} size={15} />}
+            onClick={() => openBulkEmail("pass")}
+            title="Tự lọc hồ sơ Đạt vòng đơn → xem trước / gửi thử / gửi hàng loạt"
+          >
+            Email Pass vòng đơn
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            className="!h-11"
+            leftIcon={<Icon icon={Send} size={15} />}
+            onClick={() => openBulkEmail("fail")}
+            title="Tự lọc hồ sơ Không đạt vòng đơn → xem trước / gửi thử / gửi hàng loạt"
+          >
+            Email Trượt vòng đơn
+          </Button>
           <p className="text-sm text-muted">
             Tổng số:{" "}
-            <span className="font-bold text-foreground">{filtered.length}</span>
+            <span className="font-bold text-red-500">{filtered.length}</span>
           </p>
           <ApplicationFilterBar
             draft={draftFilter}
@@ -366,6 +417,28 @@ function RecruitmentApplicationsPage() {
         rows={filtered}
         filenameBase={`ho_so_${campaignId || "dot"}`}
         onExported={(n) => showToast(`Đã tải xuống ${n} hồ sơ (CSV).`)}
+      />
+
+      <SendEmailModal
+        open={emailOpen}
+        onClose={() => {
+          setEmailOpen(false);
+          setEmailApps([]);
+        }}
+        recipients={emailApps.map((a) => applicationToEmailRecipient(a))}
+        module="recruitment-screening"
+        category="recruitment"
+        preferredTemplateId={emailKind === "fail" ? "tpl-cv-fail" : "tpl-cv-pass"}
+        autoPreview
+        title={
+          emailKind === "fail"
+            ? `Gửi email Trượt vòng đơn (${emailApps.length})`
+            : `Gửi email Pass vòng đơn (${emailApps.length})`
+        }
+        onSent={(sent) => {
+          showToast(`Đã gửi ${sent} email kết quả vòng đơn.`);
+          setSelectedIds(new Set());
+        }}
       />
     </>
   );
