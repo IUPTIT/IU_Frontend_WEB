@@ -169,6 +169,12 @@ function TrainingReviewPage() {
       ]);
       setTrainees(list);
       setSummary(sum);
+    } catch (err) {
+      showToast(
+        err instanceof Error
+          ? `Không tải được đánh giá: ${err.message}`
+          : "Không tải được dữ liệu đánh giá training.",
+      );
     } finally {
       setLoading(false);
     }
@@ -302,11 +308,16 @@ function TrainingReviewPage() {
       showToast("Không có học viên đủ điều kiện để cấp chứng nhận.");
       return;
     }
-    const res = await issueCertificates(ids);
-    await load();
-    await load();
-    setSelected(new Set());
-    showToast(`Đã cấp chứng nhận cho ${res.issued} học viên.`);
+    try {
+      const res = await issueCertificates(ids);
+      await load();
+      setSelected(new Set());
+      showToast(`Đã cấp chứng nhận cho ${res.issued} học viên.`);
+    } catch (err) {
+      showToast(
+        err instanceof Error ? err.message : "Cấp chứng nhận thất bại.",
+      );
+    }
   };
 
   const handleEval = async (

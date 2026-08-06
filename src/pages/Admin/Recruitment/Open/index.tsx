@@ -18,8 +18,9 @@ import type { RecruitmentCampaign } from "../../../../types/recruitment";
 import ConfirmDialog from "../../../../components/ui/ConfirmDialog";
 import CampaignTable from "./components/CampaignTable";
 import CampaignWizard from "./components/CampaignWizard";
+import { getDepartments } from "../../../../services/departmentsService";
 import type { CampaignDraft, QuestionDraft } from "./wizard/types";
-import { DEFAULT_QUOTAS, uid } from "./wizard/types";
+import { createEmptyDraft, quotasFromDepartments, uid } from "./wizard/types";
 
 const PAGE_SIZE = 5;
 
@@ -127,11 +128,24 @@ function RecruitmentOpenPage() {
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
   };
 
+  const handleCreateNew = async () => {
+    try {
+      const departments = await getDepartments("active");
+      setEditing(null);
+      setEditDraft(createEmptyDraft(quotasFromDepartments(departments)));
+      setEditLocks({});
+      setMode("wizard");
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Không tải được danh sách Ban.");
+    }
+  };
+
   const handleEdit = async (campaign: RecruitmentCampaign) => {
     try {
-      const [questions, applications] = await Promise.all([
+      const [questions, applications, departments] = await Promise.all([
         getFormQuestions(campaign.id),
         getApplications(campaign.id),
+        getDepartments("active"),
       ]);
       const published = campaign.status !== "draft";
       setEditLocks({
@@ -152,6 +166,20 @@ function RecruitmentOpenPage() {
         options: q.options?.map((o) => ({ id: o.id, label: o.label })) ?? [],
       }));
 
+      const quotas = quotasFromDepartments(departments, campaign.quotas);
+      // Ban trong đợt nhưng không còn trong danh mục active
+      for (const q of campaign.quotas) {
+        if (!quotas.some((x) => x.departmentName === q.departmentName)) {
+          quotas.push({
+            departmentId: uid("dept"),
+            departmentName: q.departmentName,
+            icon: "code",
+            tone: "blue",
+            quota: q.quota,
+          });
+        }
+      }
+
       setEditing(campaign);
       setEditDraft({
         name: campaign.name,
@@ -159,23 +187,7 @@ function RecruitmentOpenPage() {
         openAt: toLocalInput(campaign.openAt),
         closeAt: toLocalInput(campaign.closeAt),
         description: campaign.description ?? "",
-        // Ghép chỉ tiêu thật vào 4 ban mặc định (giữ icon/tông màu), ban lạ thêm cuối
-        quotas: [
-          ...DEFAULT_QUOTAS.map((base) => ({
-            ...base,
-            quota:
-              campaign.quotas.find((q) => q.departmentName === base.departmentName)?.quota ?? 0,
-          })),
-          ...campaign.quotas
-            .filter((q) => !DEFAULT_QUOTAS.some((b) => b.departmentName === q.departmentName))
-            .map((q) => ({
-              departmentId: uid("dept"),
-              departmentName: q.departmentName,
-              icon: "code" as const,
-              tone: "blue" as const,
-              quota: q.quota,
-            })),
-        ],
+        quotas,
         questions: draftQuestions,
         activateOnPublish: campaign.isActive,
         notifyOnPublish: false,
@@ -288,7 +300,7 @@ function RecruitmentOpenPage() {
         <Button
           variant="soft"
           size="md"
-          onClick={() => setMode("wizard")}
+          onClick={() => void handleCreateNew()}
           leftIcon={<Icon icon={Plus} size={18} />}
         >
           THÊM MỚI

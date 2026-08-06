@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import AdminLayout from "./layouts/AdminLayout";
 import LoginPage from "./pages/Login";
+import ResetPasswordPage from "./pages/ResetPassword";
 import LandingPage from "./pages/Landing";
 import RecruitmentPage from "./pages/Recruitment";
 import LookupPage from "./pages/Lookup";
@@ -71,6 +72,7 @@ function App() {
         <Route path="/tra-cuu" element={<LookupPage />} />
         {/* Khu quản trị — mọi role dùng chung portal, URL phản ánh trang con */}
         <Route path="/login" element={<LoginRoute />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/admin/*" element={<AdminPortal />} />
         <Route path="/leader/*" element={<AdminPortal />} />
         <Route path="/member/*" element={<AdminPortal />} />

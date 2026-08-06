@@ -49,7 +49,7 @@ function initials(name: string) {
 
 function notifyLabel(status?: NotifyStatus) {
   if (status === "email_sent") return "Đã Gửi Email";
-  if (status === "converted") return "Đã chuyển Member";
+  if (status === "converted") return "Đã vào training";
   return "Chờ Xử Lý";
 }
 
@@ -135,7 +135,7 @@ function buildExportColumns(
       filterOptions: [
         { value: "pending", label: "Chờ Xử Lý" },
         { value: "email_sent", label: "Đã Gửi Email" },
-        { value: "converted", label: "Đã chuyển Member" },
+        { value: "converted", label: "Đã vào training" },
       ],
       defaultSelected: true,
     },
@@ -184,8 +184,38 @@ function RecruitmentResultsPage() {
       showToast("Không có ứng viên phù hợp để gửi email.");
       return;
     }
-    setEmailRecipients(apps.map((a) => applicationToEmailRecipient(a)));
-    setEmailTemplateId(preferredTemplateId ?? "tpl-passed");
+    const passApps = apps.filter(
+      (a) =>
+        a.interviewResult === "pass" ||
+        a.status === "interview_passed" ||
+        a.status === "accepted",
+    );
+    const failApps = apps.filter(
+      (a) =>
+        a.interviewResult === "fail" ||
+        a.status === "interview_failed" ||
+        a.status === "rejected" ||
+        a.status === "cv_failed",
+    );
+    let templateId = preferredTemplateId;
+    let targets = apps;
+    if (!templateId) {
+      if (passApps.length > 0 && failApps.length > 0) {
+        showToast(
+          "Danh sách vừa Pass vừa Fail — gửi riêng từng nhóm hoặc chọn từng người.",
+        );
+        return;
+      }
+      if (failApps.length > 0 && passApps.length === 0) {
+        templateId = "tpl-rejected";
+        targets = failApps;
+      } else {
+        templateId = "tpl-passed";
+        targets = passApps.length > 0 ? passApps : apps;
+      }
+    }
+    setEmailRecipients(targets.map((a) => applicationToEmailRecipient(a)));
+    setEmailTemplateId(templateId);
     setEmailOpen(true);
     setMenuId(null);
   };
@@ -199,6 +229,12 @@ function RecruitmentResultsPage() {
       setApplications(apps as Application[]);
       setSummary(sum as CampaignResultSummary);
       setSelectedIds(new Set());
+    } catch (err) {
+      showToast(
+        err instanceof Error
+          ? `Không tải được kết quả: ${err.message}`
+          : "Không tải được kết quả tuyển dụng.",
+      );
     } finally {
       setLoading(false);
     }
@@ -346,7 +382,17 @@ function RecruitmentResultsPage() {
     try {
       const res = await convertAcceptedToMembers(convertIds);
       await reload(campaignId);
-      showToast(`Đã xác nhận trúng tuyển ${res.converted} ứng viên (nâng Member + bàn giao training).`);
+      if (res.converted === 0) {
+        showToast("Không có ứng viên nào được xác nhận trúng tuyển.");
+      } else if (res.failed > 0) {
+        showToast(
+          `Đã xác nhận ${res.converted} ứng viên; ${res.failed} hồ sơ thất bại.`,
+        );
+      } else {
+        showToast(`Đã xác nhận trúng tuyển ${res.converted} ứng viên → tân binh (vẫn role Ứng viên). Chỉ lên Member sau khi hoàn thành training.`);
+      }
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Xác nhận trúng tuyển thất bại.");
     } finally {
       setBusy(false);
       setConvertIds(null);
@@ -359,7 +405,17 @@ function RecruitmentResultsPage() {
     try {
       const res = await rejectFinalCandidates(rejectIds);
       await reload(campaignId);
-      showToast(`Đã đánh dấu không trúng tuyển ${res.rejected} ứng viên.`);
+      if (res.rejected === 0) {
+        showToast("Không có ứng viên nào bị đánh dấu không trúng tuyển.");
+      } else if (res.failed > 0) {
+        showToast(
+          `Đã đánh dấu ${res.rejected} ứng viên; ${res.failed} hồ sơ thất bại.`,
+        );
+      } else {
+        showToast(`Đã đánh dấu không trúng tuyển ${res.rejected} ứng viên.`);
+      }
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Đánh dấu không trúng tuyển thất bại.");
     } finally {
       setBusy(false);
       setRejectIds(null);
@@ -371,8 +427,8 @@ function RecruitmentResultsPage() {
       <ConfirmDialog
         open={convertIds !== null}
         title="Xác nhận trúng tuyển"
-        message={`Xác nhận ${convertIds?.length ?? 0} ứng viên trúng tuyển? Hệ thống sẽ nâng role Member và đẩy vào danh sách training.`}
-        confirmLabel="Trúng tuyển"
+        message={`Xác nhận ${convertIds?.length ?? 0} ứng viên trúng tuyển? Họ vào Tân binh training, giữ role Ứng viên — chỉ lên Member sau khi hoàn thành training.`}
+        confirmLabel="Trúng tuyển (tân binh)"
         loading={busy}
         onConfirm={confirmConvert}
         onClose={() => setConvertIds(null)}
@@ -478,7 +534,7 @@ function RecruitmentResultsPage() {
                     { value: "", label: "Tất cả" },
                     { value: "pending", label: "Chờ Xử Lý" },
                     { value: "email_sent", label: "Đã Gửi Email" },
-                    { value: "converted", label: "Đã chuyển Member" },
+                    { value: "converted", label: "Đã vào training" },
                   ]}
                   onChange={(notifyStatus) =>
                     setDraft({ ...draft, notifyStatus: notifyStatus as NotifyStatus | "" })
@@ -615,9 +671,17 @@ function RecruitmentResultsPage() {
                               value={app.preferredDepartmentName}
                               onChange={async (e) => {
                                 const dept = e.target.value;
-                                await assignOfficialDepartment(app.id, dept);
-                                await reload(campaignId);
-                                showToast(`Đã chuyển ${app.fullName} sang ban ${dept}.`);
+                                try {
+                                  await assignOfficialDepartment(app.id, dept);
+                                  await reload(campaignId);
+                                  showToast(`Đã chuyển ${app.fullName} sang ban ${dept}.`);
+                                } catch (err) {
+                                  showToast(
+                                    err instanceof Error
+                                      ? err.message
+                                      : "Đổi ban thất bại.",
+                                  );
+                                }
                               }}
                               aria-label={`Đổi ban cho ${app.fullName}`}
                             >
@@ -731,10 +795,19 @@ function RecruitmentResultsPage() {
         preferredTemplateId={emailTemplateId}
         title="Gửi email kết quả tuyển"
         onSent={async (sent) => {
+          if (sent <= 0) return;
           const ids = emailRecipients.map((r) => r.id);
-          await notifyFinalResults(ids);
-          await reload(campaignId);
-          showToast(`Đã gửi email tới ${sent} ứng viên.`);
+          try {
+            await notifyFinalResults(ids);
+            await reload(campaignId);
+            showToast(`Đã gửi email tới ${sent} ứng viên.`);
+          } catch (err) {
+            showToast(
+              err instanceof Error
+                ? `Email đã gửi nhưng cập nhật trạng thái thất bại: ${err.message}`
+                : `Đã gửi ${sent} email nhưng cập nhật trạng thái thất bại.`,
+            );
+          }
         }}
       />
     </>

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import Button from "../../../components/ui/Button";
 import Icon from "../../../components/ui/Icon";
 import ConfirmDialog from "../../../components/ui/ConfirmDialog";
@@ -13,22 +13,38 @@ import type { TrainingProgram } from "../../../types/training";
 import { formatDate } from "../../../utils/formatDate";
 
 /**
- * Portal mentor: member được đẩy quyền mentor tự tạo và quản lý LỘ TRÌNH TRAINING
- * của riêng mình — admin chỉ xem đội và đánh giá, không tạo lộ trình.
+ * Portal mentor: tạo / sửa / xoá lộ trình training của mình.
  */
 function MentorRoadmapPage() {
   const { user } = useAuth();
   const isMentor = user?.isMentor === true;
 
-  const [mode, setMode] = useState<"list" | "create">("list");
+  const [mode, setMode] = useState<"list" | "create" | "edit">("list");
+  const [editing, setEditing] = useState<TrainingProgram | null>(null);
   const [programs, setPrograms] = useState<TrainingProgram[]>([]);
-  // Không phải mentor thì không cần loading (chỉ hiện thông báo)
   const [loading, setLoading] = useState(isMentor);
   const [toast, setToast] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<TrainingProgram | null>(
     null,
   );
   const [deleting, setDeleting] = useState(false);
+
+  const load = useCallback(async () => {
+    try {
+      const all = await getTrainingPrograms();
+      const uid = user?.id ? String(user.id) : "";
+      setPrograms(all.filter((p) => String(p.createdById ?? "") === uid));
+    } catch (err) {
+      setToast(
+        err instanceof Error
+          ? `Không tải được lộ trình: ${err.message}`
+          : "Không tải được danh sách lộ trình.",
+      );
+      window.setTimeout(() => setToast(null), 2500);
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.id]);
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
@@ -46,15 +62,6 @@ function MentorRoadmapPage() {
       setDeleting(false);
     }
   };
-
-  const load = useCallback(async () => {
-    try {
-      const all = await getTrainingPrograms();
-      setPrograms(all.filter((p) => p.createdById === user?.id));
-    } finally {
-      setLoading(false);
-    }
-  }, [user?.id]);
 
   useEffect(() => {
     if (!isMentor) return;
@@ -75,15 +82,24 @@ function MentorRoadmapPage() {
     );
   }
 
-  if (mode === "create") {
+  if (mode === "create" || mode === "edit") {
     return (
       <RoadmapBuilder
-        breadcrumb="Mentor › Lộ trình của tôi › Tạo lộ trình"
-        onCancel={() => setMode("list")}
+        breadcrumb="Mentor › Lộ trình của tôi"
+        initialProgram={mode === "edit" ? editing ?? undefined : undefined}
+        onCancel={() => {
+          setMode("list");
+          setEditing(null);
+        }}
         onSaved={() => {
-          setToast("Đã lưu lộ trình training của bạn.");
+          setToast(
+            mode === "edit"
+              ? "Đã cập nhật lộ trình."
+              : "Đã lưu lộ trình training của bạn.",
+          );
           window.setTimeout(() => setToast(null), 2500);
           setMode("list");
+          setEditing(null);
           void load();
         }}
       />
@@ -104,7 +120,10 @@ function MentorRoadmapPage() {
         </div>
         <Button
           variant="primary"
-          onClick={() => setMode("create")}
+          onClick={() => {
+            setEditing(null);
+            setMode("create");
+          }}
           leftIcon={<Icon icon={Plus} size={18} />}
         >
           Tạo lộ trình mới
@@ -136,11 +155,31 @@ function MentorRoadmapPage() {
           {programs.map((p) => (
             <article key={p.id} className="neu-card !p-5 space-y-3">
               <div className="flex items-start justify-between gap-3">
-                <h2 className="font-display text-lg font-bold">{p.name}</h2>
+                <button
+                  type="button"
+                  className="text-left font-display text-lg font-bold hover:text-accent"
+                  onClick={() => {
+                    setEditing(p);
+                    setMode("edit");
+                  }}
+                >
+                  {p.name}
+                </button>
                 <div className="flex shrink-0 items-center gap-2">
                   <span className="rounded-full bg-accent/15 px-3 py-1 text-xs font-semibold text-accent">
                     {p.departmentName}
                   </span>
+                  <Button
+                    variant="icon"
+                    size="sm"
+                    aria-label={`Sửa lộ trình ${p.name}`}
+                    onClick={() => {
+                      setEditing(p);
+                      setMode("edit");
+                    }}
+                  >
+                    <Icon icon={Pencil} size={15} />
+                  </Button>
                   <Button
                     variant="icon"
                     size="sm"

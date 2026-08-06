@@ -46,37 +46,40 @@ export const SIDEBAR_CONFIG: Record<Role, SidebarConfig> = {
             label: "Kết quả",
             path: ROUTES.admin.recruitment.results,
           },
-            ],
-          },
-          // Members / Permissions / Email Configuration: MOCK FE — ẩn nav đến khi có API thật
-          // Đào tạo thành viên mới (sau trúng tuyển) — không gộp vào Tuyển dụng
-          {
-            id: "training",
-            label: "Đào tạo",
-            icon: "training",
-            path: ROUTES.admin.training.trainees,
-            children: [
               {
                 id: "training-trainees",
-                label: "Danh sách tân binh",
+                label: "Tân binh training",
                 path: ROUTES.admin.training.trainees,
               },
               {
-                id: "training-programs",
-                label: "Lộ trình training",
-                path: ROUTES.admin.training.programs,
-              },
-              {
                 id: "training-teams",
-                label: "Chia đội",
+                label: "Chia đội & phân Mentor",
                 path: ROUTES.admin.training.teams,
               },
               {
                 id: "training-review",
-                label: "Đánh giá tổng kết",
+                label: "Đánh giá training",
                 path: ROUTES.admin.training.review,
               },
             ],
+          },
+          {
+            id: "members",
+            label: "Quản lý thành viên",
+            icon: "members",
+            path: ROUTES.admin.members,
+          },
+          {
+            id: "departments",
+            label: "Quản lý Ban",
+            icon: "members",
+            path: ROUTES.admin.departments,
+          },
+          {
+            id: "permissions",
+            label: "Phân quyền",
+            icon: "permissions",
+            path: ROUTES.admin.permissions,
           },
           {
             id: "settings",
@@ -126,6 +129,12 @@ export const SIDEBAR_CONFIG: Record<Role, SidebarConfig> = {
             path: ROUTES.leader.overview,
           },
           {
+            id: "department-members",
+            label: "Thành viên Ban",
+            icon: "members",
+            path: ROUTES.leader.members,
+          },
+          {
             id: "recruitment",
             label: "Tuyển dụng",
             icon: "recruitment",
@@ -138,32 +147,57 @@ export const SIDEBAR_CONFIG: Record<Role, SidebarConfig> = {
               },
             ],
           },
-        ],
-      },
-      {
-        id: "hoi-vien",
-        label: "HỘI VIÊN",
-        items: [
           {
-            id: "training",
-            label: "Đào tạo thành viên mới",
+            id: "mentor-training",
+            label: "Đào tạo (Mentor)",
             icon: "training",
-            path: ROUTES.leader.training.groups,
+            path: ROUTES.leader.training.programs,
+            mentorOnly: true,
             children: [
               {
+                id: "training-programs",
+                label: "Tạo lộ trình training",
+                path: ROUTES.leader.training.programs,
+                mentorOnly: true,
+              },
+              {
                 id: "training-groups",
-                label: "Quản lý nhóm",
+                label: "Nhóm training phụ trách",
                 path: ROUTES.leader.training.groups,
+                mentorOnly: true,
               },
               {
                 id: "training-tasks",
                 label: "Task training",
                 path: ROUTES.leader.training.tasks,
+                mentorOnly: true,
               },
               {
                 id: "training-evaluation",
-                label: "Đánh giá",
+                label: "Đánh giá tổng kết",
                 path: ROUTES.leader.training.evaluation,
+                mentorOnly: true,
+              },
+            ],
+          },
+          {
+            id: "member-workspace",
+            label: "Không gian Member",
+            icon: "roadmap",
+            path: ROUTES.leader.training.myRoadmap,
+            dualMemberOnly: true,
+            children: [
+              {
+                id: "my-member-roadmap",
+                label: "Lộ trình của tôi",
+                path: ROUTES.leader.training.myRoadmap,
+                dualMemberOnly: true,
+              },
+              {
+                id: "my-member-tasks",
+                label: "Task của tôi",
+                path: ROUTES.leader.training.myTasks,
+                dualMemberOnly: true,
               },
             ],
           },
@@ -219,17 +253,28 @@ export const SIDEBAR_CONFIG: Record<Role, SidebarConfig> = {
             icon: "dashboard",
             path: ROUTES.member.overview,
           },
-          // Trang mentor — CHỈ hiện với member được đẩy quyền mentor
+          {
+            id: "recruitment-interviews",
+            label: "Ca phỏng vấn của tôi",
+            icon: "recruitment",
+            path: ROUTES.member.recruitment.interviews,
+          },
+        ],
+      },
+      {
+        id: "mentor",
+        label: "MENTOR TRAINING",
+        items: [
           {
             id: "mentor-roadmap",
-            label: "Lộ trình mentor",
+            label: "Lộ trình phụ trách",
             icon: "roadmap",
             path: ROUTES.member.mentorRoadmap,
             mentorOnly: true,
           },
           {
             id: "mentor-tasks",
-            label: "Task cho team",
+            label: "Nhóm & task phụ trách",
             icon: "tasks",
             path: ROUTES.member.mentorTasks,
             mentorOnly: true,
@@ -239,7 +284,6 @@ export const SIDEBAR_CONFIG: Record<Role, SidebarConfig> = {
       {
         id: "dao-tao",
         label: "ĐÀO TẠO THÀNH VIÊN MỚI",
-        // Khu tự học của member thường — mentor dẫn team, không học khu này
         hideForMentor: true,
         items: [
           {
@@ -256,7 +300,7 @@ export const SIDEBAR_CONFIG: Record<Role, SidebarConfig> = {
           },
           {
             id: "training-progress",
-            label: "Tiến độ & Trao đổi",
+            label: "Tiến độ & Kết quả",
             icon: "progress",
             path: ROUTES.member.training.progress,
           },
@@ -295,7 +339,7 @@ export const SIDEBAR_CONFIG: Record<Role, SidebarConfig> = {
       },
     ],
   },
-  // Ứng viên (candidate) — chỉ đặt lịch PV + xem hồ sơ
+  // Ứng viên + Tân binh (candidate) — lịch PV, training, hồ sơ
   candidate: {
     brand: { initial: "U", title: "Ứng viên", subtitle: "IU Club Recruitment" },
     sections: [
@@ -307,6 +351,34 @@ export const SIDEBAR_CONFIG: Record<Role, SidebarConfig> = {
             label: "Lịch phỏng vấn",
             icon: "events",
             path: ROUTES.candidate.interview,
+          },
+          {
+            id: "training",
+            label: "Đào tạo tân binh",
+            icon: "training",
+            path: ROUTES.candidate.training,
+            children: [
+              {
+                id: "training-hub",
+                label: "Training của tôi",
+                path: ROUTES.candidate.training,
+              },
+              {
+                id: "training-roadmap",
+                label: "Lộ trình",
+                path: ROUTES.candidate.trainingRoadmap,
+              },
+              {
+                id: "training-tasks",
+                label: "Nhiệm vụ & Bài tập",
+                path: ROUTES.candidate.trainingTasks,
+              },
+              {
+                id: "training-progress",
+                label: "Tiến độ & Kết quả",
+                path: ROUTES.candidate.trainingProgress,
+              },
+            ],
           },
           {
             id: "profile",
@@ -344,13 +416,17 @@ export function findNavIdByPath(role: Role, path: string): string {
   for (const section of SIDEBAR_CONFIG[role].sections) {
     for (const item of section.items) {
       if (item.children) {
-        // Exact trước, sau đó prefix (vd. /applications/app-1)
         const exact = item.children.find((c) => c.path === path);
         if (exact) return exact.id;
-        const nested = item.children.find(
-          (c) => path.startsWith(`${c.path}/`) && c.path !== "/",
-        );
-        if (nested) return nested.id;
+        // Ưu tiên prefix dài nhất (tránh /training khớp trước /training/tasks/…)
+        let best: { id: string; len: number } | null = null;
+        for (const c of item.children) {
+          if (c.path === "/" || !path.startsWith(`${c.path}/`)) continue;
+          if (!best || c.path.length > best.len) {
+            best = { id: c.id, len: c.path.length };
+          }
+        }
+        if (best) return best.id;
       }
       if (item.path === path) return item.id;
       if (path.startsWith(`${item.path}/`) && item.path !== "/") return item.id;

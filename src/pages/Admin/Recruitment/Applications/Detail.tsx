@@ -86,18 +86,21 @@ function ApplicationDetailPage({ applicationId }: Props) {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [detail, ans, crit, score, interviewerList] = await Promise.all([
-        getApplicationById(applicationId),
-        getApplicationAnswers(applicationId),
-        getScreeningCriteria(),
-        getApplicationScore(applicationId),
-        getInterviewers(),
-      ]);
+      // Hồ sơ chính trước — phụ (điểm/answers) fail không làm trắng cả trang
+      const detail = await getApplicationById(applicationId);
       setApp(detail ?? null);
+      setSelectedReviewerIds(detail?.reviewerIds ?? []);
+      if (!detail) return;
+
+      const [ans, crit, score, interviewerList] = await Promise.all([
+        getApplicationAnswers(applicationId).catch(() => [] as ApplicationAnswer[]),
+        getScreeningCriteria().catch(() => [] as ScreeningCriterion[]),
+        getApplicationScore(applicationId).catch(() => undefined),
+        getInterviewers().catch(() => [] as InterviewerRef[]),
+      ]);
       setAnswers(ans);
       setCriteria(crit);
       setReviewers(interviewerList);
-      setSelectedReviewerIds(detail?.reviewerIds ?? []);
       if (score) {
         const map: Record<string, string> = {};
         for (const c of score.criteriaScores) map[c.criteriaId] = String(c.score);
@@ -109,6 +112,13 @@ function ApplicationDetailPage({ applicationId }: Props) {
         setComment("");
         setReviewerName(user?.name ?? "Admin");
       }
+    } catch (err) {
+      setApp(null);
+      showToast(
+        err instanceof Error
+          ? `Không tải được hồ sơ: ${err.message}`
+          : "Không tải được chi tiết hồ sơ.",
+      );
     } finally {
       setLoading(false);
     }
@@ -128,8 +138,10 @@ function ApplicationDetailPage({ applicationId }: Props) {
       score: Number.parseFloat(scores[c.id] || "0") || 0,
     }));
 
+  const canScore = app?.status === "submitted";
+
   const handleSave = async () => {
-    if (!app || !user) return;
+    if (!app || !user || !canScore) return;
     setSaving(true);
     try {
       await saveApplicationScore({
@@ -141,13 +153,15 @@ function ApplicationDetailPage({ applicationId }: Props) {
       });
       showToast("Đã lưu đánh giá.");
       await load();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Lưu đánh giá thất bại.");
     } finally {
       setSaving(false);
     }
   };
 
   const handleDecision = async (result: "pass" | "fail") => {
-    if (!app || !user) return;
+    if (!app || !user || !canScore) return;
     setSaving(true);
     try {
       await saveApplicationScore({
@@ -161,6 +175,14 @@ function ApplicationDetailPage({ applicationId }: Props) {
       showToast(result === "pass" ? "Đã Pass vòng đơn." : "Đã loại hồ sơ.");
       // Quyết định xong → quay về bảng danh sách hồ sơ (chờ 1 nhịp cho toast hiện)
       window.setTimeout(backToList, 900);
+    } catch (err) {
+      showToast(
+        err instanceof Error
+          ? err.message
+          : result === "pass"
+            ? "Pass vòng đơn thất bại."
+            : "Loại hồ sơ thất bại.",
+      );
     } finally {
       setSaving(false);
     }
@@ -229,13 +251,15 @@ function ApplicationDetailPage({ applicationId }: Props) {
             size="md"
             leftIcon={<Icon icon={Send} size={16} />}
             onClick={() => setEmailOpen(true)}
+            title="Gửi email kết quả vòng đơn (Pass / Trượt) — không phải nhắc lịch PV"
           >
-            Gửi email
+            Gửi email vòng đơn
           </Button>
           <Button
             variant="primary"
             size="md"
-            disabled={saving}
+            disabled={saving || !canScore}
+            title={canScore ? "Lưu đánh giá" : "Hồ sơ đã qua vòng đơn — không thể chấm lại"}
             onClick={() => void handleSave()}
           >
             Lưu đánh giá
@@ -437,7 +461,8 @@ function ApplicationDetailPage({ applicationId }: Props) {
                     min={0}
                     max={c.maxScore}
                     step={0.5}
-                    className="neu-input !h-11 max-w-[100px] text-center font-semibold"
+                    disabled={!canScore}
+                    className="neu-input !h-11 max-w-[100px] text-center font-semibold disabled:opacity-60"
                     value={scores[c.id] ?? ""}
                     onChange={(e) => setScores((prev) => ({ ...prev, [c.id]: e.target.value }))}
                     aria-label={c.name}
@@ -459,17 +484,25 @@ function ApplicationDetailPage({ applicationId }: Props) {
               <textarea
                 id="screening-comment"
                 rows={5}
-                className="neu-input !h-auto min-h-[120px] py-3 resize-y text-sm leading-relaxed"
+                disabled={!canScore}
+                className="neu-input !h-auto min-h-[120px] py-3 resize-y text-sm leading-relaxed disabled:opacity-60"
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
                 placeholder="Nhập nhận xét về hồ sơ ứng viên..."
               />
             </div>
 
+            {!canScore && (
+              <p className="text-sm text-muted">
+                Hồ sơ không còn ở trạng thái chờ xét duyệt — không thể lưu điểm hoặc quyết định lại.
+              </p>
+            )}
+
             <div className="flex flex-wrap items-center justify-end gap-3 pt-1">
               <button
                 type="button"
-                disabled={saving}
+                disabled={saving || !canScore}
+                title={canScore ? "Loại hồ sơ" : "Hồ sơ đã qua vòng đơn"}
                 onClick={() => void handleDecision("fail")}
                 className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl px-5 text-sm font-semibold text-white
                   bg-rose-500 shadow-extruded-sm transition-all duration-300
@@ -485,7 +518,8 @@ function ApplicationDetailPage({ applicationId }: Props) {
               </button>
               <button
                 type="button"
-                disabled={saving}
+                disabled={saving || !canScore}
+                title={canScore ? "Pass vòng đơn" : "Hồ sơ đã qua vòng đơn"}
                 onClick={() => void handleDecision("pass")}
                 className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl px-5 text-sm font-semibold text-white
                   bg-accent shadow-extruded-sm transition-all duration-300
@@ -510,8 +544,23 @@ function ApplicationDetailPage({ applicationId }: Props) {
         recipients={[applicationToEmailRecipient(app)]}
         module="recruitment-screening"
         category="recruitment"
-        preferredTemplateId="tpl-screening"
-        title={`Gửi email — ${app.fullName}`}
+        preferredTemplateId={
+          app.status === "cv_failed" || app.screeningResult === "fail"
+            ? "tpl-cv-fail"
+            : app.status === "interview" ||
+                app.status === "interview_passed" ||
+                app.status === "interview_failed" ||
+                app.status === "accepted" ||
+                app.status === "rejected" ||
+                app.screeningResult === "pass"
+              ? "tpl-cv-pass"
+              : "tpl-cv-pass"
+        }
+        title={
+          app.status === "cv_failed" || app.screeningResult === "fail"
+            ? `Gửi email Trượt vòng đơn — ${app.fullName}`
+            : `Gửi email Pass vòng đơn — ${app.fullName}`
+        }
         onSent={(sent) => showToast(`Đã gửi ${sent} email.`)}
       />
     </div>

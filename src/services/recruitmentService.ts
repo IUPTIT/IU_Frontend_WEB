@@ -1,7 +1,7 @@
 // Recruitment (Admin) — campaigns/hồ sơ/câu hỏi/thống kê gọi API thật.
 // Phần chấm điểm vòng đơn & phỏng vấn backend CHƯA có endpoint — các hàm giữ
 // nguyên chữ ký, lưu in-memory (khởi đầu rỗng) để UI hoạt động, sẽ nối API sau.
-import { api } from "../api/client";
+import { api, ApiRequestError } from "../api/client";
 import type {
   Application,
   ApplicationAnswer,
@@ -78,6 +78,7 @@ type BackendApplication = {
   className: string;
   faculty: string;
   phone: string;
+  dateOfBirth?: string | null;
   avatarUrl: string;
   cvUrl: string;
   departmentPreferences: { department: string; priority: number }[];
@@ -210,6 +211,9 @@ function toApplication(a: BackendApplication): Application {
     fullName: a.fullName,
     email: a.email,
     phone: a.phone,
+    dateOfBirth: a.dateOfBirth
+      ? String(a.dateOfBirth).slice(0, 10)
+      : null,
     education: `${a.className} — ${a.faculty}`,
     preferredDepartmentId: preferred ?? "",
     preferredDepartmentName: preferred ?? "",
@@ -383,11 +387,60 @@ export async function getFormQuestions(campaignId: string): Promise<FormQuestion
 // ---- Applications (API thật) ----
 
 async function fetchApplications(campaignId?: string): Promise<BackendApplication[]> {
-  const query = campaignId ? `?campaignId=${campaignId}&limit=100` : "?limit=100";
-  const { applications } = await api.get<{ applications: BackendApplication[]; total: number }>(
-    `/recruitment/applications${query}`,
-  );
-  return applications;
+  const params = new URLSearchParams({ limit: "100", page: "1" });
+  if (campaignId) params.set("campaignId", campaignId);
+  // Lấy đủ trang nếu total > 100
+  const first = await api.get<{
+    applications: BackendApplication[];
+    total: number;
+    page: number;
+    limit: number;
+  }>(`/recruitment/applications?${params.toString()}`);
+  const all = [...first.applications];
+  const total = first.total ?? all.length;
+  const limit = first.limit ?? 100;
+  const pages = Math.ceil(total / limit);
+  for (let page = 2; page <= pages; page += 1) {
+    params.set("page", String(page));
+    const next = await api.get<{ applications: BackendApplication[] }>(
+      `/recruitment/applications?${params.toString()}`,
+    );
+    all.push(...next.applications);
+  }
+  return all;
+}
+
+/** List có phân trang server — dùng cho UI bảng */
+export async function getApplicationsPage(input: {
+  campaignId?: string;
+  department?: string;
+  status?: string;
+  page?: number;
+  limit?: number;
+}): Promise<{
+  items: Application[];
+  total: number;
+  page: number;
+  limit: number;
+}> {
+  const params = new URLSearchParams();
+  if (input.campaignId) params.set("campaignId", input.campaignId);
+  if (input.department) params.set("department", input.department);
+  if (input.status) params.set("status", input.status);
+  params.set("page", String(input.page ?? 1));
+  params.set("limit", String(input.limit ?? 20));
+  const data = await api.get<{
+    applications: BackendApplication[];
+    total: number;
+    page: number;
+    limit: number;
+  }>(`/recruitment/applications?${params.toString()}`);
+  return {
+    items: data.applications.map(toApplication),
+    total: data.total,
+    page: data.page,
+    limit: data.limit,
+  };
 }
 
 export async function getApplications(campaignId?: string): Promise<Application[]> {
@@ -395,15 +448,21 @@ export async function getApplications(campaignId?: string): Promise<Application[
 }
 
 export async function getApplicationById(id: string): Promise<Application | undefined> {
-  const all = await fetchApplications();
-  const found = all.find((a) => a._id === id);
-  return found ? toApplication(found) : undefined;
+  try {
+    const { application } = await api.get<{ application: BackendApplication }>(
+      `/recruitment/applications/${id}`,
+    );
+    return toApplication(application);
+  } catch (err) {
+    if (err instanceof ApiRequestError && err.status === 404) return undefined;
+    throw err;
+  }
 }
 
 export async function getApplicationAnswers(applicationId: string): Promise<ApplicationAnswer[]> {
-  const all = await fetchApplications();
-  const app = all.find((a) => a._id === applicationId);
-  if (!app) return [];
+  const { application: app } = await api.get<{ application: BackendApplication }>(
+    `/recruitment/applications/${applicationId}`,
+  );
   const questions = await getFormQuestions(campaignIdOf(app));
   const answerByField = new Map((app.answers ?? []).map((ans) => [ans.fieldId, ans.value]));
   return questions
@@ -523,6 +582,7 @@ function fromBackendCriteria(
 }
 
 function scorerOf(s: BackendScore): { id: string; name: string } {
+  if (!s.scoredBy) return { id: "", name: "" };
   return typeof s.scoredBy === "string"
     ? { id: s.scoredBy, name: "" }
     : { id: s.scoredBy._id, name: s.scoredBy.name };
@@ -606,9 +666,13 @@ export async function setScreeningDecision(
 
 export async function getInterviewers(): Promise<InterviewerRef[]> {
   const { interviewers } = await api.get<{
-    interviewers: { _id: string; name: string }[];
+    interviewers: { _id: string; name: string; role?: InterviewerRef["role"] }[];
   }>("/recruitment/interviewers");
-  return interviewers.map((u) => ({ id: u._id, name: u.name }));
+  return interviewers.map((u) => ({
+    id: u._id,
+    name: u.name,
+    role: u.role,
+  }));
 }
 
 // ---- Slot phỏng vấn (API thật) ----
@@ -728,8 +792,8 @@ export async function getInterviewDatesWithSlots(campaignId: string): Promise<st
 export type BatchScheduleInput = {
   campaignId: string;
   date: string;
-  startTimes: string[];
-  durationMinutes: number;
+  /** Mỗi phần tử = 1 ca (sáng hoặc chiều) với giờ bắt đầu–kết thúc */
+  sessions: { startTime: string; endTime: string; label?: string }[];
   locationOrLink: string;
   /** Số ứng viên tối đa mỗi ca */
   capacity?: number;
@@ -737,17 +801,19 @@ export type BatchScheduleInput = {
   interviewerIds?: string[];
 };
 
-/** Tạo ca trống + gắn panel interviewer (nếu có) — ứng viên pass vòng đơn tự book */
-export async function createBatchInterviewSlots(input: BatchScheduleInput): Promise<InterviewSlot[]> {
+/** Tạo tối đa 2 ca/ngày (sáng/chiều) + gắn panel interviewer */
+export async function createBatchInterviewSlots(
+  input: BatchScheduleInput,
+): Promise<InterviewSlot[]> {
   const created: InterviewSlot[] = [];
-  for (const startTime of input.startTimes) {
+  for (const session of input.sessions) {
     const { slot } = await api.post<{ slot: BackendSlot }>("/recruitment/slots", {
       campaignId: input.campaignId,
       date: input.date,
-      startTime,
-      endTime: addMinutes(startTime, input.durationMinutes),
+      startTime: session.startTime,
+      endTime: session.endTime,
       location: input.locationOrLink,
-      capacity: input.capacity ?? 1,
+      capacity: input.capacity ?? 8,
       interviewerIds: input.interviewerIds ?? [],
     });
     created.push(toUiSlot(slot, []));
@@ -1191,32 +1257,48 @@ export async function bulkDecideCvByThreshold(
 // Xác nhận trúng tuyển cuối — state machine tự enqueue job nâng role candidate → member
 export async function convertAcceptedToMembers(
   applicationIds: string[],
-): Promise<{ converted: number }> {
+): Promise<{ converted: number; failed: number }> {
   let converted = 0;
+  let failed = 0;
+  const errors: string[] = [];
   for (const id of applicationIds) {
     try {
       await api.post(`/recruitment/applications/${id}/confirm-final`, { status: "admitted" });
       converted += 1;
-    } catch {
-      // hồ sơ chưa đủ điều kiện (chưa passed_interview) — bỏ qua
+    } catch (err) {
+      failed += 1;
+      if (errors.length < 3) {
+        errors.push(err instanceof Error ? err.message : "Lỗi không xác định");
+      }
     }
   }
-  return { converted };
+  if (converted === 0 && failed > 0) {
+    throw new Error(errors[0] ?? "Không xác nhận được ứng viên nào.");
+  }
+  return { converted, failed };
 }
 
 export async function rejectFinalCandidates(
   applicationIds: string[],
-): Promise<{ rejected: number }> {
+): Promise<{ rejected: number; failed: number }> {
   let rejected = 0;
+  let failed = 0;
+  const errors: string[] = [];
   for (const id of applicationIds) {
     try {
       await api.post(`/recruitment/applications/${id}/confirm-final`, { status: "rejected" });
       rejected += 1;
-    } catch {
-      // bỏ qua
+    } catch (err) {
+      failed += 1;
+      if (errors.length < 3) {
+        errors.push(err instanceof Error ? err.message : "Lỗi không xác định");
+      }
     }
   }
-  return { rejected };
+  if (rejected === 0 && failed > 0) {
+    throw new Error(errors[0] ?? "Không đánh dấu được ứng viên nào.");
+  }
+  return { rejected, failed };
 }
 
 export async function assignReviewers(

@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import Button from "../../../../components/ui/Button";
 import Icon from "../../../../components/ui/Icon";
 import ConfirmDialog from "../../../../components/ui/ConfirmDialog";
 import RoadmapBuilder from "../../../../components/RoadmapBuilder";
+import { useAuth } from "../../../../context/useAuth";
 import {
   deleteTrainingProgram,
   getTrainingPrograms,
@@ -11,14 +12,15 @@ import {
 import type { TrainingProgram } from "../../../../types/training";
 import { formatDate } from "../../../../utils/formatDate";
 
-/**
- * BCN UC 33–35: tạo / xem / xoá lộ trình training theo ban
- * (mentor vẫn tạo lộ trình riêng ở portal mentor)
- */
+/** Mentor training tạo / sửa / xoá lộ trình của mình. */
 export default function AdminTrainingProgramsPage() {
-  const [mode, setMode] = useState<"list" | "create">("list");
+  const { user } = useAuth();
+  const isMentor = user?.isMentor === true;
+
+  const [mode, setMode] = useState<"list" | "create" | "edit">("list");
+  const [editing, setEditing] = useState<TrainingProgram | null>(null);
   const [programs, setPrograms] = useState<TrainingProgram[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(isMentor);
   const [toast, setToast] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<TrainingProgram | null>(
     null,
@@ -27,15 +29,39 @@ export default function AdminTrainingProgramsPage() {
 
   const load = useCallback(async () => {
     try {
-      setPrograms(await getTrainingPrograms());
+      const all = await getTrainingPrograms();
+      const uid = user?.id ? String(user.id) : "";
+      setPrograms(all.filter((p) => String(p.createdById ?? "") === uid));
+    } catch (err) {
+      setToast(
+        err instanceof Error
+          ? `Không tải được lộ trình: ${err.message}`
+          : "Không tải được danh sách lộ trình.",
+      );
+      window.setTimeout(() => setToast(null), 2500);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user?.id]);
 
   useEffect(() => {
+    if (!isMentor) return;
     void load();
-  }, [load]);
+  }, [isMentor, load]);
+
+  if (!isMentor) {
+    return (
+      <section className="neu-card !p-10 text-center space-y-3">
+        <h1 className="font-display text-2xl font-extrabold">
+          Lộ trình training
+        </h1>
+        <p className="text-muted mx-auto max-w-md">
+          Chỉ Mentor training được tạo và quản lý lộ trình. Khi được Ban Chủ
+          nhiệm chỉ định làm Mentor, bạn sẽ thiết kế lộ trình tại đây.
+        </p>
+      </section>
+    );
+  }
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
@@ -54,15 +80,24 @@ export default function AdminTrainingProgramsPage() {
     }
   };
 
-  if (mode === "create") {
+  if (mode === "create" || mode === "edit") {
     return (
       <RoadmapBuilder
-        breadcrumb="Đào tạo thành viên mới › Lộ trình training › Tạo"
-        onCancel={() => setMode("list")}
+        breadcrumb="Tuyển dụng › Training tân binh › Lộ trình"
+        initialProgram={mode === "edit" ? editing ?? undefined : undefined}
+        onCancel={() => {
+          setMode("list");
+          setEditing(null);
+        }}
         onSaved={() => {
-          setToast("Đã tạo lộ trình training.");
+          setToast(
+            mode === "edit"
+              ? "Đã cập nhật lộ trình."
+              : "Đã tạo lộ trình training.",
+          );
           window.setTimeout(() => setToast(null), 2500);
           setMode("list");
+          setEditing(null);
           setLoading(true);
           void load();
         }}
@@ -75,19 +110,22 @@ export default function AdminTrainingProgramsPage() {
       <section className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wider text-muted">
-            Đào tạo thành viên mới
+            Tuyển dụng › Training tân binh
           </p>
           <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
             Lộ trình training
           </h1>
           <p className="mt-2 text-muted max-w-xl">
-            Thiết lập chương trình/lộ trình theo ban với các giai đoạn và bài
-            học. Mentor cũng có thể tạo lộ trình riêng cho team mình.
+            Thiết lập lộ trình theo ban cho các team bạn được phân công phụ
+            trách.
           </p>
         </div>
         <Button
           variant="primary"
-          onClick={() => setMode("create")}
+          onClick={() => {
+            setEditing(null);
+            setMode("create");
+          }}
           leftIcon={<Icon icon={Plus} size={18} />}
         >
           Tạo lộ trình
@@ -109,7 +147,7 @@ export default function AdminTrainingProgramsPage() {
         <section className="neu-card !p-10 text-center space-y-3">
           <p className="font-semibold">Chưa có lộ trình nào.</p>
           <p className="text-sm text-muted">
-            Tạo lộ trình theo ban trước khi chia đội, hoặc để mentor tự tạo.
+            Bạn chưa tạo lộ trình nào. Hãy tạo lộ trình cho team mình phụ trách.
           </p>
         </section>
       ) : (
@@ -117,11 +155,31 @@ export default function AdminTrainingProgramsPage() {
           {programs.map((p) => (
             <article key={p.id} className="neu-card !p-5 space-y-3">
               <div className="flex items-start justify-between gap-3">
-                <h2 className="font-display text-lg font-bold">{p.name}</h2>
+                <button
+                  type="button"
+                  className="text-left font-display text-lg font-bold hover:text-accent"
+                  onClick={() => {
+                    setEditing(p);
+                    setMode("edit");
+                  }}
+                >
+                  {p.name}
+                </button>
                 <div className="flex shrink-0 items-center gap-2">
                   <span className="rounded-full bg-accent/15 px-3 py-1 text-xs font-semibold text-accent">
                     {p.departmentName}
                   </span>
+                  <Button
+                    variant="icon"
+                    size="sm"
+                    aria-label={`Sửa lộ trình ${p.name}`}
+                    onClick={() => {
+                      setEditing(p);
+                      setMode("edit");
+                    }}
+                  >
+                    <Icon icon={Pencil} size={15} />
+                  </Button>
                   <Button
                     variant="icon"
                     size="sm"

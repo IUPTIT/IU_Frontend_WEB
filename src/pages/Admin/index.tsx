@@ -1,15 +1,18 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import StatsCards from "./components/StatsCards";
 import RecruitmentFunnel from "./components/RecruitmentFunnel";
 import SubmissionChart from "./components/SubmissionChart";
 import ScoreChart from "./components/ScoreChart";
 import TraineeDonut from "./components/TraineeDonut";
 import ReviewBanner from "./components/ReviewBanner";
-import { DASHBOARD_SEASONS } from "./mockData";
 import Button from "../../components/ui/Button";
 import ExportDataModal, { type ExportColumnDef } from "../../components/ui/ExportDataModal";
 import { usePortalUi } from "../../context/usePortalUi";
 import { ROUTES } from "../../constants/routes";
+import {
+  getDashboardOverview,
+  type DashboardOverview,
+} from "../../services/dashboardService";
 
 type ReportRow = {
   id: string;
@@ -19,11 +22,10 @@ type ReportRow = {
   note: string;
 };
 
-function buildReportRows(seasonId: string): ReportRow[] {
-  const season = DASHBOARD_SEASONS.find((s) => s.id === seasonId) ?? DASHBOARD_SEASONS[0];
+function buildReportRows(overview: DashboardOverview): ReportRow[] {
   const rows: ReportRow[] = [];
 
-  for (const card of season.statCards) {
+  for (const card of overview.statCards) {
     rows.push({
       id: `kpi-${card.id}`,
       section: "KPI",
@@ -32,7 +34,7 @@ function buildReportRows(seasonId: string): ReportRow[] {
       note: card.badge ?? "",
     });
   }
-  for (const stage of season.recruitmentFunnel) {
+  for (const stage of overview.recruitmentFunnel) {
     rows.push({
       id: `funnel-${stage.id}`,
       section: "Phễu tuyển dụng",
@@ -41,7 +43,7 @@ function buildReportRows(seasonId: string): ReportRow[] {
       note: `${stage.percent}%`,
     });
   }
-  for (const w of season.weeklySubmissions) {
+  for (const w of overview.weeklySubmissions) {
     rows.push({
       id: `week-${w.week}`,
       section: "Hồ sơ theo tuần",
@@ -50,13 +52,13 @@ function buildReportRows(seasonId: string): ReportRow[] {
       note: `Qua đơn: ${w.passed}`,
     });
   }
-  for (const d of season.traineeDepartments) {
+  for (const d of overview.traineeDepartments) {
     rows.push({
       id: `dept-${d.id}`,
       section: "Trainee theo ban",
       metric: d.label,
       value: `${d.percent}%`,
-      note: `Tổng trainee: ${season.traineeTotal}`,
+      note: `Tổng trainee: ${overview.traineeTotal}`,
     });
   }
 
@@ -84,16 +86,53 @@ const REPORT_COLUMNS: ExportColumnDef<ReportRow>[] = [
 
 function AdminPage() {
   const { navigate } = usePortalUi();
-  const [seasonId, setSeasonId] = useState(DASHBOARD_SEASONS[0].id);
+  const [overview, setOverview] = useState<DashboardOverview | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [exportOpen, setExportOpen] = useState(false);
   const [exportMsg, setExportMsg] = useState<string | null>(null);
 
-  const season = useMemo(
-    () => DASHBOARD_SEASONS.find((s) => s.id === seasonId) ?? DASHBOARD_SEASONS[0],
-    [seasonId],
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      setOverview(await getDashboardOverview());
+    } catch (err) {
+      setOverview(null);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Không tải được tổng quan hoạt động.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const reportRows = useMemo(
+    () => (overview ? buildReportRows(overview) : []),
+    [overview],
   );
 
-  const reportRows = useMemo(() => buildReportRows(seasonId), [seasonId]);
+  if (loading) {
+    return <div className="neu-card h-64 animate-pulse" aria-busy="true" />;
+  }
+
+  if (!overview) {
+    return (
+      <section className="neu-card !p-10 text-center space-y-3">
+        <h1 className="font-display text-2xl font-extrabold">Tổng quan</h1>
+        <p className="text-muted text-sm">{error ?? "Không có dữ liệu."}</p>
+        <Button variant="secondary" onClick={() => void load()}>
+          Thử lại
+        </Button>
+      </section>
+    );
+  }
 
   return (
     <>
@@ -103,35 +142,14 @@ function AdminPage() {
             Tổng quan Hoạt động
           </h1>
           <p className="mt-2 text-muted max-w-xl">
-            Báo cáo tổng hợp Tuyển dụng &amp; Đào tạo đợt {season.label}.
+            Báo cáo tổng hợp Tuyển dụng &amp; Đào tạo — dữ liệu thật trên hệ
+            thống ({overview.label}).
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-4">
-          <label className="relative">
-            <span className="sr-only">Chọn đợt / mùa</span>
-            <select
-              value={seasonId}
-              onChange={(e) => setSeasonId(e.target.value)}
-              className="neu-btn cursor-pointer appearance-none pr-10 shadow-inset-sm hover:translate-y-0 hover:shadow-inset-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-            >
-              {DASHBOARD_SEASONS.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.label}
-                </option>
-              ))}
-            </select>
-            <svg
-              className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
-              viewBox="0 0 20 20"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              aria-hidden
-            >
-              <path d="m6 8 4 4 4-4" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </label>
-
+          <Button variant="secondary" onClick={() => void load()}>
+            Làm mới
+          </Button>
           <Button
             variant="secondary"
             onClick={() => setExportOpen(true)}
@@ -151,24 +169,37 @@ function AdminPage() {
         </p>
       )}
 
-      <StatsCards cards={season.statCards} />
+      <StatsCards cards={overview.statCards} />
 
       <section className="grid gap-8 lg:grid-cols-[1fr_2fr]">
-        <RecruitmentFunnel stages={season.recruitmentFunnel} />
+        <RecruitmentFunnel stages={overview.recruitmentFunnel} />
         <SubmissionChart
-          weeklyData={season.weeklySubmissions}
-          dailyData={season.dailySubmissions}
-          periodLabel={season.label}
+          weeklyData={overview.weeklySubmissions}
+          dailyData={
+            overview.dailySubmissions.length > 0
+              ? overview.dailySubmissions
+              : overview.weeklySubmissions
+          }
+          periodLabel={overview.label}
         />
       </section>
 
       <section className="grid gap-8 lg:grid-cols-2">
-        <ScoreChart data={season.trainingScores} />
-        <TraineeDonut departments={season.traineeDepartments} total={season.traineeTotal} />
+        {overview.trainingScores.length > 0 ? (
+          <ScoreChart data={overview.trainingScores} />
+        ) : (
+          <section className="neu-card !p-6 text-sm text-muted">
+            Chưa có điểm training trung bình để vẽ biểu đồ.
+          </section>
+        )}
+        <TraineeDonut
+          departments={overview.traineeDepartments}
+          total={overview.traineeTotal}
+        />
       </section>
 
       <ReviewBanner
-        review={season.pendingReview}
+        review={overview.pendingReview}
         onAction={() => navigate(ROUTES.admin.recruitment.interviews)}
       />
 
@@ -179,9 +210,9 @@ function AdminPage() {
         description="Chọn cột và lọc nhóm chỉ số cần xuất:"
         columns={REPORT_COLUMNS}
         rows={reportRows}
-        filenameBase={`bao_cao_${seasonId}`}
+        filenameBase="bao_cao_tong_quan"
         onExported={(n) => {
-          setExportMsg(`Đã tải xuống báo cáo ${season.label} (${n} dòng).`);
+          setExportMsg(`Đã tải xuống báo cáo (${n} dòng).`);
           window.setTimeout(() => setExportMsg(null), 2800);
         }}
       />

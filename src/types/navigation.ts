@@ -6,6 +6,10 @@ export type NavChild = {
   id: string;
   label: string;
   path: string;
+  /** Chỉ hiện trên Leader portal khi user.roles gồm member (dual account) */
+  dualMemberOnly?: boolean;
+  /** Chỉ hiện khi tài khoản có quyền Mentor training. */
+  mentorOnly?: boolean;
 };
 
 export type NavIcon =
@@ -35,6 +39,8 @@ export type NavItem = {
   action?: "navigate" | "logout";
   /** Chỉ hiện khi user.isMentor (member được đẩy quyền mentor) */
   mentorOnly?: boolean;
+  /** Chỉ hiện trên Leader portal khi user.roles gồm member (dual account) */
+  dualMemberOnly?: boolean;
 };
 
 /** Nhóm menu — `label` là heading section (VD: ĐÀO TẠO, CHÍNH); bỏ trống thì không hiện heading */

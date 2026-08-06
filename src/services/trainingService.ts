@@ -112,7 +112,7 @@ function toProgram(p: BackendProgram): TrainingProgram {
     name: p.name,
     departmentId: p.department,
     departmentName: p.department,
-    createdById: p.createdBy ?? undefined,
+    createdById: p.createdBy != null ? String(p.createdBy) : undefined,
     passThresholdPercent: p.passThresholdPercent ?? 80,
     stages: p.stages.map((s) => ({
       id: s.stageId,
@@ -189,8 +189,13 @@ export async function getMyTraining(): Promise<MyTraining | null> {
         groupId: trainee.groupId ?? undefined,
         mentorId: group?.mentorId?._id,
         mentorName: group?.mentorId?.name,
+        avgScore: trainee.mentorScore ?? undefined,
+        mentorNote: trainee.mentorNote || undefined,
+        mentorReviewStatus: trainee.mentorReviewStatus,
         evalStatus: trainee.evalStatus,
         cohortLabel: trainee.cohortLabel || undefined,
+        certificateCode: trainee.certificateCode || undefined,
+        certificateIssuedAt: trainee.certificateIssuedAt ?? undefined,
       },
       group: group
         ? {
@@ -223,6 +228,9 @@ type BackendTaskAssignment = {
   submittedAt: string | null;
   feedback: string;
   score: number | null;
+  reviewedAt?: string | null;
+  workStartedAt?: string | null;
+  progressLogs?: { content: string; createdAt: string }[];
 };
 
 type BackendMentorTask = {
@@ -249,6 +257,9 @@ export type MyMentorTask = {
   submittedAt?: string;
   feedback?: string;
   score?: number;
+  reviewedAt?: string;
+  workStartedAt?: string;
+  progressLogs: { content: string; createdAt: string }[];
 };
 
 function assignmentTraineeId(a: BackendTaskAssignment): string {
@@ -279,6 +290,12 @@ export async function getMyMentorTasks(
       submittedAt: mine?.submittedAt ?? undefined,
       feedback: mine?.feedback || undefined,
       score: mine?.score ?? undefined,
+      reviewedAt: mine?.reviewedAt ?? undefined,
+      workStartedAt: mine?.workStartedAt ?? undefined,
+      progressLogs: (mine?.progressLogs ?? []).map((l) => ({
+        content: l.content,
+        createdAt: l.createdAt,
+      })),
     };
   });
 }
@@ -289,6 +306,14 @@ export async function submitMentorTask(
   input: { submissionUrl?: string; submissionNote?: string },
 ): Promise<void> {
   await api.post(`/training/tasks/${taskId}/submit`, input);
+}
+
+/** Tân binh ghi nhật ký tiến độ (trước khi nộp chính thức) */
+export async function addTaskProgressLog(
+  taskId: string,
+  content: string,
+): Promise<void> {
+  await api.post(`/training/tasks/${taskId}/progress-log`, { content });
 }
 
 // ---- Task mentor giao (phía mentor: giao / xem bài nộp / chấm) ----
@@ -370,6 +395,7 @@ export async function createMentorTask(input: {
   description?: string;
   attachmentUrl?: string;
   deadline?: string;
+  assigneeIds?: string[];
 }): Promise<void> {
   await api.post("/training/tasks", {
     groupId: input.groupId,
@@ -377,6 +403,7 @@ export async function createMentorTask(input: {
     description: input.description ?? "",
     attachmentUrl: input.attachmentUrl ?? "",
     deadline: input.deadline ?? null,
+    ...(input.assigneeIds?.length ? { assigneeIds: input.assigneeIds } : {}),
   });
 }
 
@@ -466,15 +493,14 @@ export async function setMentorFlag(
   await api.patch(`/training/mentors/${userId}`, { isMentor });
 }
 
-/** Random chia đều tân binh chưa có team cho các mentor (mỗi team dùng lộ trình riêng của mentor) */
+/** Tự động chia nhóm — BE chưa có; báo rõ thay vì gọi 404 */
 export async function autoAssignTeams(
-  fallbackProgramId?: string,
-  campaignId?: string,
+  _fallbackProgramId?: string,
+  _campaignId?: string,
 ): Promise<{ assigned: number; mentors: number; groups: unknown[] }> {
-  return api.post("/training/groups/auto-assign", {
-    programId: fallbackProgramId || null,
-    campaignId: campaignId || null,
-  });
+  throw new Error(
+    "Chức năng tự động chia nhóm chưa được bật — hãy tạo nhóm thủ công tại Quản lý nhóm.",
+  );
 }
 
 // ---- Programs ----
@@ -635,6 +661,10 @@ export async function updateTrainingGroup(
     input,
   );
   return toGroup(group);
+}
+
+export async function deleteTrainingGroup(id: string): Promise<void> {
+  await api.delete(`/training/groups/${id}`);
 }
 
 // ---- Đánh giá tổng kết ----

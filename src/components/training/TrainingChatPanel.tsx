@@ -16,6 +16,8 @@ type Props = {
   subtitle?: string;
   /** Poll tin mới (ms). 0 = tắt */
   pollMs?: number;
+  /** Ẩn header ngoài — dùng trong popup widget */
+  embedded?: boolean;
 };
 
 /**
@@ -26,6 +28,7 @@ export default function TrainingChatPanel({
   title = "Trao đổi nhóm",
   subtitle,
   pollMs = 8000,
+  embedded = false,
 }: Props) {
   const { user } = useAuth();
   const myId = user?.id ? String(user.id) : "";
@@ -35,22 +38,26 @@ export default function TrainingChatPanel({
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
-  const listRef = useRef<HTMLDivElement>(null);
 
-  const load = useCallback(async (silent = false) => {
-    if (!silent) setLoading(true);
-    try {
-      const list = await getGroupMessages(groupId);
-      setMessages(list);
-      setError(null);
-    } catch (err) {
-      if (!silent) {
-        setError(err instanceof Error ? err.message : "Không tải được tin nhắn");
+  const load = useCallback(
+    async (silent = false) => {
+      if (!silent) setLoading(true);
+      try {
+        const list = await getGroupMessages(groupId);
+        setMessages(list);
+        setError(null);
+      } catch (err) {
+        if (!silent) {
+          setError(
+            err instanceof Error ? err.message : "Không tải được tin nhắn",
+          );
+        }
+      } finally {
+        if (!silent) setLoading(false);
       }
-    } finally {
-      if (!silent) setLoading(false);
-    }
-  }, [groupId]);
+    },
+    [groupId],
+  );
 
   useEffect(() => {
     void load();
@@ -86,11 +93,19 @@ export default function TrainingChatPanel({
   };
 
   return (
-    <div className="neu-card flex flex-col !p-0 overflow-hidden">
-      <div className="border-b border-foreground/5 px-5 py-3">
-        <h2 className="font-display font-bold">{title}</h2>
-        {subtitle && <p className="text-xs text-muted">{subtitle}</p>}
-      </div>
+    <div
+      className={
+        embedded
+          ? "flex min-h-0 flex-1 flex-col overflow-hidden"
+          : "neu-card flex flex-col !p-0 overflow-hidden"
+      }
+    >
+      {!embedded && (
+        <div className="border-b border-foreground/5 px-5 py-3">
+          <h2 className="font-display font-bold">{title}</h2>
+          {subtitle && <p className="text-xs text-muted">{subtitle}</p>}
+        </div>
+      )}
 
       {error && (
         <p className="mx-4 mt-3 rounded-xl bg-rose-500/10 px-3 py-2 text-sm text-rose-600">
@@ -99,8 +114,11 @@ export default function TrainingChatPanel({
       )}
 
       <div
-        ref={listRef}
-        className="flex h-[min(52vh,360px)] min-h-[200px] flex-col gap-2.5 overflow-y-auto px-4 py-4"
+        className={
+          embedded
+            ? "flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto px-4 py-4"
+            : "flex h-[min(52vh,360px)] min-h-[200px] flex-col gap-2.5 overflow-y-auto px-4 py-4"
+        }
       >
         {loading ? (
           <div className="m-auto h-16 w-full max-w-xs animate-pulse rounded-2xl bg-background shadow-inset-sm" />

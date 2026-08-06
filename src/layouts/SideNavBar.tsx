@@ -56,14 +56,31 @@ function SideNavBar({ role, variant = "rail" }: Props) {
   } = usePortalUi();
   const { logout, user } = useAuth();
   const isMentor = user?.isMentor === true;
+  const hasMemberCapability =
+    (user?.roles?.includes("member") ?? false) || user?.role === "member";
 
   const { brand: baseBrand, sections: allSections } = SIDEBAR_CONFIG[role];
   // Sidebar theo vai trò thực tế: mentor thấy khu mentor, member thường thấy khu đào tạo
+  // Leader dual: hiện thêm mục Member workspace khi roles gồm member
   const sections = allSections
     .filter((s) => !(isMentor && s.hideForMentor))
     .map((s) => ({
       ...s,
-      items: s.items.filter((i) => !i.mentorOnly || isMentor),
+      items: s.items
+        .filter((i) => (!i.mentorOnly || isMentor) && (!i.dualMemberOnly || hasMemberCapability))
+        .map((i) =>
+          i.children
+            ? {
+                ...i,
+                children: i.children.filter(
+                  (c) =>
+                    (!c.dualMemberOnly || hasMemberCapability) &&
+                    (!c.mentorOnly || isMentor),
+                ),
+              }
+            : i,
+        )
+        .filter((i) => !i.children || i.children.length > 0),
     }))
     .filter((s) => s.items.length > 0);
   const brand =

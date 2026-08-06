@@ -6,6 +6,7 @@ import Icon from "../../../../components/ui/Icon";
 import Select from "../../../../components/ui/Select";
 import SendEmailModal from "../../../../components/ui/SendEmailModal";
 import { usePortalUi } from "../../../../context/usePortalUi";
+import { useToast } from "../../../../context/useToast";
 import { ROUTES } from "../../../../constants/routes";
 import ExportDataModal, { type ExportColumnDef } from "../../../../components/ui/ExportDataModal";
 import {
@@ -95,6 +96,7 @@ const EXPORT_COLUMNS: ExportColumnDef<InterviewResultRowUi>[] = [
 
 function RecruitmentInterviewsPage() {
   const { navigate } = usePortalUi();
+  const toastApi = useToast();
   const [tab, setTab] = useState<TabId>("schedule");
   const [campaigns, setCampaigns] = useState<RecruitmentCampaign[]>([]);
   const [campaignId, setCampaignId] = useState("");
@@ -132,8 +134,7 @@ function RecruitmentInterviewsPage() {
   const [unbookedBusy, setUnbookedBusy] = useState(false);
 
   const showToast = (msg: string) => {
-    setToast(msg);
-    window.setTimeout(() => setToast(null), 2800);
+    toastApi.info(msg);
   };
 
   useEffect(() => {
@@ -175,6 +176,12 @@ function RecruitmentInterviewsPage() {
       setCandidates(apps);
       setUnbooked(waiting);
       setResultRows(results);
+    } catch (err) {
+      showToast(
+        err instanceof Error
+          ? `Không tải được lịch PV: ${err.message}`
+          : "Không tải được lịch phỏng vấn.",
+      );
     } finally {
       setLoading(false);
     }
@@ -398,8 +405,25 @@ function RecruitmentInterviewsPage() {
                   showToast("Chưa có ứng viên đã duyệt kết quả PV để gửi email.");
                   return;
                 }
+                const passRows = rows.filter(
+                  (x) =>
+                    x.row.applicationStatus === "passed_interview" ||
+                    x.row.applicationStatus === "admitted",
+                );
+                const failRows = rows.filter(
+                  (x) =>
+                    x.row.applicationStatus === "failed_interview" ||
+                    x.row.applicationStatus === "rejected",
+                );
+                if (passRows.length > 0 && failRows.length > 0) {
+                  showToast(
+                    "Danh sách vừa Pass vừa Fail — gửi riêng từng nhóm (lọc theo kết quả).",
+                  );
+                  return;
+                }
+                const target = passRows.length > 0 ? passRows : failRows;
                 setEmailRecipients(
-                  rows.map(({ row, app }) =>
+                  target.map(({ row, app }) =>
                     applicationToEmailRecipient(app, {
                       interview_date: formatDate(row.slotDate),
                       interview_time: row.slotTime,
@@ -410,7 +434,7 @@ function RecruitmentInterviewsPage() {
                     }),
                   ),
                 );
-                setEmailTpl("tpl-passed");
+                setEmailTpl(passRows.length > 0 ? "tpl-passed" : "tpl-rejected");
                 setEmailOpen(true);
               }}
             >
@@ -671,11 +695,11 @@ function RecruitmentInterviewsPage() {
           const created = await createBatchInterviewSlots({ campaignId, ...payload });
           await reloadSlots(campaignId);
           setSelectedDate(payload.date);
-          showToast(
-            `Đã tạo ${created.length} ca` +
+          toastApi.created(
+            `${created.length} ca phỏng vấn` +
               (payload.interviewerIds.length
-                ? ` · ${payload.interviewerIds.length} người PV mỗi ca.`
-                : " · chưa gán người PV (phân công sau trên từng ca)."),
+                ? ` · ${payload.interviewerIds.length} người PV`
+                : ""),
           );
         }}
       />
@@ -688,7 +712,7 @@ function RecruitmentInterviewsPage() {
         onSubmit={async (slotId, list) => {
           await assignInterviewersToSlot(slotId, list);
           await reloadSlots(campaignId);
-          showToast("Đã phân công người phỏng vấn.");
+          toastApi.updated("phân công người phỏng vấn");
         }}
       />
 
@@ -700,7 +724,7 @@ function RecruitmentInterviewsPage() {
           await rescheduleInterviewSlot(slotId, patch);
           await reloadSlots(campaignId);
           setSelectedDate(patch.date);
-          showToast("Đã cập nhật ca phỏng vấn.");
+          toastApi.updated("ca phỏng vấn");
         }}
       />
 
@@ -731,10 +755,10 @@ function RecruitmentInterviewsPage() {
           try {
             await deleteInterviewSlot(deleteSlotTarget.id);
             await reloadSlots(campaignId);
-            showToast("Đã xoá ca phỏng vấn.");
+            toastApi.deleted("ca phỏng vấn");
             setDeleteSlotTarget(null);
           } catch (err) {
-            showToast(err instanceof Error ? err.message : "Xoá ca thất bại.");
+            toastApi.error(err instanceof Error ? err.message : "Xoá ca thất bại.");
           } finally {
             setDeletingSlot(false);
           }
@@ -751,8 +775,27 @@ function RecruitmentInterviewsPage() {
         preferredTemplateId={emailTpl}
         title="Gửi email phỏng vấn"
         onSent={async (sent) => {
-          await notifyInterviewResults(emailRecipients.map((r) => r.id));
-          showToast(`Đã gửi email tới ${sent} ứng viên.`);
+          if (sent <= 0) return;
+          // Thư mời PV — không stamp kết quả
+          if (emailTpl === "tpl-interview") {
+            showToast(`Đã gửi thư mời tới ${sent} ứng viên.`);
+            return;
+          }
+          // Kết quả Pass / Fail đều stamp đã gửi email kết quả
+          if (emailTpl !== "tpl-passed" && emailTpl !== "tpl-rejected") {
+            showToast(`Đã gửi ${sent} email.`);
+            return;
+          }
+          try {
+            await notifyInterviewResults(emailRecipients.map((r) => r.id));
+            showToast(`Đã gửi email kết quả tới ${sent} ứng viên.`);
+          } catch (err) {
+            showToast(
+              err instanceof Error
+                ? `Email đã gửi nhưng cập nhật trạng thái thất bại: ${err.message}`
+                : `Đã gửi ${sent} email nhưng cập nhật trạng thái thất bại.`,
+            );
+          }
         }}
       />
     </>
