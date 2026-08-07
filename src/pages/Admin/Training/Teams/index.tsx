@@ -7,6 +7,7 @@ import Avatar from "../../../../components/ui/Avatar";
 import Select from "../../../../components/ui/Select";
 import ConfirmDialog from "../../../../components/ui/ConfirmDialog";
 import { usePortalUi } from "../../../../context/usePortalUi";
+import { useToast } from "../../../../context/useToast";
 import EditGroupModal from "./components/EditGroupModal";
 import CreateGroupModal from "./components/CreateGroupModal";
 import MentorManageModal from "./components/MentorManageModal";
@@ -145,6 +146,7 @@ function GroupDetailModal({
 
 function TrainingTeamsPage() {
   const { search } = usePortalUi();
+  const toast = useToast();
   const [campaigns, setCampaigns] = useState<RecruitmentCampaign[]>([]);
   // Đợt tuyển: user chọn thì ưu tiên, không thì lấy đợt đang mở / mới nhất
   const [campaignIdOverride, setCampaignIdOverride] = useState("");
@@ -169,12 +171,6 @@ function TrainingTeamsPage() {
   const [editGroup, setEditGroup] = useState<TrainingGroup | null>(null);
   const [deleteGroup, setDeleteGroup] = useState<TrainingGroup | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
-
-  const showToast = (msg: string) => {
-    setToast(msg);
-    window.setTimeout(() => setToast(null), 2500);
-  };
 
   // loading khởi tạo true — refresh sau thao tác giữ nguyên dữ liệu cũ
   const load = useCallback(async () => {
@@ -193,7 +189,7 @@ function TrainingTeamsPage() {
       setDepartments(d);
     } catch (err) {
       // Không báo lỗi thì state rỗng và form tạo đội trông như bị hỏng
-      setToast(
+      toast.error(
         err instanceof Error
           ? `Không tải được dữ liệu: ${err.message}`
           : "Không tải được dữ liệu đào tạo.",
@@ -201,7 +197,7 @@ function TrainingTeamsPage() {
     } finally {
       setLoading(false);
     }
-  }, [campaignId]);
+  }, [campaignId, toast]);
 
   useEffect(() => {
     let alive = true;
@@ -238,14 +234,10 @@ function TrainingTeamsPage() {
 
       <section className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
-            Danh sách Đội Training
-          </h1>
-          <div className="mt-2 flex flex-wrap items-center gap-2 text-muted">
-            <span>
-              Tạo đội → thêm tân binh → chỉ định Mentor training từ Member CLB.
-              Mentor là quyền training độc lập, không phải Leader Ban.
-            </span>
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
+              Danh sách Đội Training
+            </h1>
             <Select
               value={campaignId}
               options={campaigns.map((c) => ({ value: c.id, label: c.name }))}
@@ -256,6 +248,9 @@ function TrainingTeamsPage() {
               triggerClassName="!shadow-extruded-sm !h-10 text-accent !font-semibold"
             />
           </div>
+          <p className="mt-2 text-sm text-muted max-w-xl">
+            Tạo đội, thêm tân binh và chỉ định Mentor cho từng đội.
+          </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button
@@ -272,9 +267,9 @@ function TrainingTeamsPage() {
               if (groups.length === 0) return;
               try {
                 const res = await notifyTrainingGroups(groups.map((g) => g.id));
-                showToast(`Đã gửi thông báo tới ${res.sent} đội.`);
+                toast.success(`Đã gửi thông báo tới ${res.sent} đội.`);
               } catch (err) {
-                showToast(
+                toast.error(
                   err instanceof Error
                     ? err.message
                     : "Gửi thông báo thất bại — thử lại.",
@@ -305,15 +300,6 @@ function TrainingTeamsPage() {
           </Button>
         </div>
       </section>
-
-      {toast && (
-        <p
-          className="rounded-2xl bg-accent/10 px-4 py-3 text-sm text-accent"
-          role="status"
-        >
-          {toast}
-        </p>
-      )}
 
       {loading ? (
         <div className="neu-card h-64 animate-pulse" aria-busy="true" />
@@ -424,11 +410,11 @@ function TrainingTeamsPage() {
             setDeleting(true);
             try {
               await deleteTrainingGroup(deleteGroup.id);
-              showToast(`Đã xóa đội "${deleteGroup.name}".`);
+              toast.success(`Đã xóa đội "${deleteGroup.name}".`);
               setDeleteGroup(null);
               void load();
             } catch (err) {
-              showToast(
+              toast.error(
                 err instanceof Error ? err.message : "Xóa đội thất bại.",
               );
             } finally {
@@ -447,7 +433,7 @@ function TrainingTeamsPage() {
         programs={programs}
         onClose={() => setEditGroup(null)}
         onSaved={(msg) => {
-          showToast(msg);
+          toast.success(msg);
           void load();
         }}
       />
@@ -460,7 +446,7 @@ function TrainingTeamsPage() {
         campaignId={campaignId || undefined}
         onClose={() => setCreateOpen(false)}
         onSaved={(msg) => {
-          showToast(msg);
+          toast.success(msg);
           void load();
         }}
       />

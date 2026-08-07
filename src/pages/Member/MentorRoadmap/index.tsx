@@ -5,6 +5,7 @@ import Icon from "../../../components/ui/Icon";
 import ConfirmDialog from "../../../components/ui/ConfirmDialog";
 import RoadmapBuilder from "../../../components/RoadmapBuilder";
 import { useAuth } from "../../../context/useAuth";
+import { useToast } from "../../../context/useToast";
 import {
   deleteTrainingProgram,
   getTrainingPrograms,
@@ -17,13 +18,13 @@ import { formatDate } from "../../../utils/formatDate";
  */
 function MentorRoadmapPage() {
   const { user } = useAuth();
+  const toast = useToast();
   const isMentor = user?.isMentor === true;
 
   const [mode, setMode] = useState<"list" | "create" | "edit">("list");
   const [editing, setEditing] = useState<TrainingProgram | null>(null);
   const [programs, setPrograms] = useState<TrainingProgram[]>([]);
   const [loading, setLoading] = useState(isMentor);
-  const [toast, setToast] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<TrainingProgram | null>(
     null,
   );
@@ -35,29 +36,26 @@ function MentorRoadmapPage() {
       const uid = user?.id ? String(user.id) : "";
       setPrograms(all.filter((p) => String(p.createdById ?? "") === uid));
     } catch (err) {
-      setToast(
+      toast.error(
         err instanceof Error
           ? `Không tải được lộ trình: ${err.message}`
           : "Không tải được danh sách lộ trình.",
       );
-      window.setTimeout(() => setToast(null), 2500);
     } finally {
       setLoading(false);
     }
-  }, [user?.id]);
+  }, [user?.id, toast]);
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
     setDeleting(true);
     try {
       await deleteTrainingProgram(deleteTarget.id);
-      setToast(`Đã xóa lộ trình "${deleteTarget.name}".`);
-      window.setTimeout(() => setToast(null), 2500);
+      toast.success(`Đã xóa lộ trình "${deleteTarget.name}".`);
       setDeleteTarget(null);
       void load();
     } catch (err) {
-      setToast(err instanceof Error ? err.message : "Xóa lộ trình thất bại.");
-      window.setTimeout(() => setToast(null), 2500);
+      toast.error(err instanceof Error ? err.message : "Xóa lộ trình thất bại.");
     } finally {
       setDeleting(false);
     }
@@ -92,12 +90,11 @@ function MentorRoadmapPage() {
           setEditing(null);
         }}
         onSaved={() => {
-          setToast(
+          toast.success(
             mode === "edit"
               ? "Đã cập nhật lộ trình."
               : "Đã lưu lộ trình training của bạn.",
           );
-          window.setTimeout(() => setToast(null), 2500);
           setMode("list");
           setEditing(null);
           void load();
@@ -113,9 +110,8 @@ function MentorRoadmapPage() {
           <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
             Lộ trình của tôi
           </h1>
-          <p className="mt-2 text-muted max-w-xl">
-            Mỗi mentor có cách training riêng — lộ trình mới nhất của bạn sẽ tự
-            áp dụng cho team khi Ban Chủ nhiệm chia đội.
+          <p className="mt-2 text-sm text-muted max-w-xl">
+            Lộ trình mới nhất tự áp dụng cho team khi được chia đội.
           </p>
         </div>
         <Button
@@ -129,15 +125,6 @@ function MentorRoadmapPage() {
           Tạo lộ trình mới
         </Button>
       </section>
-
-      {toast && (
-        <p
-          className="rounded-2xl bg-accent/10 px-4 py-3 text-sm text-accent"
-          role="status"
-        >
-          {toast}
-        </p>
-      )}
 
       {loading ? (
         <div className="neu-card h-64 animate-pulse" aria-busy="true" />

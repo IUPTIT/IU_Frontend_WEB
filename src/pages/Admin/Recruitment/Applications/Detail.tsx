@@ -5,6 +5,7 @@ import Icon from "../../../../components/ui/Icon";
 import SendEmailModal from "../../../../components/ui/SendEmailModal";
 import { useAuth } from "../../../../context/useAuth";
 import { usePortalUi } from "../../../../context/usePortalUi";
+import { useToast } from "../../../../context/useToast";
 import { ROUTES } from "../../../../constants/routes";
 import {
   getApplicationAnswers,
@@ -63,6 +64,7 @@ function AttachmentIcon({ kind }: { kind: ApplicationAttachment["kind"] }) {
 function ApplicationDetailPage({ applicationId }: Props) {
   const { navigate } = usePortalUi();
   const { user } = useAuth();
+  const toast = useToast();
 
   const [app, setApp] = useState<Application | null>(null);
   const [answers, setAnswers] = useState<ApplicationAnswer[]>([]);
@@ -72,15 +74,13 @@ function ApplicationDetailPage({ applicationId }: Props) {
   const [reviewerName, setReviewerName] = useState("Admin");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
   const [emailOpen, setEmailOpen] = useState(false);
   const [reviewers, setReviewers] = useState<InterviewerRef[]>([]);
   const [selectedReviewerIds, setSelectedReviewerIds] = useState<string[]>([]);
   const [assigning, setAssigning] = useState(false);
 
   const showToast = (msg: string) => {
-    setToast(msg);
-    window.setTimeout(() => setToast(null), 2500);
+    toast.info(msg);
   };
 
   const load = useCallback(async () => {
@@ -266,12 +266,6 @@ function ApplicationDetailPage({ applicationId }: Props) {
           </Button>
         </div>
       </header>
-
-      {toast && (
-        <p className="rounded-2xl bg-accent/10 px-4 py-3 text-sm text-accent" role="status">
-          {toast}
-        </p>
-      )}
 
       <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(0,1fr)]">
         {/* Left column */}

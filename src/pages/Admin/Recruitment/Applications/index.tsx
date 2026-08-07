@@ -8,6 +8,7 @@ import Select from "../../../../components/ui/Select";
 import SendEmailModal from "../../../../components/ui/SendEmailModal";
 import { ROUTES } from "../../../../constants/routes";
 import { usePortalUi } from "../../../../context/usePortalUi";
+import { useToast } from "../../../../context/useToast";
 import { getApplications, getCampaigns, bulkDecideCvByThreshold } from "../../../../services/recruitmentService";
 import type { Application, ApplicationStatus, RecruitmentCampaign } from "../../../../types/recruitment";
 import { applicationToEmailRecipient } from "../../../../utils/emailRecipients";
@@ -90,6 +91,7 @@ function buildApplicationExportColumns(
 
 function RecruitmentApplicationsPage() {
   const { search, navigate } = usePortalUi();
+  const toast = useToast();
   const [campaigns, setCampaigns] = useState<RecruitmentCampaign[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
   // campaignId dẫn xuất: user chọn thì ưu tiên, không thì lấy đợt đang mở / mới nhất
@@ -105,7 +107,6 @@ function RecruitmentApplicationsPage() {
   const [page, setPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [exportOpen, setExportOpen] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
   const [bulkOpen, setBulkOpen] = useState(false);
   const [bulkThreshold, setBulkThreshold] = useState("7");
   const [bulkBusy, setBulkBusy] = useState(false);
@@ -118,10 +119,8 @@ function RecruitmentApplicationsPage() {
   const [appliedFilter, setAppliedFilter] = useState<ApplicationFilterDraft>(EMPTY_FILTER);
 
   const showToast = (msg: string) => {
-    setToast(msg);
-    window.setTimeout(() => setToast(null), 2800);
+    toast.info(msg);
   };
-
 
   const loadApplications = useCallback(async (id: string) => {
     try {
@@ -300,12 +299,11 @@ function RecruitmentApplicationsPage() {
         onClose={() => setBulkOpen(false)}
       />
       <section className="flex flex-wrap items-end justify-between gap-4">
-        <div className="min-w-0 space-y-3">
-          <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
-            Danh sách ứng tuyển
-          </h1>
-          <div className="flex flex-wrap items-center gap-2 text-muted">
-            <span className="text-sm sm:text-base">Quản lý và duyệt hồ sơ ứng viên</span>
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
+              Danh sách ứng tuyển
+            </h1>
             <Select
               value={campaignId}
               options={campaignOptions}
@@ -384,12 +382,6 @@ function RecruitmentApplicationsPage() {
           </Button>
         </div>
       </section>
-
-      {toast && (
-        <p className="rounded-2xl bg-accent/10 px-4 py-3 text-sm text-accent" role="status">
-          {toast}
-        </p>
-      )}
 
       {loading ? (
         <div className="neu-card h-64 animate-pulse" aria-busy="true" aria-label="Đang tải" />

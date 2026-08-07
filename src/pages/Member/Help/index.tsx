@@ -16,14 +16,16 @@ const FAQS = [
 export default function Page() {
   return (
     <div className="space-y-6">
-      <header className="space-y-1">
-        <h1 className="font-display text-3xl font-extrabold tracking-tight">
-          Trợ giúp Member
-        </h1>
-        <p className="text-muted text-sm max-w-xl">
-          Hướng dẫn nhanh cho thành viên / mentor trên Member Portal.
+      <div>
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
+            Trợ giúp Member
+          </h1>
+        </div>
+        <p className="mt-2 text-sm text-muted max-w-xl">
+          Hướng dẫn nhanh cho thành viên và mentor trên Member Portal.
         </p>
-      </header>
+      </div>
       <section className="neu-card !p-5 space-y-3">
         <h2 className="font-display text-lg font-bold">Câu hỏi thường gặp</h2>
         <ul className="space-y-3">

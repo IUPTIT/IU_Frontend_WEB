@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../../../context/useAuth";
 import { usePortalUi } from "../../../../context/usePortalUi";
+import { useToast } from "../../../../context/useToast";
 import { ROUTES } from "../../../../constants/routes";
 import { getMyInterviewSlots } from "../../../../services/recruitmentService";
 import type { InterviewSlot } from "../../../../types/recruitment";
@@ -14,26 +15,25 @@ import InterviewSlotCard from "../../../Admin/Recruitment/Interviews/components/
 export default function LeaderRecruitmentInterviewsPage() {
   const { user } = useAuth();
   const { navigate } = usePortalUi();
+  const toast = useToast();
   const slotPath =
     user?.role === "member"
       ? ROUTES.member.recruitment.interviewSlot
       : ROUTES.leader.recruitment.interviewSlot;
   const [slots, setSlots] = useState<InterviewSlot[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
       setSlots(await getMyInterviewSlots());
-      setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Không tải được ca PV");
+      toast.error(err instanceof Error ? err.message : "Không tải được ca PV");
       setSlots([]);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     void load();
@@ -55,20 +55,15 @@ export default function LeaderRecruitmentInterviewsPage() {
         <nav className="text-sm text-muted">
           Tuyển dụng › <span className="text-foreground/80">Ca của tôi</span>
         </nav>
-        <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
-          Ca phỏng vấn của tôi
-        </h1>
-        <p className="text-muted text-sm max-w-2xl">
-          Các ca Ban Chủ nhiệm đã phân bạn phụ trách — xem ứng viên và chấm điểm.
-          Bạn không tạo/sửa ca tại đây.
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
+            Ca phỏng vấn của tôi
+          </h1>
+        </div>
+        <p className="text-muted text-sm max-w-xl">
+          Ca do BCN phân công — chỉ xem ứng viên và chấm điểm.
         </p>
       </header>
-
-      {error && (
-        <p className="rounded-2xl bg-rose-500/10 px-4 py-3 text-sm text-rose-600">
-          {error}
-        </p>
-      )}
 
       {loading ? (
         <div className="neu-card h-48 animate-pulse" aria-busy="true" />

@@ -61,14 +61,16 @@ export default function MemberOverviewPage() {
 
   return (
     <section className="space-y-6">
-      <header className="space-y-1">
-        <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
-          Tổng quan
-        </h1>
-        <p className="text-muted">
+      <div>
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
+            Tổng quan
+          </h1>
+        </div>
+        <p className="mt-2 text-sm text-muted max-w-xl">
           Theo dõi tiến độ đào tạo thành viên mới của bạn.
         </p>
-      </header>
+      </div>
 
       {loading ? (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

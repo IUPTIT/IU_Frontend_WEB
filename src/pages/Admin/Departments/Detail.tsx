@@ -5,6 +5,7 @@ import Icon from "../../../components/ui/Icon";
 import Select from "../../../components/ui/Select";
 import { ROUTES } from "../../../constants/routes";
 import { usePortalUi } from "../../../context/usePortalUi";
+import { useToast } from "../../../context/useToast";
 import { formatDate } from "../../../utils/formatDate";
 import {
   appointLeader,
@@ -30,22 +31,17 @@ export default function AdminDepartmentDetailPage({
   departmentId: string;
 }) {
   const { navigate } = usePortalUi();
+  const toast = useToast();
   const [tab, setTab] = useState<Tab>("members");
   const [dept, setDept] = useState<ClubDepartment | null>(null);
   const [members, setMembers] = useState<DepartmentMember[]>([]);
   const [unassigned, setUnassigned] = useState<DepartmentMember[]>([]);
   const [history, setHistory] = useState<LeadershipHistoryEvent[]>([]);
   const [loading, setLoading] = useState(true);
-  const [toast, setToast] = useState<string | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
   const [appointUserId, setAppointUserId] = useState("");
   const [termLabel, setTermLabel] = useState("");
   const [busy, setBusy] = useState(false);
-
-  const showToast = (msg: string) => {
-    setToast(msg);
-    window.setTimeout(() => setToast(null), 2800);
-  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -61,11 +57,11 @@ export default function AdminDepartmentDetailPage({
       setUnassigned(u);
       setHistory(h);
     } catch (err) {
-      showToast(err instanceof Error ? err.message : "Không tải được Ban");
+      toast.error(err instanceof Error ? err.message : "Không tải được Ban");
     } finally {
       setLoading(false);
     }
-  }, [departmentId]);
+  }, [departmentId, toast]);
 
   useEffect(() => {
     void load();
@@ -90,10 +86,10 @@ export default function AdminDepartmentDetailPage({
         await assignMemberToDepartment(id, departmentId);
       }
       setSelected([]);
-      showToast(`Đã gán ${selected.length} thành viên vào Ban.`);
+      toast.success(`Đã gán ${selected.length} thành viên vào Ban.`);
       await load();
     } catch (err) {
-      showToast(err instanceof Error ? err.message : "Gán thất bại");
+      toast.error(err instanceof Error ? err.message : "Gán thất bại");
     } finally {
       setBusy(false);
     }
@@ -104,10 +100,10 @@ export default function AdminDepartmentDetailPage({
     setBusy(true);
     try {
       await removeMemberFromDepartment(userId);
-      showToast("Đã gỡ khỏi Ban.");
+      toast.success("Đã gỡ khỏi Ban.");
       await load();
     } catch (err) {
-      showToast(err instanceof Error ? err.message : "Gỡ thất bại");
+      toast.error(err instanceof Error ? err.message : "Gỡ thất bại");
     } finally {
       setBusy(false);
     }
@@ -115,7 +111,7 @@ export default function AdminDepartmentDetailPage({
 
   const handleAppoint = async () => {
     if (!appointUserId) {
-      showToast("Chọn thành viên thuộc Ban.");
+      toast.info("Chọn thành viên thuộc Ban.");
       return;
     }
     setBusy(true);
@@ -128,10 +124,10 @@ export default function AdminDepartmentDetailPage({
       });
       setAppointUserId("");
       setTermLabel("");
-      showToast("Đã chỉ định Leader.");
+      toast.success("Đã chỉ định Leader.");
       await load();
     } catch (err) {
-      showToast(err instanceof Error ? err.message : "Chỉ định thất bại");
+      toast.error(err instanceof Error ? err.message : "Chỉ định thất bại");
     } finally {
       setBusy(false);
     }
@@ -144,10 +140,10 @@ export default function AdminDepartmentDetailPage({
     setBusy(true);
     try {
       await revokeLeader(departmentId, userId);
-      showToast("Đã thu hồi vai trò Leader.");
+      toast.success("Đã thu hồi vai trò Leader.");
       await load();
     } catch (err) {
-      showToast(err instanceof Error ? err.message : "Thu hồi thất bại");
+      toast.error(err instanceof Error ? err.message : "Thu hồi thất bại");
     } finally {
       setBusy(false);
     }
@@ -187,20 +183,16 @@ export default function AdminDepartmentDetailPage({
         <nav className="text-sm text-muted">
           Quản lý Ban › <span className="text-foreground/80">{dept.name}</span>
         </nav>
-        <h1 className="font-display text-3xl font-extrabold tracking-tight">
-          {dept.name}
-        </h1>
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
+            {dept.name}
+          </h1>
+        </div>
         <p className="text-sm text-muted">
           {dept.field || dept.code}
           {dept.headUserName ? ` · Leader: ${dept.headUserName}` : " · Chưa có Leader"}
         </p>
       </header>
-
-      {toast && (
-        <p className="rounded-2xl bg-accent/10 px-4 py-3 text-sm text-accent">
-          {toast}
-        </p>
-      )}
 
       <div className="flex flex-wrap gap-2 rounded-2xl bg-background p-1 shadow-inset-sm">
         {tabs.map((t) => (

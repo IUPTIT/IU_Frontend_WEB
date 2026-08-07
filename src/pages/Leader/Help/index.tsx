@@ -16,11 +16,13 @@ const FAQS = [
 export default function Page() {
   return (
     <div className="space-y-6">
-      <header className="space-y-1">
-        <h1 className="font-display text-3xl font-extrabold tracking-tight">
-          Trợ giúp Leader
-        </h1>
-        <p className="text-muted text-sm max-w-xl">
+      <header>
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
+            Trợ giúp Leader
+          </h1>
+        </div>
+        <p className="mt-2 text-sm text-muted max-w-xl">
           Hướng dẫn nhanh cho Trưởng ban / Mentor trên Leader Portal.
         </p>
       </header>

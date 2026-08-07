@@ -4,6 +4,7 @@ import Avatar from "../../../../components/ui/Avatar";
 import Badge from "../../../../components/ui/Badge";
 import Button from "../../../../components/ui/Button";
 import Icon from "../../../../components/ui/Icon";
+import { useToast } from "../../../../context/useToast";
 import {
   confirmTrainingCompletion,
   getMentorTasks,
@@ -26,16 +27,11 @@ const EVAL_LABEL: Record<string, string> = {
  * Không fake soft-skill 3 trục: chỉ mentorScore + thống kê task.
  */
 export default function LeaderTrainingEvaluationPage() {
+  const toast = useToast();
   const [trainees, setTrainees] = useState<Trainee[]>([]);
   const [tasks, setTasks] = useState<MentorTask[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [toast, setToast] = useState<string | null>(null);
-
-  const showToast = (msg: string) => {
-    setToast(msg);
-    window.setTimeout(() => setToast(null), 2800);
-  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -50,11 +46,11 @@ export default function LeaderTrainingEvaluationPage() {
         prev && list.some((t) => t.id === prev) ? prev : (list[0]?.id ?? null),
       );
     } catch (err) {
-      showToast(err instanceof Error ? err.message : "Tải danh sách thất bại");
+      toast.error(err instanceof Error ? err.message : "Tải danh sách thất bại");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     void load();
@@ -76,20 +72,16 @@ export default function LeaderTrainingEvaluationPage() {
           <nav className="text-sm text-muted">
             Đào tạo › <span className="text-foreground/80">Đánh giá</span>
           </nav>
-          <h1 className="font-display text-3xl font-extrabold tracking-tight">
-            Đánh giá tổng kết Training
-          </h1>
-          <p className="text-sm text-muted">
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
+              Đánh giá tổng kết Training
+            </h1>
+          </div>
+          <p className="text-sm text-muted max-w-xl">
             Chọn tân binh — ghi điểm quá trình & nhận xét gửi Ban Chủ nhiệm
           </p>
         </div>
       </header>
-
-      {toast && (
-        <div className="rounded-2xl bg-accent/15 px-4 py-2 text-sm font-medium text-accent">
-          {toast}
-        </div>
-      )}
 
       {trainees.length === 0 ? (
         <div className="neu-card !p-10 text-center text-muted">
@@ -143,10 +135,7 @@ export default function LeaderTrainingEvaluationPage() {
               key={selected.id}
               trainee={selected}
               tasks={tasks}
-              onChanged={(msg) => {
-                showToast(msg);
-                void load();
-              }}
+              onChanged={() => void load()}
             />
           )}
         </div>
@@ -162,8 +151,9 @@ function EvalDetail({
 }: {
   trainee: Trainee;
   tasks: MentorTask[];
-  onChanged: (msg: string) => void;
+  onChanged: () => void;
 }) {
+  const toast = useToast();
   const [score, setScore] = useState(
     trainee.avgScore != null ? String(trainee.avgScore) : "",
   );
@@ -217,11 +207,11 @@ function EvalDetail({
   const handleSave = async (submit: boolean) => {
     const parsed = score.trim() === "" ? undefined : Number.parseFloat(score);
     if (parsed != null && (Number.isNaN(parsed) || parsed < 0 || parsed > 10)) {
-      onChanged("Điểm phải từ 0 đến 10.");
+      toast.error("Điểm phải từ 0 đến 10.");
       return;
     }
     if (!note.trim() && parsed == null) {
-      onChanged("Nhập nhận xét tổng thể (bắt buộc khi đánh giá).");
+      toast.error("Nhập nhận xét tổng thể (bắt buộc khi đánh giá).");
       return;
     }
     setSaving(true);
@@ -231,13 +221,14 @@ function EvalDetail({
         note: note.trim(),
         submit,
       });
-      onChanged(
+      toast.success(
         submit
           ? `Đã gửi đánh giá của ${trainee.fullName} lên BCN.`
           : `Đã lưu nháp cho ${trainee.fullName}.`,
       );
+      onChanged();
     } catch (err) {
-      onChanged(err instanceof Error ? err.message : "Lưu thất bại.");
+      toast.error(err instanceof Error ? err.message : "Lưu thất bại.");
     } finally {
       setSaving(false);
     }
@@ -247,9 +238,10 @@ function EvalDetail({
     setSaving(true);
     try {
       await confirmTrainingCompletion(trainee.id, note.trim());
-      onChanged(`Đã xác nhận hoàn thành training cho ${trainee.fullName}.`);
+      toast.success(`Đã xác nhận hoàn thành training cho ${trainee.fullName}.`);
+      onChanged();
     } catch (err) {
-      onChanged(err instanceof Error ? err.message : "Xác nhận thất bại.");
+      toast.error(err instanceof Error ? err.message : "Xác nhận thất bại.");
     } finally {
       setSaving(false);
     }

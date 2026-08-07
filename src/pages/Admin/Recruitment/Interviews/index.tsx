@@ -249,16 +249,16 @@ function RecruitmentInterviewsPage() {
       </nav>
 
       <section className="flex flex-wrap items-end justify-between gap-4">
-        <div className="space-y-2 min-w-0">
-          <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
-            {tab === "schedule" ? "Lịch phỏng vấn" : "Kết quả phỏng vấn"}
-          </h1>
-          <div className="flex flex-wrap items-center gap-2 text-muted text-sm sm:text-base">
-            <span>Đợt tuyển</span>
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
+              {tab === "schedule" ? "Lịch phỏng vấn" : "Kết quả phỏng vấn"}
+            </h1>
             <Select
               value={campaignId}
               options={campaigns.map((c) => ({ value: c.id, label: c.name }))}
               onChange={setCampaignId}
+              ariaLabel="Chọn đợt tuyển"
               className="min-w-[200px]"
               triggerClassName="!h-10 !shadow-extruded-sm text-accent !font-semibold"
             />

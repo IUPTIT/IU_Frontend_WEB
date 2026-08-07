@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import TrainingChatWidget from "../../../components/training/TrainingChatWidget";
 import { useAuth } from "../../../context/useAuth";
+import { useToast } from "../../../context/useToast";
 import {
   getMentorTasks,
   getMyTeamTrainees,
@@ -19,18 +20,13 @@ import {
 /** Portal mentor: KPI + giao task + bảng theo dõi — data thật + linh vật chat */
 function MentorTasksPage() {
   const { user } = useAuth();
+  const toast = useToast();
   const canManage = user?.isMentor === true || user?.role === "admin";
 
   const [tasks, setTasks] = useState<MentorTask[]>([]);
   const [groups, setGroups] = useState<TrainingGroup[]>([]);
   const [teamTrainees, setTeamTrainees] = useState<Trainee[]>([]);
   const [loading, setLoading] = useState(canManage);
-  const [toast, setToast] = useState<string | null>(null);
-
-  const showToast = (msg: string) => {
-    setToast(msg);
-    window.setTimeout(() => setToast(null), 2500);
-  };
 
   const load = useCallback(async () => {
     const [t, g, tt] = await Promise.all([
@@ -96,24 +92,16 @@ function MentorTasksPage() {
 
   return (
     <div className="space-y-6">
-      <header className="space-y-1">
-        <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
-          Quản lý Task Training
-        </h1>
-        <p className="text-muted max-w-2xl text-sm">
-          Giao bài tập và theo dõi tiến độ chi tiết của tân binh trong nhóm bạn
-          phụ trách.
+      <div>
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
+            Quản lý Task Training
+          </h1>
+        </div>
+        <p className="mt-2 text-sm text-muted max-w-xl">
+          Giao bài tập và theo dõi tiến độ tân binh trong nhóm bạn phụ trách.
         </p>
-      </header>
-
-      {toast && (
-        <p
-          className="rounded-2xl bg-accent/10 px-4 py-3 text-sm text-accent"
-          role="status"
-        >
-          {toast}
-        </p>
-      )}
+      </div>
 
       {groups.length === 0 ? (
         <section className="neu-card !p-8 text-center">
@@ -130,14 +118,14 @@ function MentorTasksPage() {
               groups={groups}
               trainees={teamTrainees}
               onCreated={() => {
-                showToast("Đã giao task.");
+                toast.success("Đã giao task.");
                 reload();
               }}
             />
             <TaskTrackingBoard
               rows={rows}
               onReviewed={() => {
-                showToast("Đã lưu kết quả chấm.");
+                toast.success("Đã lưu kết quả chấm.");
                 reload();
               }}
             />

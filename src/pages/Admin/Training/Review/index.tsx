@@ -19,6 +19,7 @@ import Pagination from "../../../../components/ui/Pagination";
 import Select from "../../../../components/ui/Select";
 import SendEmailModal from "../../../../components/ui/SendEmailModal";
 import { usePortalUi } from "../../../../context/usePortalUi";
+import { useToast } from "../../../../context/useToast";
 import useCountUp from "../../../../hooks/useCountUp";
 import {
   getTrainees,
@@ -120,6 +121,7 @@ function StatCard({
 
 function TrainingReviewPage() {
   const { search } = usePortalUi();
+  const toast = useToast();
   const [campaigns, setCampaigns] = useState<RecruitmentCampaign[]>([]);
   // Đợt tuyển: user chọn thì ưu tiên, không thì lấy đợt đang mở / mới nhất
   const [campaignIdOverride, setCampaignIdOverride] = useState("");
@@ -145,7 +147,6 @@ function TrainingReviewPage() {
   const [applied, setApplied] = useState<DraftFilter>(EMPTY);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [exportOpen, setExportOpen] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
   const [emailOpen, setEmailOpen] = useState(false);
   const [emailRecipients, setEmailRecipients] = useState<EmailRecipient[]>([]);
   const [detailTrainee, setDetailTrainee] = useState<Trainee | null>(null);
@@ -154,11 +155,6 @@ function TrainingReviewPage() {
     useState<PenaltyActionType>("final_reminder");
   const [penaltyReason, setPenaltyReason] = useState("");
   const [penaltySaving, setPenaltySaving] = useState(false);
-
-  const showToast = (msg: string) => {
-    setToast(msg);
-    window.setTimeout(() => setToast(null), 2800);
-  };
 
   // loading khởi tạo true — refresh sau thao tác giữ nguyên bảng cũ
   const load = useCallback(async () => {
@@ -170,7 +166,7 @@ function TrainingReviewPage() {
       setTrainees(list);
       setSummary(sum);
     } catch (err) {
-      showToast(
+      toast.error(
         err instanceof Error
           ? `Không tải được đánh giá: ${err.message}`
           : "Không tải được dữ liệu đánh giá training.",
@@ -178,7 +174,7 @@ function TrainingReviewPage() {
     } finally {
       setLoading(false);
     }
-  }, [campaignId]);
+  }, [campaignId, toast]);
 
   useEffect(() => {
     let alive = true;
@@ -305,16 +301,16 @@ function TrainingReviewPage() {
         ? [...selected]
         : filtered.filter((t) => t.evalStatus === "qualified").map((t) => t.id);
     if (ids.length === 0) {
-      showToast("Không có học viên đủ điều kiện để cấp chứng nhận.");
+      toast.info("Không có học viên đủ điều kiện để cấp chứng nhận.");
       return;
     }
     try {
       const res = await issueCertificates(ids);
       await load();
       setSelected(new Set());
-      showToast(`Đã cấp chứng nhận cho ${res.issued} học viên.`);
+      toast.success(`Đã cấp chứng nhận cho ${res.issued} học viên.`);
     } catch (err) {
-      showToast(
+      toast.error(
         err instanceof Error ? err.message : "Cấp chứng nhận thất bại.",
       );
     }
@@ -326,24 +322,24 @@ function TrainingReviewPage() {
   ) => {
     try {
       await setTraineeEvalStatus(traineeId, evalStatus);
-      showToast(
+      toast.success(
         evalStatus === "qualified"
           ? "Đã đánh dấu Đạt."
           : "Đã đánh dấu Chưa đạt.",
       );
       await load();
     } catch (err) {
-      showToast(err instanceof Error ? err.message : "Cập nhật thất bại.");
+      toast.error(err instanceof Error ? err.message : "Cập nhật thất bại.");
     }
   };
 
   const handlePenalty = async () => {
     if (!penaltyTarget || !penaltyReason.trim()) {
-      showToast("Vui lòng nhập lý do xử lý.");
+      toast.info("Vui lòng nhập lý do xử lý.");
       return;
     }
     if (penaltyAction === "extend_once" && penaltyTarget.extendedOnce) {
-      showToast("Tân binh này đã được gia hạn 1 lần.");
+      toast.info("Tân binh này đã được gia hạn 1 lần.");
       return;
     }
     setPenaltySaving(true);
@@ -352,7 +348,7 @@ function TrainingReviewPage() {
         action: penaltyAction,
         reason: penaltyReason.trim(),
       });
-      showToast(
+      toast.success(
         penaltyAction === "remove_from_club"
           ? `Đã loại ${penaltyTarget.fullName} khỏi CLB.`
           : penaltyAction === "extend_once"
@@ -363,7 +359,7 @@ function TrainingReviewPage() {
       setPenaltyReason("");
       await load();
     } catch (err) {
-      showToast(err instanceof Error ? err.message : "Xử lý thất bại.");
+      toast.error(err instanceof Error ? err.message : "Xử lý thất bại.");
     } finally {
       setPenaltySaving(false);
     }
@@ -373,11 +369,10 @@ function TrainingReviewPage() {
     <>
       <section className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
-            Đánh giá &amp; Hoàn thành
-          </h1>
-          <div className="mt-2 flex flex-wrap items-center gap-2 text-muted">
-            <span>Tổng kết đợt training — theo dõi tiến độ tân binh.</span>
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
+              Đánh giá &amp; Hoàn thành
+            </h1>
             <Select
               value={campaignId}
               options={campaigns.map((c) => ({ value: c.id, label: c.name }))}
@@ -388,6 +383,9 @@ function TrainingReviewPage() {
               triggerClassName="!shadow-extruded-sm !h-10 text-accent !font-semibold"
             />
           </div>
+          <p className="mt-2 text-sm text-muted max-w-xl">
+            Tổng kết đợt training — theo dõi tiến độ tân binh.
+          </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button
@@ -410,7 +408,7 @@ function TrainingReviewPage() {
                   ? trainees.filter((t) => selected.has(t.id))
                   : filtered;
               if (list.length === 0) {
-                showToast(
+                toast.info(
                   "Chọn học viên hoặc để trống để gửi theo bộ lọc hiện tại.",
                 );
                 return;
@@ -431,15 +429,6 @@ function TrainingReviewPage() {
           </Button>
         </div>
       </section>
-
-      {toast && (
-        <p
-          className="rounded-2xl bg-accent/10 px-4 py-3 text-sm text-accent"
-          role="status"
-        >
-          {toast}
-        </p>
-      )}
 
       <div className="grid gap-4 sm:grid-cols-3">
         <StatCard title="Tổng tân binh" value={summary.totalTrainees} />
@@ -879,7 +868,7 @@ function TrainingReviewPage() {
         columns={exportColumns}
         rows={filtered}
         filenameBase="danh_gia_training"
-        onExported={(n) => showToast(`Đã tải xuống ${n} dòng (CSV).`)}
+        onExported={(n) => toast.success(`Đã tải xuống ${n} dòng (CSV).`)}
       />
 
       <SendEmailModal
@@ -890,7 +879,7 @@ function TrainingReviewPage() {
         category="training"
         preferredTemplateId="tpl-training-complete"
         title="Gửi email training"
-        onSent={(sent) => showToast(`Đã gửi email tới ${sent} học viên.`)}
+        onSent={(sent) => toast.success(`Đã gửi email tới ${sent} học viên.`)}
       />
     </>
   );

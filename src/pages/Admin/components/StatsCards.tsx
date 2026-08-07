@@ -77,29 +77,32 @@ function StatCardItem({ card }: { card: StatCard }) {
   const display = card.decimals ? value.toFixed(card.decimals) : value;
 
   return (
-    <article className="neu-card neu-card-hover !p-5">
-      <div className="flex items-start justify-between gap-3">
+    <article className="neu-card neu-card-hover !p-5 flex flex-col gap-4">
+      <div className="flex items-center justify-between gap-3">
         <span className={`flex h-11 w-11 items-center justify-center rounded-xl ${t.icon}`}>
           <Icon icon={icons[card.icon]} size={20} />
         </span>
-        {card.badge && (
-          <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${t.icon}`}>
-            {card.badge}
-          </span>
-        )}
+        <span className={`h-2 w-2 rounded-full ${t.tick}`} aria-hidden />
       </div>
-      <p className={`stat-num mt-4 text-[2rem] leading-none ${t.value}`}>
-        {display}
-        {card.suffix ?? ""}
-      </p>
-      <p className="mt-1.5 text-sm font-medium text-muted">{card.label}</p>
+      <div>
+        <p className={`stat-num text-[2rem] leading-none ${t.value}`}>
+          {display}
+          {card.suffix ?? ""}
+        </p>
+        <p className="mt-1.5 text-sm font-medium text-muted">{card.label}</p>
+      </div>
+      {card.badge && (
+        <p className="mt-auto border-t border-black/5 pt-3 text-xs font-medium text-muted">
+          {card.badge}
+        </p>
+      )}
     </article>
   );
 }
 
 function StatsCards({ cards }: { cards: StatCard[] }) {
   return (
-    <section className="grid gap-4 sm:gap-6 sm:grid-cols-2 xl:grid-cols-4">
+    <section className="grid gap-4 sm:gap-6 grid-cols-2 lg:grid-cols-4">
       {cards.map((card) => (
         <StatCardItem key={card.id} card={card} />
       ))}

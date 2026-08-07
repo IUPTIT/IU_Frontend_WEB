@@ -53,10 +53,16 @@ function CandidateProfilePage() {
 
   return (
     <>
-      <section className="space-y-2">
-        <h1 className="font-display text-3xl font-extrabold tracking-tight">Hồ sơ của tôi</h1>
-        <p className="text-muted">Thông tin hồ sơ ứng tuyển và trạng thái hiện tại</p>
-      </section>
+      <div>
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
+            Hồ sơ của tôi
+          </h1>
+        </div>
+        <p className="mt-2 text-sm text-muted max-w-xl">
+          Thông tin hồ sơ ứng tuyển và trạng thái hiện tại.
+        </p>
+      </div>
 
       <section className="neu-card !p-6">
         <Row label="Mã hồ sơ" value={application.applicationCode ?? "—"} />

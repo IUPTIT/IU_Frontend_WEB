@@ -15,6 +15,7 @@ import MetricCard from "../../../components/ui/MetricCard";
 import Pagination from "../../../components/ui/Pagination";
 import Select from "../../../components/ui/Select";
 import { usePortalUi } from "../../../context/usePortalUi";
+import { useToast } from "../../../context/useToast";
 import { getDepartments } from "../../../services/departmentsService";
 import { validatePersonName } from "../../../utils/validateContact";
 import {
@@ -257,6 +258,7 @@ function CreateAccountDrawer({
 
 function AdminPermissionsPage() {
   const { search } = usePortalUi();
+  const toast = useToast();
   const [accounts, setAccounts] = useState<ManagedAccount[]>([]);
   const [departments, setDepartments] = useState<ClubDepartment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -264,14 +266,8 @@ function AdminPermissionsPage() {
   const [roleFilter, setRoleFilter] = useState<AccountRole | "">("");
   const [draftRole, setDraftRole] = useState<AccountRole | "">("");
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
   const [revokeTarget, setRevokeTarget] = useState<ManagedAccount | null>(null);
   const [revoking, setRevoking] = useState(false);
-
-  const showToast = (msg: string) => {
-    setToast(msg);
-    window.setTimeout(() => setToast(null), 2800);
-  };
 
   // loading khởi tạo true — refresh sau thao tác giữ nguyên bảng cũ
   const load = useCallback(async () => {
@@ -283,7 +279,7 @@ function AdminPermissionsPage() {
       setAccounts(accs);
       setDepartments(depts);
     } catch (err) {
-      showToast(
+      toast.error(
         err instanceof Error
           ? `Không tải được tài khoản: ${err.message}`
           : "Không tải được danh sách phân quyền.",
@@ -291,7 +287,7 @@ function AdminPermissionsPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     void load();
@@ -342,25 +338,19 @@ function AdminPermissionsPage() {
     <>
       <section className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
-            Phân quyền &amp; Tài khoản
-          </h1>
-          <p className="mt-2 text-muted max-w-xl">
-            Cấp tài khoản Member/Admin và quản lý quyền truy cập portal. Leader chỉ
-            được chỉ định tại màn Quản lý Ban; Mentor training được cấp riêng tại
-            màn Chia đội.
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
+              Phân quyền &amp; Tài khoản
+            </h1>
+          </div>
+          <p className="mt-2 text-sm text-muted max-w-xl">
+            Cấp tài khoản Member/Admin và quản lý quyền truy cập portal.
           </p>
         </div>
         <Button variant="primary" onClick={() => setDrawerOpen(true)} leftIcon={<Icon icon={Plus} size={18} />}>
           Cấp tài khoản
         </Button>
       </section>
-
-      {toast && (
-        <p className="rounded-2xl bg-accent/10 px-4 py-3 text-sm text-accent" role="status">
-          {toast}
-        </p>
-      )}
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard label="Tổng TK" value={counts.all} tone="slate" icon={Users} />
@@ -452,7 +442,7 @@ function AdminPermissionsPage() {
                         onChange={async (role) => {
                           await updateAccountRole(a.id, role as AccountRole);
                           await load();
-                          showToast(`Đã đổi role ${a.fullName} → ${ROLE_LABEL[role as AccountRole]}.`);
+                          toast.success(`Đã đổi role ${a.fullName} → ${ROLE_LABEL[role as AccountRole]}.`);
                         }}
                         className="min-w-[120px]"
                         triggerClassName="!h-9 !text-xs"
@@ -498,7 +488,7 @@ function AdminPermissionsPage() {
           try {
             await deactivateAccount(revokeTarget.id);
             await load();
-            showToast("Đã thu hồi tài khoản.");
+            toast.success("Đã thu hồi tài khoản.");
           } finally {
             setRevoking(false);
             setRevokeTarget(null);
@@ -511,7 +501,7 @@ function AdminPermissionsPage() {
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         onCreated={() => {
-          showToast("Đã tạo tài khoản thành công.");
+          toast.success("Đã tạo tài khoản thành công.");
           void load();
         }}
         departments={departments}

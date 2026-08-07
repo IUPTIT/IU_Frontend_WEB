@@ -5,6 +5,7 @@ import Icon from "../../../../components/ui/Icon";
 import ConfirmDialog from "../../../../components/ui/ConfirmDialog";
 import RoadmapBuilder from "../../../../components/RoadmapBuilder";
 import { useAuth } from "../../../../context/useAuth";
+import { useToast } from "../../../../context/useToast";
 import {
   deleteTrainingProgram,
   getTrainingPrograms,
@@ -16,12 +17,12 @@ import { formatDate } from "../../../../utils/formatDate";
 export default function AdminTrainingProgramsPage() {
   const { user } = useAuth();
   const isMentor = user?.isMentor === true;
+  const toast = useToast();
 
   const [mode, setMode] = useState<"list" | "create" | "edit">("list");
   const [editing, setEditing] = useState<TrainingProgram | null>(null);
   const [programs, setPrograms] = useState<TrainingProgram[]>([]);
   const [loading, setLoading] = useState(isMentor);
-  const [toast, setToast] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<TrainingProgram | null>(
     null,
   );
@@ -33,16 +34,15 @@ export default function AdminTrainingProgramsPage() {
       const uid = user?.id ? String(user.id) : "";
       setPrograms(all.filter((p) => String(p.createdById ?? "") === uid));
     } catch (err) {
-      setToast(
+      toast.error(
         err instanceof Error
           ? `Không tải được lộ trình: ${err.message}`
           : "Không tải được danh sách lộ trình.",
       );
-      window.setTimeout(() => setToast(null), 2500);
     } finally {
       setLoading(false);
     }
-  }, [user?.id]);
+  }, [user?.id, toast]);
 
   useEffect(() => {
     if (!isMentor) return;
@@ -68,13 +68,11 @@ export default function AdminTrainingProgramsPage() {
     setDeleting(true);
     try {
       await deleteTrainingProgram(deleteTarget.id);
-      setToast(`Đã xóa lộ trình "${deleteTarget.name}".`);
-      window.setTimeout(() => setToast(null), 2500);
+      toast.success(`Đã xóa lộ trình "${deleteTarget.name}".`);
       setDeleteTarget(null);
       void load();
     } catch (err) {
-      setToast(err instanceof Error ? err.message : "Xóa thất bại.");
-      window.setTimeout(() => setToast(null), 2500);
+      toast.error(err instanceof Error ? err.message : "Xóa thất bại.");
     } finally {
       setDeleting(false);
     }
@@ -90,12 +88,11 @@ export default function AdminTrainingProgramsPage() {
           setEditing(null);
         }}
         onSaved={() => {
-          setToast(
+          toast.success(
             mode === "edit"
               ? "Đã cập nhật lộ trình."
               : "Đã tạo lộ trình training.",
           );
-          window.setTimeout(() => setToast(null), 2500);
           setMode("list");
           setEditing(null);
           setLoading(true);
@@ -112,12 +109,13 @@ export default function AdminTrainingProgramsPage() {
           <p className="text-xs font-semibold uppercase tracking-wider text-muted">
             Tuyển dụng › Training tân binh
           </p>
-          <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
-            Lộ trình training
-          </h1>
-          <p className="mt-2 text-muted max-w-xl">
-            Thiết lập lộ trình theo ban cho các team bạn được phân công phụ
-            trách.
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
+              Lộ trình training
+            </h1>
+          </div>
+          <p className="mt-2 text-sm text-muted max-w-xl">
+            Thiết lập lộ trình theo ban cho các team bạn phụ trách.
           </p>
         </div>
         <Button
@@ -131,15 +129,6 @@ export default function AdminTrainingProgramsPage() {
           Tạo lộ trình
         </Button>
       </section>
-
-      {toast && (
-        <p
-          className="rounded-2xl bg-accent/10 px-4 py-3 text-sm text-accent"
-          role="status"
-        >
-          {toast}
-        </p>
-      )}
 
       {loading ? (
         <div className="neu-card h-64 animate-pulse" aria-busy="true" />

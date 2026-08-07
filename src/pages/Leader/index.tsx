@@ -128,13 +128,14 @@ export default function LeaderOverviewPage() {
   if (!user?.isMentor) {
     return (
       <section className="space-y-6">
-        <header className="space-y-1">
-          <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
-            Tổng quan Leader Ban
-          </h1>
-          <p className="text-muted">
-            Quản lý thành viên trong Ban bạn đang phụ trách. Quyền Mentor
-            training được cấp riêng bởi BCN.
+        <header>
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
+              Tổng quan Leader Ban
+            </h1>
+          </div>
+          <p className="mt-2 text-sm text-muted max-w-xl">
+            Quản lý thành viên Ban; quyền Mentor do BCN cấp riêng.
           </p>
         </header>
         <div className="neu-card !p-6">
@@ -153,13 +154,15 @@ export default function LeaderOverviewPage() {
 
   return (
     <section className="space-y-6">
-      <header className="space-y-1">
-        <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
-          Leader Dashboard — Tổng quan
-        </h1>
-        <p className="text-muted">
-          {greetingLabel()}, {firstName}. Đây là tình hình đội ngũ training của
-          bạn hôm nay.
+      <header>
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
+            Leader Dashboard — Tổng quan
+          </h1>
+        </div>
+        <p className="mt-2 text-sm text-muted max-w-xl">
+          {greetingLabel()}, {firstName}. Tình hình đội ngũ training của bạn hôm
+          nay.
         </p>
       </header>
 

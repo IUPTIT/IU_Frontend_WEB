@@ -4,6 +4,7 @@ import Button from "../../../../components/ui/Button";
 import Icon from "../../../../components/ui/Icon";
 import Pagination from "../../../../components/ui/Pagination";
 import { usePortalUi } from "../../../../context/usePortalUi";
+import { useToast } from "../../../../context/useToast";
 import {
   createCampaign,
   deleteCampaign,
@@ -26,10 +27,10 @@ const PAGE_SIZE = 5;
 
 function RecruitmentOpenPage() {
   const { search } = usePortalUi();
+  const toast = useToast();
   const [campaigns, setCampaigns] = useState<RecruitmentCampaign[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
-  const [toast, setToast] = useState<string | null>(null);
   const [mode, setMode] = useState<"list" | "wizard">("list");
   // Đợt đang sửa (null = tạo mới) + draft prefill cho wizard
   const [editing, setEditing] = useState<RecruitmentCampaign | null>(null);
@@ -37,8 +38,7 @@ function RecruitmentOpenPage() {
   const [editLocks, setEditLocks] = useState<{ nameAndOpen?: boolean; questions?: boolean }>({});
 
   const showToast = (msg: string) => {
-    setToast(msg);
-    window.setTimeout(() => setToast(null), 2500);
+    toast.info(msg);
   };
 
   // loading khởi tạo true — refresh sau thao tác giữ nguyên bảng cũ, không nháy skeleton
@@ -266,11 +266,6 @@ function RecruitmentOpenPage() {
   if (mode === "wizard") {
     return (
       <>
-        {toast && (
-          <p className="rounded-2xl bg-accent/10 px-4 py-3 text-sm text-accent" role="status">
-            {toast}
-          </p>
-        )}
         <CampaignWizard
           key={editing?.id ?? "new"}
           initialDraft={editDraft ?? undefined}
@@ -290,12 +285,11 @@ function RecruitmentOpenPage() {
     <>
       <section className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
-            Danh sách đợt tuyển dụng
-          </h1>
-          <p className="mt-2 text-muted max-w-xl">
-            Quản lý và theo dõi các chiến dịch tuyển thành viên mới.
-          </p>
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
+              Danh sách đợt tuyển dụng
+            </h1>
+          </div>
         </div>
         <Button
           variant="soft"
@@ -306,12 +300,6 @@ function RecruitmentOpenPage() {
           THÊM MỚI
         </Button>
       </section>
-
-      {toast && (
-        <p className="rounded-2xl bg-accent/10 px-4 py-3 text-sm text-accent" role="status">
-          {toast}
-        </p>
-      )}
 
       {loading ? (
         <div className="neu-card h-64 animate-pulse" aria-busy="true" aria-label="Đang tải" />

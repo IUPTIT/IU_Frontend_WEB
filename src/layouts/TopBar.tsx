@@ -260,22 +260,26 @@ function TopBar({
           </div>
           <button
             type="button"
-            className="flex items-center gap-2.5 rounded-full bg-background py-1 pl-1 pr-1.5 shadow-extruded-sm transition hover:shadow-extruded sm:pr-3.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            className="group flex items-center rounded-full bg-background p-1 shadow-extruded-sm transition-shadow duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:shadow-extruded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             aria-label="Mở cài đặt tài khoản"
             onClick={() => navigate(settingsPath(role))}
           >
+            {/* Avatar giữ nguyên bên trái — pill nở sang trái nên avatar trượt sang trái */}
             {user ? (
               <Avatar name={user.name} src={user.avatarDataUrl} size="md" />
             ) : (
-              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-accent/12 text-xs font-bold text-accent">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent/12 text-xs font-bold text-accent">
                 ?
               </span>
             )}
-            <span className="hidden text-left leading-tight sm:block">
-              <span className="block max-w-[130px] truncate text-sm font-semibold text-foreground">
-                {user?.name ?? "—"}
+            {/* Tên + vai trò: mở ra bên phải avatar như bản gốc, chậm & mượt */}
+            <span className="flex max-w-0 items-center overflow-hidden text-left leading-tight opacity-0 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:max-w-[160px] group-hover:pl-2.5 group-hover:pr-2 group-hover:opacity-100 group-focus-visible:max-w-[160px] group-focus-visible:pl-2.5 group-focus-visible:pr-2 group-focus-visible:opacity-100">
+              <span className="min-w-0">
+                <span className="block max-w-[130px] truncate text-sm font-semibold text-foreground">
+                  {user?.name ?? "—"}
+                </span>
+                <span className="block truncate text-xs text-muted">{roleLabel}</span>
               </span>
-              <span className="block text-xs text-muted">{roleLabel}</span>
             </span>
           </button>
         </div>

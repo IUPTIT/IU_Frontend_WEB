@@ -5,6 +5,7 @@ import Icon from "../../../../components/ui/Icon";
 import { ROUTES } from "../../../../constants/routes";
 import { useAuth } from "../../../../context/useAuth";
 import { usePortalUi } from "../../../../context/usePortalUi";
+import { useToast } from "../../../../context/useToast";
 import {
   getBookingDetail,
   getInterviewCriteria,
@@ -29,6 +30,7 @@ function InterviewCandidateNotePage({ bookingId }: { bookingId: string }) {
         ? ROUTES.leader.recruitment
         : ROUTES.admin.recruitment;
   const { navigate } = usePortalUi();
+  const toast = useToast();
   const [detail, setDetail] = useState<BookingDetail | null>(null);
   const [criteria, setCriteria] = useState<InterviewCriterion[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,11 +42,9 @@ function InterviewCandidateNotePage({ bookingId }: { bookingId: string }) {
   const [editAsUserId, setEditAsUserId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [deciding, setDeciding] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
-    setToast(msg);
-    window.setTimeout(() => setToast(null), 2800);
+    toast.info(msg);
   };
 
   const load = useCallback(async () => {
@@ -215,15 +215,6 @@ function InterviewCandidateNotePage({ bookingId }: { bookingId: string }) {
           </div>
         )}
       </section>
-
-      {toast && (
-        <p
-          className="rounded-2xl bg-accent/10 px-4 py-3 text-sm text-accent"
-          role="status"
-        >
-          {toast}
-        </p>
-      )}
 
       <div className="grid gap-5 lg:grid-cols-[1fr_360px]">
         <section className="neu-card space-y-5 !p-6">

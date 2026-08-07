@@ -19,6 +19,7 @@ import Input from "../../../../components/ui/Input";
 import Modal from "../../../../components/ui/Modal";
 import Select from "../../../../components/ui/Select";
 import Toggle from "../../../../components/ui/Toggle";
+import { useToast } from "../../../../context/useToast";
 import {
   createEmailTemplate,
   deleteEmailTemplate,
@@ -78,13 +79,14 @@ const EMPTY_TPL: {
   status: "active",
 };
 
+type ToastVariant = "success" | "error" | "info";
+
 function EmailConfigurationPage() {
   const [tab, setTab] = useState<TabId>("templates");
-  const [toast, setToast] = useState<string | null>(null);
+  const toast = useToast();
 
-  const showToast = (msg: string) => {
-    setToast(msg);
-    window.setTimeout(() => setToast(null), 2800);
+  const showToast = (msg: string, variant: ToastVariant = "success") => {
+    toast[variant](msg);
   };
 
   return (
@@ -105,15 +107,6 @@ function EmailConfigurationPage() {
           </p>
         </div>
       </header>
-
-      {toast && (
-        <p
-          className="mx-auto max-w-xl rounded-2xl bg-emerald-500/15 px-4 py-3 text-center text-sm font-medium text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-500/20"
-          role="status"
-        >
-          {toast}
-        </p>
-      )}
 
       {/* Soft pill tabs — centered */}
       <nav className="flex justify-center" aria-label="Email sections">
@@ -181,7 +174,11 @@ const UNIT_OPTS: { value: AutomationTimingUnit; label: string }[] = [
   { value: "hours", label: "Giờ" },
 ];
 
-function AutomationPanel({ onToast }: { onToast: (m: string) => void }) {
+function AutomationPanel({
+  onToast,
+}: {
+  onToast: (m: string, variant?: ToastVariant) => void;
+}) {
   const [rules, setRules] = useState<EmailAutomationRule[]>([]);
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const [loading, setLoading] = useState(true);
@@ -200,7 +197,10 @@ function AutomationPanel({ onToast }: { onToast: (m: string) => void }) {
       setRules(r);
       setTemplates(t.filter((x) => x.status === "active" && x.slug));
     } catch (err) {
-      onToast(err instanceof Error ? err.message : "Không tải được quy tắc.");
+      onToast(
+        err instanceof Error ? err.message : "Không tải được quy tắc.",
+        "error",
+      );
     } finally {
       setLoading(false);
     }
@@ -236,7 +236,7 @@ function AutomationPanel({ onToast }: { onToast: (m: string) => void }) {
       setEditing(null);
       onToast("Đã lưu quy tắc gửi tự động.");
     } catch (err) {
-      onToast(err instanceof Error ? err.message : "Lưu thất bại.");
+      onToast(err instanceof Error ? err.message : "Lưu thất bại.", "error");
     } finally {
       setSaving(false);
     }
@@ -248,7 +248,10 @@ function AutomationPanel({ onToast }: { onToast: (m: string) => void }) {
       setRules((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
       onToast(enabled ? `Đã bật: ${rule.name}` : `Đã tắt: ${rule.name}`);
     } catch (err) {
-      onToast(err instanceof Error ? err.message : "Cập nhật thất bại.");
+      onToast(
+        err instanceof Error ? err.message : "Cập nhật thất bại.",
+        "error",
+      );
     }
   };
 
@@ -260,7 +263,10 @@ function AutomationPanel({ onToast }: { onToast: (m: string) => void }) {
       setRestoreOpen(false);
       onToast("Đã khôi phục quy tắc mặc định IU CLUB.");
     } catch (err) {
-      onToast(err instanceof Error ? err.message : "Khôi phục thất bại.");
+      onToast(
+        err instanceof Error ? err.message : "Khôi phục thất bại.",
+        "error",
+      );
     } finally {
       setRestoring(false);
     }
@@ -517,7 +523,11 @@ function SmtpInfoPanel() {
   );
 }
 
-function TemplatesPanel({ onToast }: { onToast: (m: string) => void }) {
+function TemplatesPanel({
+  onToast,
+}: {
+  onToast: (m: string, variant?: ToastVariant) => void;
+}) {
   const [list, setList] = useState<EmailTemplate[]>([]);
   const [deleteTarget, setDeleteTarget] = useState<EmailTemplate | null>(null);
   const [loading, setLoading] = useState(true);
@@ -562,7 +572,7 @@ function TemplatesPanel({ onToast }: { onToast: (m: string) => void }) {
     if (!editor) return;
     const d = editor.draft;
     if (!d.name.trim() || !d.subject.trim() || !d.body.trim()) {
-      onToast("Điền đủ tên, subject và nội dung.");
+      onToast("Điền đủ tên, subject và nội dung.", "info");
       return;
     }
     if (editor.mode === "create") {
