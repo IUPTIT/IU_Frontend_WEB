@@ -19,10 +19,11 @@ import {
   X,
 } from "lucide-react";
 import type { NavChild, NavIcon, NavItem, Role } from "../types/navigation";
-import { SIDEBAR_CONFIG, findNavIdByPath } from "../constants/navigation";
+import { SIDEBAR_CONFIG } from "../constants/navigation";
 import { usePortalUi } from "../context/usePortalUi";
 import { useAuth } from "../context/useAuth";
 import Icon from "../components/ui/Icon";
+import logoMark from "../assets/logo-mark.png";
 
 const icons: Record<NavIcon, LucideIcon> = {
   dashboard: LayoutDashboard,
@@ -46,6 +47,15 @@ type Props = {
   variant?: "rail" | "drawer";
 };
 
+// Điểm khớp path — chọn mục CỤ THỂ NHẤT (dài nhất). Tránh việc /admin (overview)
+// nuốt hết mọi path con.
+function pathScore(itemPath: string | undefined, active: string): number {
+  if (!itemPath || itemPath.startsWith("#")) return -1;
+  if (itemPath === active) return itemPath.length + 1;
+  if (active.startsWith(`${itemPath}/`)) return itemPath.length;
+  return -1;
+}
+
 function SideNavBar({ role, variant = "rail" }: Props) {
   const {
     activePath,
@@ -67,7 +77,11 @@ function SideNavBar({ role, variant = "rail" }: Props) {
     .map((s) => ({
       ...s,
       items: s.items
-        .filter((i) => (!i.mentorOnly || isMentor) && (!i.dualMemberOnly || hasMemberCapability))
+        .filter(
+          (i) =>
+            (!i.mentorOnly || isMentor) &&
+            (!i.dualMemberOnly || hasMemberCapability),
+        )
         .map((i) =>
           i.children
             ? {
@@ -83,40 +97,47 @@ function SideNavBar({ role, variant = "rail" }: Props) {
         .filter((i) => !i.children || i.children.length > 0),
     }))
     .filter((s) => s.items.length > 0);
+
   const brand =
     role === "member" && isMentor
-      ? { ...baseBrand, initial: "M", title: "Mentor Portal" }
+      ? { ...baseBrand, subtitle: "Mentor Console" }
       : baseBrand;
-  const activeId = findNavIdByPath(role, activePath);
+
+  // Xác định mục đang active bằng cách chọn path khớp cụ thể nhất
+  let activeId = "";
+  let bestScore = 0;
+  let activeParentId: string | null = null;
+  for (const section of sections) {
+    for (const item of section.items) {
+      // Mục có children: path của cha trùng path con đầu → chỉ khớp qua children
+      if (item.children) {
+        for (const child of item.children) {
+          const cs = pathScore(child.path, activePath);
+          if (cs > bestScore) {
+            bestScore = cs;
+            activeId = child.id;
+            activeParentId = item.id;
+          }
+        }
+      } else {
+        const sc = pathScore(item.path, activePath);
+        if (sc > bestScore) {
+          bestScore = sc;
+          activeId = item.id;
+          activeParentId = null;
+        }
+      }
+    }
+  }
+
   const collapsed = variant === "rail" && sidebarCollapsed;
 
-  const [openId, setOpenId] = useState<string | null>(() => {
-    for (const section of sections) {
-      const parent = section.items.find((i) =>
-        i.children?.some(
-          (c) => c.path === activePath || activePath.startsWith(`${c.path}/`),
-        ),
-      );
-      if (parent) return parent.id;
-    }
-    return null;
-  });
-
-  // Đồng bộ accordion với route — không reset khi chỉ collapse (adjust state during render)
+  const [openId, setOpenId] = useState<string | null>(activeParentId);
+  // Mở đúng nhóm khi đổi route (adjust state during render)
   const [prevActivePath, setPrevActivePath] = useState(activePath);
   if (activePath !== prevActivePath) {
     setPrevActivePath(activePath);
-    for (const section of sections) {
-      const parent = section.items.find((i) =>
-        i.children?.some(
-          (c) => c.path === activePath || activePath.startsWith(`${c.path}/`),
-        ),
-      );
-      if (parent) {
-        setOpenId(parent.id);
-        break;
-      }
-    }
+    if (activeParentId) setOpenId(activeParentId);
   }
 
   const handleParentClick = (item: NavItem) => {
@@ -126,26 +147,32 @@ function SideNavBar({ role, variant = "rail" }: Props) {
       return;
     }
     if (item.children) {
+      // Rail thu gọn: không mở accordion được → vào thẳng mục con đang active (hoặc mục đầu)
       if (collapsed) {
         const activeChild = item.children.find((c) => c.id === activeId);
         navigate(activeChild?.path ?? item.children[0].path);
         return;
       }
+      // Mở nhóm: chỉ vào mục con đầu khi CHƯA đứng ở trang con nào của nhóm
+      // → đóng/mở lại vẫn giữ đúng trang đang xem, không nhảy về mục đầu.
       const nextOpen = openId === item.id ? null : item.id;
       setOpenId(nextOpen);
-      if (nextOpen) navigate(item.children[0].path);
+      if (nextOpen && !item.children.some((c) => c.id === activeId)) {
+        navigate(item.children[0].path);
+      }
     } else {
       navigate(item.path);
     }
   };
 
-  const handleChildClick = (child: NavChild) => {
-    navigate(child.path);
-  };
+  const handleChildClick = (child: NavChild) => navigate(child.path);
 
-  const widthClass = collapsed ? "w-[72px]" : "w-[288px]";
+  const widthClass = collapsed ? "w-[72px]" : "w-[264px]";
   const mainSections = sections.filter((s) => s.id !== "footer");
   const footerSection = sections.find((s) => s.id === "footer");
+
+  const ring =
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background";
 
   const renderSection = (
     section: (typeof sections)[number],
@@ -153,118 +180,103 @@ function SideNavBar({ role, variant = "rail" }: Props) {
   ) => (
     <div
       key={section.id}
-      className={`space-y-2 ${isFooter ? "mt-auto pt-4 border-t border-accent/10 shrink-0" : "shrink-0"}`}
+      className={`space-y-1 ${isFooter ? "shrink-0 border-t border-black/5 pt-3" : "shrink-0"}`}
     >
       {section.label && !collapsed && (
-        <p className="px-3 text-[11px] font-semibold tracking-wider text-muted uppercase transition-opacity duration-300">
+        <p className="px-3 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wider text-muted">
           {section.label}
         </p>
       )}
 
       {section.items.map((item) => {
         const open = openId === item.id && !collapsed;
-        const childActive =
-          item.children?.some((c) => c.id === activeId) ?? false;
-        const selfActive =
-          item.action !== "logout" && item.id === activeId && !item.children;
-        const groupActive = childActive || (item.children != null && open);
+        const isActive = item.id === activeId;
+        const sectionActive = item.id === activeParentId; // có mục con đang active
         const danger = item.tone === "danger";
 
         return (
-          <div
-            key={item.id}
-            className={`relative rounded-2xl transition-all duration-300 ease-out ${
-              groupActive && item.children && !collapsed
-                ? "bg-background p-1.5 shadow-extruded-sm"
-                : ""
-            }`}
-          >
+          <div key={item.id}>
             <button
               type="button"
               onClick={() => handleParentClick(item)}
               aria-expanded={item.children ? open : undefined}
               aria-current={
-                selfActive || (childActive && collapsed) ? "page" : undefined
+                isActive || (sectionActive && collapsed) ? "page" : undefined
               }
               aria-label={collapsed ? item.label : undefined}
               title={collapsed ? item.label : undefined}
-              className={`group relative flex w-full items-center rounded-2xl min-h-12 font-medium transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
-                collapsed ? "h-12 justify-center px-0" : "gap-3 px-3 py-2.5"
+              className={`group relative flex w-full items-center rounded-xl text-sm transition-colors duration-200 ${ring} ${
+                collapsed ? "h-11 justify-center" : "gap-3 px-3 py-2.5"
               } ${
                 danger
-                  ? "text-red-500 hover:text-red-600 hover:-translate-y-px hover:shadow-extruded-sm"
-                  : selfActive
-                    ? "bg-accent/15 text-accent font-semibold shadow-inset-sm"
-                    : childActive || (groupActive && item.children)
-                      ? "text-accent font-semibold"
-                      : "text-muted hover:text-foreground hover:-translate-y-px hover:shadow-extruded-sm"
+                  ? "font-medium text-red-500 hover:bg-red-500/10 hover:text-red-600"
+                  : isActive
+                    ? "bg-accent/12 font-semibold text-accent"
+                    : sectionActive
+                      ? "font-semibold text-foreground"
+                      : "font-medium text-muted hover:bg-accent/[0.07] hover:text-foreground"
               }`}
             >
               <Icon icon={icons[item.icon]} size={20} className="shrink-0" />
 
-              <span
-                className={`text-left leading-snug transition-opacity duration-300 ease-out ${
-                  collapsed
-                    ? "w-0 overflow-hidden opacity-0"
-                    : "min-w-0 flex-1 opacity-100 break-words"
-                }`}
-              >
-                {item.label}
-              </span>
+              {!collapsed && (
+                <span className="min-w-0 flex-1 text-left leading-snug">
+                  {item.label}
+                </span>
+              )}
 
               {item.children && !collapsed && (
                 <Icon
                   icon={ChevronDown}
                   size={16}
-                  className={`ml-1 transition-transform duration-300 ease-out ${open ? "rotate-180" : ""}`}
-                />
-              )}
-
-              {collapsed && (selfActive || childActive) && (
-                <span
-                  className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-accent"
-                  aria-hidden
+                  className={`ml-1 shrink-0 text-muted transition-transform duration-300 ease-out ${open ? "rotate-180" : ""}`}
                 />
               )}
 
               {collapsed && (
                 <span
                   role="tooltip"
-                  className="pointer-events-none absolute left-full top-1/2 z-50 ml-3 -translate-y-1/2 whitespace-nowrap rounded-xl bg-foreground px-3 py-1.5 text-xs text-background opacity-0 shadow-extruded-sm transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100"
+                  className="pointer-events-none absolute left-full top-1/2 z-50 ml-3 -translate-y-1/2 whitespace-nowrap rounded-lg bg-foreground px-2.5 py-1.5 text-xs text-background opacity-0 shadow-lg transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100"
                 >
                   {item.label}
                 </span>
               )}
             </button>
 
-            {item.children && open && (
-              <div className="mt-1.5 space-y-1 px-1 pb-1">
-                {item.children.map((child) => {
-                  const isActive = child.id === activeId;
-                  return (
-                    <button
-                      type="button"
-                      key={child.id}
-                      onClick={() => handleChildClick(child)}
-                      aria-current={isActive ? "page" : undefined}
-                      className={`relative block w-full rounded-xl px-3 py-2.5 text-left text-sm leading-snug transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
-                        isActive
-                          ? "bg-accent/20 font-semibold text-accent shadow-[inset_0_0_0_1px_rgba(74,144,226,0.35)] ring-1 ring-accent/25"
-                          : "text-muted hover:bg-accent/8 hover:text-foreground hover:shadow-extruded-sm"
-                      }`}
-                    >
-                      {isActive && (
-                        <span
-                          className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-accent"
-                          aria-hidden
-                        />
-                      )}
-                      <span className={isActive ? "pl-1.5" : ""}>
-                        {child.label}
-                      </span>
-                    </button>
-                  );
-                })}
+            {item.children && !collapsed && (
+              <div
+                className={`grid transition-[grid-template-rows] duration-300 ease-out ${open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
+                aria-hidden={!open}
+              >
+                <div className="overflow-hidden">
+                  <div className="mt-1 space-y-0.5">
+                    {item.children.map((child) => {
+                      const childOn = child.id === activeId;
+                      return (
+                        <button
+                          type="button"
+                          key={child.id}
+                          onClick={() => handleChildClick(child)}
+                          aria-current={childOn ? "page" : undefined}
+                          tabIndex={open ? 0 : -1}
+                          className={`relative block w-full rounded-lg py-2 pl-11 pr-3 text-left text-sm leading-snug transition-colors duration-200 ${ring} ${
+                            childOn
+                              ? "bg-accent/12 font-semibold text-accent"
+                              : "font-medium text-muted hover:bg-accent/[0.07] hover:text-foreground"
+                          }`}
+                        >
+                          <span
+                            className={`absolute left-[22px] top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full ${
+                              childOn ? "bg-accent" : "bg-muted/40"
+                            }`}
+                            aria-hidden
+                          />
+                          {child.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -275,34 +287,29 @@ function SideNavBar({ role, variant = "rail" }: Props) {
 
   return (
     <aside
-      className={`relative flex shrink-0 flex-col bg-background shadow-extruded rounded-card
-        transition-[width,padding] duration-300 ease-out overflow-x-hidden
+      className={`relative flex h-full flex-col overflow-hidden bg-background transition-[width] duration-300 ease-out
         ${widthClass}
-        ${
-          variant === "rail"
-            ? "h-full overflow-y-auto"
-            : "h-full w-full !w-full overflow-y-auto"
-        }
-        ${collapsed ? "p-3 items-center" : "p-4"}
+        ${variant === "rail" ? "border-r border-black/[0.06]" : "w-full !w-full"}
+        ${collapsed ? "items-center p-3" : "p-4"}
       `}
       aria-label="Menu điều hướng"
       data-collapsed={collapsed ? "true" : "false"}
     >
-      {/* Brand full width — không chia chỗ với nút toggle */}
+      {/* Brand */}
       <div
-        className={`flex w-full shrink-0 items-center gap-3 rounded-2xl bg-background shadow-extruded-sm
-          ${collapsed ? "justify-center p-2" : "p-3 pr-12"}
-        `}
+        className={`flex w-full shrink-0 items-center gap-3 ${collapsed ? "justify-center" : "pr-10"}`}
       >
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent/20 text-accent font-display font-extrabold text-lg shadow-inset-sm">
-          {brand.initial}
-        </div>
+        <img
+          src={logoMark}
+          alt="IU Club"
+          className="h-10 w-10 shrink-0 object-contain"
+        />
         {!collapsed && (
-          <div className="min-w-0 flex-1">
-            <p className="font-display font-bold text-accent leading-tight">
+          <div className="min-w-0 flex-1 leading-tight">
+            <p className="font-display text-[15px] font-bold text-foreground">
               {brand.title}
             </p>
-            <p className="text-xs text-muted leading-snug">{brand.subtitle}</p>
+            <p className="truncate text-xs text-muted">{brand.subtitle}</p>
           </div>
         )}
       </div>
@@ -314,8 +321,8 @@ function SideNavBar({ role, variant = "rail" }: Props) {
           aria-label={collapsed ? "Mở rộng menu" : "Thu gọn menu"}
           aria-expanded={!collapsed}
           aria-controls="sidebar-nav"
-          className={`neu-btn h-9 w-9 !px-0 rounded-full shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
-            collapsed ? "mt-3" : "absolute top-4 right-3 z-10"
+          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-muted transition-colors hover:bg-accent/[0.07] hover:text-foreground ${ring} ${
+            collapsed ? "mt-3" : "absolute right-3 top-3 z-10"
           }`}
         >
           <Icon
@@ -331,19 +338,29 @@ function SideNavBar({ role, variant = "rail" }: Props) {
           type="button"
           onClick={closeMobileNav}
           aria-label="Đóng menu"
-          className="neu-btn absolute top-4 right-3 z-10 h-9 w-9 !px-0 rounded-full shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          className={`absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-lg text-muted transition-colors hover:bg-accent/[0.07] hover:text-foreground ${ring}`}
         >
           <Icon icon={X} size={16} />
         </button>
       )}
 
+      <div
+        className={`mt-5 shrink-0 border-t border-black/5 ${collapsed ? "w-8" : "w-full"}`}
+        aria-hidden
+      />
+
       <nav
         id="sidebar-nav"
-        className={`mt-6 w-full flex flex-1 flex-col min-h-0 ${collapsed ? "space-y-2" : "space-y-3"}`}
+        className={`mt-4 flex min-h-0 w-full flex-1 flex-col overflow-y-auto ${collapsed ? "space-y-1" : "space-y-1.5"}`}
       >
         {mainSections.map((section) => renderSection(section))}
-        {footerSection && renderSection(footerSection, true)}
       </nav>
+
+      {footerSection && (
+        <div className="mt-2 w-full shrink-0">
+          {renderSection(footerSection, true)}
+        </div>
+      )}
     </aside>
   );
 }

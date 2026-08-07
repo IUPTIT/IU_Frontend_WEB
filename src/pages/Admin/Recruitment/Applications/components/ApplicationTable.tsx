@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { MoreVertical } from "lucide-react";
+import { Eye } from "lucide-react";
 import Button from "../../../../../components/ui/Button";
 import {
   DataTableCell,
@@ -37,7 +37,8 @@ function ApplicationTable({
   onOpenDetail,
 }: Props) {
   const allIds = applications.map((a) => a.id);
-  const allChecked = allIds.length > 0 && allIds.every((id) => selectedIds.has(id));
+  const allChecked =
+    allIds.length > 0 && allIds.every((id) => selectedIds.has(id));
   const someChecked = allIds.some((id) => selectedIds.has(id)) && !allChecked;
 
   const columns: DataTableColumn[] = useMemo(
@@ -61,12 +62,48 @@ function ApplicationTable({
         minWidth: 48,
         align: "center",
       },
-      { id: "applicant", label: "Ứng viên", width: 220, minWidth: 140, align: "left" },
-      { id: "dept", label: "Ban nguyện vọng", width: 180, minWidth: 120, align: "center" },
-      { id: "date", label: "Ngày nộp", width: 110, minWidth: 90, align: "center" },
-      { id: "score", label: "Điểm ĐG", width: 100, minWidth: 80, align: "center" },
-      { id: "status", label: "Trạng thái", width: 130, minWidth: 100, align: "center" },
-      { id: "actions", label: "Thao tác", width: 88, minWidth: 72, align: "center" },
+      {
+        id: "applicant",
+        label: "Ứng viên",
+        width: 220,
+        minWidth: 140,
+        align: "left",
+      },
+      {
+        id: "dept",
+        label: "Ban nguyện vọng",
+        width: 180,
+        minWidth: 120,
+        align: "center",
+      },
+      {
+        id: "date",
+        label: "Ngày nộp",
+        width: 110,
+        minWidth: 90,
+        align: "center",
+      },
+      {
+        id: "score",
+        label: "Điểm ĐG",
+        width: 100,
+        minWidth: 80,
+        align: "center",
+      },
+      {
+        id: "status",
+        label: "Trạng thái",
+        width: 130,
+        minWidth: 100,
+        align: "center",
+      },
+      {
+        id: "actions",
+        label: "Thao tác",
+        width: 148,
+        minWidth: 128,
+        align: "center",
+      },
     ],
     [allChecked, someChecked, allIds, onToggleAll],
   );
@@ -119,7 +156,9 @@ function ApplicationTable({
                     {initials(app.fullName)}
                   </span>
                   <div className="min-w-0 text-left">
-                    <p className="truncate font-semibold text-foreground">{app.fullName}</p>
+                    <p className="truncate font-semibold text-foreground">
+                      {app.fullName}
+                    </p>
                     <p className="truncate text-xs text-muted">{app.email}</p>
                   </div>
                 </div>
@@ -133,7 +172,9 @@ function ApplicationTable({
                 </div>
               </DataTableCell>
               <DataTableCell>
-                <span className="text-sm text-muted">{formatDate(app.submittedAt)}</span>
+                <span className="text-sm text-muted">
+                  {formatDate(app.submittedAt)}
+                </span>
               </DataTableCell>
               <DataTableCell>
                 {app.totalScore != null ? (
@@ -161,13 +202,12 @@ function ApplicationTable({
               <DataTableCell>
                 <span onClick={(e) => e.stopPropagation()}>
                   <Button
-                    variant="icon"
+                    variant="secondary"
                     size="sm"
-                    aria-label={`Xem chi tiết ${app.fullName}`}
+                    leftIcon={<Icon icon={Eye} size={15} />}
+                    aria-label={`Xem hồ sơ ${app.fullName}`}
                     onClick={() => onOpenDetail(app)}
-                  >
-                    <Icon icon={MoreVertical} size={16} />
-                  </Button>
+                  ></Button>
                 </span>
               </DataTableCell>
             </tr>

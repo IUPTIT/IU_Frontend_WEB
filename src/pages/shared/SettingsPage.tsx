@@ -5,6 +5,7 @@ import Toggle from "../../components/ui/Toggle";
 import Avatar from "../../components/ui/Avatar";
 import Icon from "../../components/ui/Icon";
 import { useAuth } from "../../context/useAuth";
+import { useToast } from "../../context/useToast";
 import { usePreferences } from "../../context/usePreferences";
 import type { ThemeMode } from "../../context/preferences-context";
 import { changePassword, updateMyProfile } from "../../services/authService";
@@ -25,6 +26,7 @@ const ROLE_LABEL = {
  */
 function SettingsPage() {
   const { user, replaceUser } = useAuth();
+  const toast = useToast();
   const {
     theme,
     setTheme,
@@ -39,7 +41,6 @@ function SettingsPage() {
   const [phone, setPhone] = useState(user?.phone ?? "");
   const [bio, setBio] = useState(user?.bio ?? "");
   const [pwd, setPwd] = useState({ current: "", next: "", confirm: "" });
-  const [toast, setToast] = useState<string | null>(null);
   const [pwdError, setPwdError] = useState<string | null>(null);
   const [profileError, setProfileError] = useState<string | null>(null);
   const [savingProfile, setSavingProfile] = useState(false);
@@ -56,17 +57,12 @@ function SettingsPage() {
 
   if (!user) return null;
 
-  const showToast = (msg: string) => {
-    setToast(msg);
-    window.setTimeout(() => setToast(null), 2500);
-  };
-
   const saveAvatar = async (avatar: string, message: string) => {
     setProfileError(null);
     setSavingProfile(true);
     try {
       replaceUser(await updateMyProfile({ avatar }));
-      showToast(message);
+      toast.success(message);
     } catch (err) {
       setProfileError(err instanceof Error ? err.message : "Lưu ảnh đại diện thất bại.");
     } finally {
@@ -77,11 +73,11 @@ function SettingsPage() {
   const onPickAvatar = (file: File | null) => {
     if (!file) return;
     if (!file.type.startsWith("image/")) {
-      showToast("Vui lòng chọn file ảnh.");
+      toast.error("Vui lòng chọn file ảnh.");
       return;
     }
     if (file.size > 2 * 1024 * 1024) {
-      showToast("Ảnh tối đa 2MB.");
+      toast.error("Ảnh tối đa 2MB.");
       return;
     }
     const reader = new FileReader();
@@ -108,7 +104,7 @@ function SettingsPage() {
       replaceUser(
         await updateMyProfile({ name: name.trim(), phone: phone.trim(), bio: bio.trim() }),
       );
-      showToast("Đã lưu thông tin tài khoản.");
+      toast.success("Đã lưu thông tin tài khoản.");
     } catch (err) {
       setProfileError(err instanceof Error ? err.message : "Lưu hồ sơ thất bại — thử lại.");
     } finally {
@@ -135,7 +131,7 @@ function SettingsPage() {
     try {
       replaceUser(await changePassword(pwd.current, pwd.next));
       setPwd({ current: "", next: "", confirm: "" });
-      showToast("Đã đổi mật khẩu.");
+      toast.success("Đã đổi mật khẩu.");
     } catch (err) {
       setPwdError(err instanceof Error ? err.message : "Đổi mật khẩu thất bại — thử lại.");
     } finally {
@@ -145,19 +141,13 @@ function SettingsPage() {
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-8 animate-fade-in">
-      <header className="relative overflow-hidden rounded-card bg-gradient-to-br from-accent/18 via-violet-500/8 to-background p-6 sm:p-8 shadow-extruded ring-1 ring-accent/12 text-center sm:text-left">
-        <div className="pointer-events-none absolute -right-6 -top-8 h-36 w-36 rounded-full bg-accent/15 blur-3xl" aria-hidden />
-        <h1 className="relative font-display text-3xl sm:text-4xl font-extrabold tracking-tight">Cài đặt</h1>
-        <p className="relative mt-2 text-muted">
+      <header className="text-center sm:text-left">
+        <p className="eyebrow">Tài khoản</p>
+        <h1 className="mt-1.5 font-display text-3xl sm:text-4xl font-extrabold tracking-tight">Cài đặt</h1>
+        <p className="mt-2 text-muted">
           Quản lý hồ sơ, giao diện và tùy chọn tài khoản của bạn.
         </p>
       </header>
-
-      {toast && (
-        <p className="rounded-2xl bg-accent/10 px-4 py-3 text-sm text-accent" role="status">
-          {toast}
-        </p>
-      )}
 
       {/* Avatar + profile */}
       <section className="neu-card !p-6 space-y-6">

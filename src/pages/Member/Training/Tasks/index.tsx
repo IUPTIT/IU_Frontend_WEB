@@ -4,6 +4,7 @@ import TrainingChatWidget from "../../../../components/training/TrainingChatWidg
 import Badge from "../../../../components/ui/Badge";
 import { ROUTES } from "../../../../constants/routes";
 import { usePortalUi } from "../../../../context/usePortalUi";
+import { useToast } from "../../../../context/useToast";
 import {
   getMyMentorTasks,
   getMyTraining,
@@ -14,10 +15,10 @@ import {
 /** Nhiệm vụ & bài tập — list task thật + chat widget */
 export default function MemberTrainingTasksPage() {
   const { navigate, activePath } = usePortalUi();
+  const toast = useToast();
   const [me, setMe] = useState<MyTraining | null>(null);
   const [tasks, setTasks] = useState<MyMentorTask[]>([]);
   const [loading, setLoading] = useState(true);
-  const [toast, setToast] = useState<string | null>(null);
 
   const taskDetailPath = useCallback(
     (id: string) => {
@@ -46,18 +47,17 @@ export default function MemberTrainingTasksPage() {
     let alive = true;
     void load()
       .catch(() => {
-        if (alive) setToast("Không tải được danh sách task.");
+        if (alive) toast.error("Không tải được danh sách task.");
       })
       .finally(() => alive && setLoading(false));
     return () => {
       alive = false;
     };
-  }, [load]);
+  }, [load, toast]);
 
   const reload = () => {
     void load().then(() => {
-      setToast("Đã cập nhật bài nộp.");
-      window.setTimeout(() => setToast(null), 2200);
+      toast.success("Đã cập nhật bài nộp.");
     });
   };
 
@@ -82,7 +82,7 @@ export default function MemberTrainingTasksPage() {
             Nhiệm vụ & Bài tập
           </h1>
           <p className="text-muted text-sm">
-            Mở task để cập nhật tiến độ và nộp bài — dữ liệu thật từ hệ thống.
+            Mở task để cập nhật tiến độ và nộp bài.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -92,15 +92,6 @@ export default function MemberTrainingTasksPage() {
           )}
         </div>
       </header>
-
-      {toast && (
-        <p
-          className="rounded-2xl bg-accent/10 px-4 py-3 text-sm text-accent shadow-inset-sm"
-          role="status"
-        >
-          {toast}
-        </p>
-      )}
 
       {!me ? (
         <div className="neu-card !p-10 text-center text-muted text-sm">

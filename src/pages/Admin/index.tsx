@@ -1,13 +1,18 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import StatsCards from "./components/StatsCards";
+import JourneyStrip from "./components/JourneyStrip";
+import DashboardSkeleton from "./components/DashboardSkeleton";
 import RecruitmentFunnel from "./components/RecruitmentFunnel";
 import SubmissionChart from "./components/SubmissionChart";
 import ScoreChart from "./components/ScoreChart";
 import TraineeDonut from "./components/TraineeDonut";
 import ReviewBanner from "./components/ReviewBanner";
 import Button from "../../components/ui/Button";
-import ExportDataModal, { type ExportColumnDef } from "../../components/ui/ExportDataModal";
+import ExportDataModal, {
+  type ExportColumnDef,
+} from "../../components/ui/ExportDataModal";
 import { usePortalUi } from "../../context/usePortalUi";
+import { useToast } from "../../context/useToast";
 import { ROUTES } from "../../constants/routes";
 import {
   getDashboardOverview,
@@ -30,7 +35,7 @@ function buildReportRows(overview: DashboardOverview): ReportRow[] {
       id: `kpi-${card.id}`,
       section: "KPI",
       metric: card.label,
-      value: String(card.value),
+      value: `${card.value}${card.suffix ?? ""}`,
       note: card.badge ?? "",
     });
   }
@@ -79,24 +84,44 @@ const REPORT_COLUMNS: ExportColumnDef<ReportRow>[] = [
     ],
     defaultSelected: true,
   },
-  { id: "metric", label: "Chỉ số", getValue: (r) => r.metric, defaultSelected: true },
-  { id: "value", label: "Giá trị", getValue: (r) => r.value, defaultSelected: true },
-  { id: "note", label: "Ghi chú", getValue: (r) => r.note, defaultSelected: true },
+  {
+    id: "metric",
+    label: "Chỉ số",
+    getValue: (r) => r.metric,
+    defaultSelected: true,
+  },
+  {
+    id: "value",
+    label: "Giá trị",
+    getValue: (r) => r.value,
+    defaultSelected: true,
+  },
+  {
+    id: "note",
+    label: "Ghi chú",
+    getValue: (r) => r.note,
+    defaultSelected: true,
+  },
 ];
 
 function AdminPage() {
   const { navigate } = usePortalUi();
+  const toast = useToast();
   const [overview, setOverview] = useState<DashboardOverview | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [exportOpen, setExportOpen] = useState(false);
-  const [exportMsg, setExportMsg] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      setOverview(await getDashboardOverview());
+      // Giữ skeleton tối thiểu ~1s để chuyển cảnh mượt, không chớp nháy
+      const [data] = await Promise.all([
+        getDashboardOverview(),
+        new Promise((r) => window.setTimeout(r, 500)),
+      ]);
+      setOverview(data);
     } catch (err) {
       setOverview(null);
       setError(
@@ -119,7 +144,7 @@ function AdminPage() {
   );
 
   if (loading) {
-    return <div className="neu-card h-64 animate-pulse" aria-busy="true" />;
+    return <DashboardSkeleton />;
   }
 
   if (!overview) {
@@ -138,12 +163,16 @@ function AdminPage() {
     <>
       <section className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
-            Tổng quan Hoạt động
-          </h1>
-          <p className="mt-2 text-muted max-w-xl">
-            Báo cáo tổng hợp Tuyển dụng &amp; Đào tạo — dữ liệu thật trên hệ
-            thống ({overview.label}).
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
+              Tổng quan Hoạt động
+            </h1>
+            <span className="rounded-full bg-accent/10 px-3 py-1 text-xs font-semibold text-accent shadow-inset-sm">
+              {overview.label}
+            </span>
+          </div>
+          <p className="mt-2 text-sm text-muted max-w-xl">
+            Báo cáo tổng hợp Tuyển dụng &amp; Đào tạo từ dữ liệu thật trên hệ thống.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-4">
@@ -155,19 +184,31 @@ function AdminPage() {
             onClick={() => setExportOpen(true)}
             className="text-accent font-bold"
           >
-            <svg className="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8">
-              <path d="M10 3v9m0 0 3.5-3.5M10 12 6.5 8.5M4 16h12" strokeLinecap="round" strokeLinejoin="round" />
+            <svg
+              className="h-4 w-4"
+              viewBox="0 0 20 20"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+            >
+              <path
+                d="M10 3v9m0 0 3.5-3.5M10 12 6.5 8.5M4 16h12"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
             Xuất báo cáo
           </Button>
         </div>
       </section>
 
-      {exportMsg && (
-        <p className="rounded-2xl bg-accent-secondary/15 px-4 py-3 text-sm text-accent-secondary" role="status">
-          {exportMsg}
-        </p>
-      )}
+      <JourneyStrip
+        stages={overview.recruitmentFunnel}
+        periodLabel={overview.label}
+        totalMembers={
+          overview.statCards.find((c) => c.id === "members")?.value ?? 0
+        }
+      />
 
       <StatsCards cards={overview.statCards} />
 
@@ -211,10 +252,7 @@ function AdminPage() {
         columns={REPORT_COLUMNS}
         rows={reportRows}
         filenameBase="bao_cao_tong_quan"
-        onExported={(n) => {
-          setExportMsg(`Đã tải xuống báo cáo (${n} dòng).`);
-          window.setTimeout(() => setExportMsg(null), 2800);
-        }}
+        onExported={(n) => toast.success(`Đã tải xuống báo cáo (${n} dòng).`)}
       />
     </>
   );

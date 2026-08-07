@@ -19,6 +19,7 @@ import Input from "../../../../components/ui/Input";
 import Modal from "../../../../components/ui/Modal";
 import Select from "../../../../components/ui/Select";
 import Toggle from "../../../../components/ui/Toggle";
+import { useToast } from "../../../../context/useToast";
 import {
   createEmailTemplate,
   deleteEmailTemplate,
@@ -78,54 +79,34 @@ const EMPTY_TPL: {
   status: "active",
 };
 
+type ToastVariant = "success" | "error" | "info";
+
 function EmailConfigurationPage() {
   const [tab, setTab] = useState<TabId>("templates");
-  const [toast, setToast] = useState<string | null>(null);
+  const toast = useToast();
 
-  const showToast = (msg: string) => {
-    setToast(msg);
-    window.setTimeout(() => setToast(null), 2800);
+  const showToast = (msg: string, variant: ToastVariant = "success") => {
+    toast[variant](msg);
   };
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-8 animate-fade-in">
-      {/* Soft hero */}
-      <header className="relative overflow-hidden rounded-card bg-gradient-to-br from-accent/20 via-sky-500/10 to-background p-6 sm:p-8 shadow-extruded ring-1 ring-accent/15">
-        <div
-          className="pointer-events-none absolute -right-8 -top-10 h-40 w-40 rounded-full bg-accent/20 blur-3xl"
-          aria-hidden
-        />
-        <div
-          className="pointer-events-none absolute -bottom-12 left-1/3 h-32 w-32 rounded-full bg-sky-400/15 blur-3xl"
-          aria-hidden
-        />
-        <div className="relative flex flex-col items-center gap-5 text-center sm:flex-row sm:text-left">
-          <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[1.35rem] bg-accent/25 text-accent shadow-extruded-sm ring-1 ring-accent/30">
-            <Icon icon={Mail} size={28} />
-          </span>
-          <div className="min-w-0 space-y-1.5">
-            <p className="text-xs font-semibold uppercase tracking-wider text-accent">
-              Hệ thống email
-            </p>
-            <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">
-              Email Configuration
-            </h1>
-            <p className="text-sm sm:text-base text-muted max-w-xl mx-auto sm:mx-0">
-              Mẫu thư và quy tắc gửi tự động (API thật). SMTP cấu hình trên
-              server qua biến môi trường — không lưu giả lập trên trình duyệt.
-            </p>
-          </div>
+      {/* Header phẳng — đồng bộ instrument-panel */}
+      <header className="flex flex-col items-center gap-4 text-center sm:flex-row sm:text-left">
+        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-accent/12 text-accent">
+          <Icon icon={Mail} size={26} />
+        </span>
+        <div className="min-w-0 space-y-1.5">
+          <p className="eyebrow">Hệ thống email</p>
+          <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">
+            Email Configuration
+          </h1>
+          <p className="text-sm sm:text-base text-muted max-w-xl mx-auto sm:mx-0">
+            Mẫu thư và quy tắc gửi tự động (API thật). SMTP cấu hình trên
+            server qua biến môi trường — không lưu giả lập trên trình duyệt.
+          </p>
         </div>
       </header>
-
-      {toast && (
-        <p
-          className="mx-auto max-w-xl rounded-2xl bg-emerald-500/15 px-4 py-3 text-center text-sm font-medium text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-500/20"
-          role="status"
-        >
-          {toast}
-        </p>
-      )}
 
       {/* Soft pill tabs — centered */}
       <nav className="flex justify-center" aria-label="Email sections">
@@ -193,7 +174,11 @@ const UNIT_OPTS: { value: AutomationTimingUnit; label: string }[] = [
   { value: "hours", label: "Giờ" },
 ];
 
-function AutomationPanel({ onToast }: { onToast: (m: string) => void }) {
+function AutomationPanel({
+  onToast,
+}: {
+  onToast: (m: string, variant?: ToastVariant) => void;
+}) {
   const [rules, setRules] = useState<EmailAutomationRule[]>([]);
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const [loading, setLoading] = useState(true);
@@ -212,7 +197,10 @@ function AutomationPanel({ onToast }: { onToast: (m: string) => void }) {
       setRules(r);
       setTemplates(t.filter((x) => x.status === "active" && x.slug));
     } catch (err) {
-      onToast(err instanceof Error ? err.message : "Không tải được quy tắc.");
+      onToast(
+        err instanceof Error ? err.message : "Không tải được quy tắc.",
+        "error",
+      );
     } finally {
       setLoading(false);
     }
@@ -248,7 +236,7 @@ function AutomationPanel({ onToast }: { onToast: (m: string) => void }) {
       setEditing(null);
       onToast("Đã lưu quy tắc gửi tự động.");
     } catch (err) {
-      onToast(err instanceof Error ? err.message : "Lưu thất bại.");
+      onToast(err instanceof Error ? err.message : "Lưu thất bại.", "error");
     } finally {
       setSaving(false);
     }
@@ -260,7 +248,10 @@ function AutomationPanel({ onToast }: { onToast: (m: string) => void }) {
       setRules((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
       onToast(enabled ? `Đã bật: ${rule.name}` : `Đã tắt: ${rule.name}`);
     } catch (err) {
-      onToast(err instanceof Error ? err.message : "Cập nhật thất bại.");
+      onToast(
+        err instanceof Error ? err.message : "Cập nhật thất bại.",
+        "error",
+      );
     }
   };
 
@@ -272,7 +263,10 @@ function AutomationPanel({ onToast }: { onToast: (m: string) => void }) {
       setRestoreOpen(false);
       onToast("Đã khôi phục quy tắc mặc định IU CLUB.");
     } catch (err) {
-      onToast(err instanceof Error ? err.message : "Khôi phục thất bại.");
+      onToast(
+        err instanceof Error ? err.message : "Khôi phục thất bại.",
+        "error",
+      );
     } finally {
       setRestoring(false);
     }
@@ -529,7 +523,11 @@ function SmtpInfoPanel() {
   );
 }
 
-function TemplatesPanel({ onToast }: { onToast: (m: string) => void }) {
+function TemplatesPanel({
+  onToast,
+}: {
+  onToast: (m: string, variant?: ToastVariant) => void;
+}) {
   const [list, setList] = useState<EmailTemplate[]>([]);
   const [deleteTarget, setDeleteTarget] = useState<EmailTemplate | null>(null);
   const [loading, setLoading] = useState(true);
@@ -574,7 +572,7 @@ function TemplatesPanel({ onToast }: { onToast: (m: string) => void }) {
     if (!editor) return;
     const d = editor.draft;
     if (!d.name.trim() || !d.subject.trim() || !d.body.trim()) {
-      onToast("Điền đủ tên, subject và nội dung.");
+      onToast("Điền đủ tên, subject và nội dung.", "info");
       return;
     }
     if (editor.mode === "create") {

@@ -12,6 +12,7 @@ import Button from "../../../../components/ui/Button";
 import Icon from "../../../../components/ui/Icon";
 import TrainingChatWidget from "../../../../components/training/TrainingChatWidget";
 import { usePortalUi } from "../../../../context/usePortalUi";
+import { useToast } from "../../../../context/useToast";
 import {
   addTaskProgressLog,
   getMyMentorTasks,
@@ -62,6 +63,7 @@ export default function TrainingTaskDetailPage({
   tasksBasePath,
 }: Props) {
   const { navigate } = usePortalUi();
+  const toast = useToast();
   const [me, setMe] = useState<MyTraining | null>(null);
   const [task, setTask] = useState<MyMentorTask | null>(null);
   const [loading, setLoading] = useState(true);
@@ -69,12 +71,6 @@ export default function TrainingTaskDetailPage({
   const [url, setUrl] = useState("");
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
-
-  const showToast = (msg: string) => {
-    setToast(msg);
-    window.setTimeout(() => setToast(null), 2500);
-  };
 
   const load = useCallback(async () => {
     const training = await getMyTraining();
@@ -96,13 +92,13 @@ export default function TrainingTaskDetailPage({
     let alive = true;
     void load()
       .catch(() => {
-        if (alive) showToast("Không tải được task.");
+        if (alive) toast.error("Không tải được task.");
       })
       .finally(() => alive && setLoading(false));
     return () => {
       alive = false;
     };
-  }, [load]);
+  }, [load, toast]);
 
   const activeStep = task ? stepFromTask(task) : "backlog";
   const activeIdx = STEPS.findIndex((s) => s.key === activeStep);
@@ -164,10 +160,10 @@ export default function TrainingTaskDetailPage({
     try {
       await addTaskProgressLog(task.id, logDraft.trim());
       setLogDraft("");
-      showToast("Đã gửi nhật ký tiến độ.");
+      toast.success("Đã gửi nhật ký tiến độ.");
       await load();
     } catch (err) {
-      showToast(err instanceof Error ? err.message : "Gửi nhật ký thất bại.");
+      toast.error(err instanceof Error ? err.message : "Gửi nhật ký thất bại.");
     } finally {
       setSaving(false);
     }
@@ -176,7 +172,7 @@ export default function TrainingTaskDetailPage({
   const handleSubmit = async () => {
     if (!task) return;
     if (!url.trim() && !note.trim()) {
-      showToast("Nhập link bài nộp hoặc ghi chú trước khi nộp.");
+      toast.info("Nhập link bài nộp hoặc ghi chú trước khi nộp.");
       return;
     }
     setSaving(true);
@@ -185,10 +181,10 @@ export default function TrainingTaskDetailPage({
         submissionUrl: url.trim() ? ensureHttpUrl(url) : undefined,
         submissionNote: note.trim() || undefined,
       });
-      showToast("Đã nộp bài cho mentor.");
+      toast.success("Đã nộp bài cho mentor.");
       await load();
     } catch (err) {
-      showToast(err instanceof Error ? err.message : "Nộp bài thất bại.");
+      toast.error(err instanceof Error ? err.message : "Nộp bài thất bại.");
     } finally {
       setSaving(false);
     }
@@ -235,12 +231,6 @@ export default function TrainingTaskDetailPage({
           </p>
         </div>
       </header>
-
-      {toast && (
-        <p className="rounded-2xl bg-accent/10 px-4 py-3 text-sm text-accent">
-          {toast}
-        </p>
-      )}
 
       <div className="grid gap-5 lg:grid-cols-[1.4fr_1fr]">
         <div className="space-y-5">

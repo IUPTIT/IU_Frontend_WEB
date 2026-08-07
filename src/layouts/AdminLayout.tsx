@@ -53,9 +53,9 @@ function LayoutInner({ role, children }: { role: Role; children: ReactNode }) {
   }, [activePath, setSearch]);
 
   return (
-    <div className="portal-shell flex min-h-screen gap-4 sm:gap-6 bg-background p-4 sm:p-6">
-      {/* Desktop / Tablet rail — ≥768px, cao full viewport */}
-      <div className="hidden md:block shrink-0 sticky top-4 sm:top-6 h-[calc(100vh-2rem)] sm:h-[calc(100vh-3rem)] self-start">
+    <div className="portal-shell flex min-h-screen bg-background">
+      {/* Desktop / Tablet rail — ≥768px, full màn, sát mép trái */}
+      <div className="sticky top-0 z-20 hidden h-screen shrink-0 self-start md:block">
         <SideNavBar role={role} variant="rail" />
       </div>
 
@@ -81,15 +81,20 @@ function LayoutInner({ role, children }: { role: Role; children: ReactNode }) {
         </div>
       )}
 
-      <div className="flex-1 min-w-0">
-        <TopBar
-          role={role}
-          search={search}
-          onSearchChange={setSearch}
-          onOpenMobileNav={openMobileNav}
-          searchPlaceholder={searchPlaceholderForPath(activePath)}
-        />
-        <main className="mx-auto max-w-7xl py-6 sm:py-8 space-y-6 sm:space-y-8 px-0">{children}</main>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+          {/* Sticky top bar — nền canvas đục, che nội dung cuộn phía sau */}
+          <div className="portal-topbar-bg sticky top-0 z-30 pb-3 pt-4 sm:pt-6">
+            <TopBar
+              role={role}
+              search={search}
+              onSearchChange={setSearch}
+              onOpenMobileNav={openMobileNav}
+              searchPlaceholder={searchPlaceholderForPath(activePath)}
+            />
+          </div>
+          <main className="space-y-6 pb-8 sm:space-y-8">{children}</main>
+        </div>
       </div>
     </div>
   );

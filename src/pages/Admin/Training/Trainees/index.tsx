@@ -4,6 +4,7 @@ import Badge from "../../../../components/ui/Badge";
 import Pagination from "../../../../components/ui/Pagination";
 import Select from "../../../../components/ui/Select";
 import { usePortalUi } from "../../../../context/usePortalUi";
+import { useToast } from "../../../../context/useToast";
 import { getTrainees } from "../../../../services/trainingService";
 import { getCampaigns } from "../../../../services/recruitmentService";
 import type { RecruitmentCampaign } from "../../../../types/recruitment";
@@ -14,13 +15,13 @@ const PAGE_SIZE = 10;
 /** BCN UC 32: danh sách tân binh cần training — bảng soft-UI như Applications */
 export default function AdminTrainingTraineesPage() {
   const { search } = usePortalUi();
+  const toast = useToast();
   const [campaigns, setCampaigns] = useState<RecruitmentCampaign[]>([]);
   const [campaignId, setCampaignId] = useState("");
   const [trainees, setTrainees] = useState<Trainee[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState("");
-  const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => {
     void getCampaigns().then((c) => {
@@ -35,16 +36,15 @@ export default function AdminTrainingTraineesPage() {
     try {
       setTrainees(await getTrainees(undefined, campaignId || undefined));
     } catch (err) {
-      setToast(
+      toast.error(
         err instanceof Error
           ? `Không tải được tân binh: ${err.message}`
           : "Không tải được danh sách tân binh.",
       );
-      window.setTimeout(() => setToast(null), 2800);
     } finally {
       setLoading(false);
     }
-  }, [campaignId]);
+  }, [campaignId, toast]);
 
   useEffect(() => {
     void load();
@@ -82,19 +82,15 @@ export default function AdminTrainingTraineesPage() {
         <span className="text-foreground/80">Danh sách tân binh</span>
       </nav>
 
-      {toast && (
-        <p className="rounded-2xl bg-accent/10 px-4 py-3 text-sm text-accent" role="status">
-          {toast}
-        </p>
-      )}
-
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
-            Danh sách tân binh
-          </h1>
-          <p className="mt-2 text-muted text-sm">
-            Thành viên vừa trúng tuyển, cần hoàn thành training
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
+              Danh sách tân binh
+            </h1>
+          </div>
+          <p className="mt-2 text-sm text-muted max-w-xl">
+            Thành viên vừa trúng tuyển, cần hoàn thành training.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">

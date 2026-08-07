@@ -131,9 +131,16 @@ function TopBar({
     };
   }, [openNotif]);
 
+  const roleLabel: string = {
+    admin: "Ban Chủ nhiệm",
+    leader: "Trưởng nhóm",
+    member: user?.isMentor ? "Mentor" : "Thành viên",
+    candidate: "Ứng viên",
+  }[role];
+
   return (
-    <header className="sticky top-4 sm:top-6 z-10">
-      <div className="flex items-center gap-3 sm:gap-4 rounded-card bg-background/80 backdrop-blur px-4 sm:px-6 py-4 shadow-extruded">
+    <header>
+      <div className="flex items-center gap-3 sm:gap-4 rounded-card bg-background px-4 sm:px-6 py-3 shadow-extruded">
         <button
           type="button"
           className="neu-btn h-12 w-12 !px-0 rounded-full shrink-0 md:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
@@ -144,15 +151,15 @@ function TopBar({
           <Icon icon={Menu} size={20} />
         </button>
 
-        <label className="relative flex-1 max-w-xl">
+        <label className="relative flex-1 max-w-lg">
           <span
             className="absolute left-4 top-1/2 -translate-y-1/2 text-placeholder"
             aria-hidden
           >
-            <Icon icon={Search} size={20} />
+            <Icon icon={Search} size={18} />
           </span>
           <input
-            className="neu-input pl-12"
+            className="h-11 w-full rounded-full border-0 bg-background pl-11 pr-4 text-sm text-foreground shadow-extruded-sm outline-none transition placeholder:text-placeholder focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             placeholder={searchPlaceholder}
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
@@ -253,20 +260,27 @@ function TopBar({
           </div>
           <button
             type="button"
-            className="neu-btn h-12 w-12 !px-0 rounded-full overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            className="group flex items-center rounded-full bg-background p-1 shadow-extruded-sm transition-shadow duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:shadow-extruded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             aria-label="Mở cài đặt tài khoản"
             onClick={() => navigate(settingsPath(role))}
           >
+            {/* Avatar giữ nguyên bên trái — pill nở sang trái nên avatar trượt sang trái */}
             {user ? (
-              <Avatar
-                name={user.name}
-                src={user.avatarDataUrl}
-                size="md"
-                className="!h-full !w-full !rounded-none"
-              />
+              <Avatar name={user.name} src={user.avatarDataUrl} size="md" />
             ) : (
-              <span className="text-xs font-bold text-accent">?</span>
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent/12 text-xs font-bold text-accent">
+                ?
+              </span>
             )}
+            {/* Tên + vai trò: mở ra bên phải avatar như bản gốc, chậm & mượt */}
+            <span className="flex max-w-0 items-center overflow-hidden text-left leading-tight opacity-0 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:max-w-[160px] group-hover:pl-2.5 group-hover:pr-2 group-hover:opacity-100 group-focus-visible:max-w-[160px] group-focus-visible:pl-2.5 group-focus-visible:pr-2 group-focus-visible:opacity-100">
+              <span className="min-w-0">
+                <span className="block max-w-[130px] truncate text-sm font-semibold text-foreground">
+                  {user?.name ?? "—"}
+                </span>
+                <span className="block truncate text-xs text-muted">{roleLabel}</span>
+              </span>
+            </span>
           </button>
         </div>
       </div>

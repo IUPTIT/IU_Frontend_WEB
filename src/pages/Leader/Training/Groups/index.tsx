@@ -4,6 +4,7 @@ import Avatar from "../../../../components/ui/Avatar";
 import Icon from "../../../../components/ui/Icon";
 import TrainingChatWidget from "../../../../components/training/TrainingChatWidget";
 import { useAuth } from "../../../../context/useAuth";
+import { useToast } from "../../../../context/useToast";
 import {
   getMentorTasks,
   getMyTeamTrainees,
@@ -26,16 +27,11 @@ import {
  */
 export default function LeaderTrainingGroupsPage() {
   const { user } = useAuth();
+  const toast = useToast();
   const [groups, setGroups] = useState<TrainingGroup[]>([]);
   const [trainees, setTrainees] = useState<Trainee[]>([]);
   const [tasks, setTasks] = useState<MentorTask[]>([]);
   const [loading, setLoading] = useState(true);
-  const [toast, setToast] = useState<string | null>(null);
-
-  const showToast = (msg: string) => {
-    setToast(msg);
-    window.setTimeout(() => setToast(null), 2500);
-  };
 
   const load = useCallback(async () => {
     const [g, t, tk] = await Promise.all([
@@ -52,13 +48,13 @@ export default function LeaderTrainingGroupsPage() {
     let alive = true;
     void load()
       .catch(() => {
-        if (alive) showToast("Không tải được nhóm.");
+        if (alive) toast.error("Không tải được nhóm.");
       })
       .finally(() => alive && setLoading(false));
     return () => {
       alive = false;
     };
-  }, [load]);
+  }, [load, toast]);
 
   const myTraineeIds = useMemo(
     () => new Set(trainees.map((t) => t.id)),
@@ -150,20 +146,15 @@ export default function LeaderTrainingGroupsPage() {
           Đào tạo ›{" "}
           <span className="text-foreground/80">Nhóm & Task Training</span>
         </nav>
-        <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
-          Quản lý Nhóm & Task Training
-        </h1>
-        <p className="text-muted text-sm max-w-2xl">
-          Giao task và theo dõi tiến độ tân binh trong nhóm bạn phụ trách —
-          dữ liệu thật từ API.
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
+            Quản lý Nhóm & Task Training
+          </h1>
+        </div>
+        <p className="text-muted text-sm max-w-xl">
+          Giao task và theo dõi tiến độ tân binh trong nhóm.
         </p>
       </header>
-
-      {toast && (
-        <p className="rounded-2xl bg-accent/10 px-4 py-3 text-sm text-accent">
-          {toast}
-        </p>
-      )}
 
       {groups.length === 0 ? (
         <div className="neu-card !p-10 text-center text-muted text-sm">
@@ -176,7 +167,7 @@ export default function LeaderTrainingGroupsPage() {
               groups={groups}
               trainees={trainees}
               onCreated={() => {
-                showToast("Đã giao task.");
+                toast.success("Đã giao task.");
                 void load();
               }}
             />

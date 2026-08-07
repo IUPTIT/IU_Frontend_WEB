@@ -93,7 +93,6 @@ export default function AdminMembersPage() {
   const [draftDept, setDraftDept] = useState("");
   const [draftRole, setDraftRole] = useState("");
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [visibleIds, setVisibleIds] = useState(() =>
@@ -115,7 +114,6 @@ export default function AdminMembersPage() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    setError(null);
     try {
       const [memberList, departmentList] = await Promise.all([
         getClubMembers(),
@@ -124,7 +122,7 @@ export default function AdminMembersPage() {
       setMembers(memberList);
       setDepartments(departmentList);
     } catch (err) {
-      setError(
+      toastApi.error(
         err instanceof Error
           ? err.message
           : "Không tải được danh sách thành viên CLB.",
@@ -132,7 +130,7 @@ export default function AdminMembersPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [toastApi]);
 
   useEffect(() => {
     void load();
@@ -225,20 +223,15 @@ export default function AdminMembersPage() {
   return (
     <section className="space-y-6">
       <header>
-        <h1 className="font-display text-3xl font-extrabold tracking-tight">
-          Danh sách thành viên CLB
-        </h1>
-        <p className="mt-2 text-sm text-muted">
-          CRUD thành viên, nhập/xuất Excel. Phân Ban Leader vẫn quản tại màn
-          Ban.
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
+            Danh sách thành viên CLB
+          </h1>
+        </div>
+        <p className="mt-2 text-sm text-muted max-w-xl">
+          Thêm, sửa, xóa và nhập/xuất Excel danh sách thành viên.
         </p>
       </header>
-
-      {error && (
-        <p className="rounded-2xl bg-rose-500/10 px-4 py-3 text-sm text-rose-600">
-          {error}
-        </p>
-      )}
 
       <ListToolbar
         search={localSearch}

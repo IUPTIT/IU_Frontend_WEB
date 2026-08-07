@@ -10,6 +10,7 @@ import Pagination from "../../../../components/ui/Pagination";
 import Select from "../../../../components/ui/Select";
 import SendEmailModal from "../../../../components/ui/SendEmailModal";
 import { usePortalUi } from "../../../../context/usePortalUi";
+import { useToast } from "../../../../context/useToast";
 import useCountUp from "../../../../hooks/useCountUp";
 import {
   convertAcceptedToMembers,
@@ -150,6 +151,7 @@ function buildExportColumns(
 
 function RecruitmentResultsPage() {
   const { search } = usePortalUi();
+  const toast = useToast();
   const [campaigns, setCampaigns] = useState<RecruitmentCampaign[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
   const [summary, setSummary] = useState<CampaignResultSummary>({
@@ -165,7 +167,6 @@ function RecruitmentResultsPage() {
   const [applied, setApplied] = useState<ResultFilter>(EMPTY);
   const [exportOpen, setExportOpen] = useState(false);
   const [menuId, setMenuId] = useState<string | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [convertIds, setConvertIds] = useState<string[] | null>(null);
   const [rejectIds, setRejectIds] = useState<string[] | null>(null);
@@ -174,8 +175,7 @@ function RecruitmentResultsPage() {
   const [emailTemplateId, setEmailTemplateId] = useState<string | undefined>("tpl-passed");
 
   const showToast = (msg: string) => {
-    setToast(msg);
-    window.setTimeout(() => setToast(null), 2800);
+    toast.info(msg);
   };
 
   const openEmailForIds = (ids: string[], preferredTemplateId?: string) => {
@@ -443,12 +443,11 @@ function RecruitmentResultsPage() {
         onClose={() => setRejectIds(null)}
       />
       <section className="flex flex-wrap items-end justify-between gap-4">
-        <div className="min-w-0 space-y-3">
-          <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
-            Kết quả cuối cùng
-          </h1>
-          <div className="flex flex-wrap items-center gap-2 text-muted">
-            <span className="text-sm sm:text-base">Tổng hợp sau 2 vòng — xác nhận trúng tuyển</span>
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
+              Kết quả cuối cùng
+            </h1>
             <Select
               value={campaignId}
               options={campaigns.map((c) => ({ value: c.id, label: c.name }))}
@@ -459,6 +458,9 @@ function RecruitmentResultsPage() {
               triggerClassName="!shadow-extruded-sm !h-10 text-accent !font-semibold"
             />
           </div>
+          <p className="mt-2 text-sm text-muted max-w-xl">
+            Tổng hợp sau 2 vòng — xác nhận trúng tuyển
+          </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
@@ -493,12 +495,6 @@ function RecruitmentResultsPage() {
           </Button>
         </div>
       </section>
-
-      {toast && (
-        <p className="rounded-2xl bg-accent/10 px-4 py-3 text-sm text-accent" role="status">
-          {toast}
-        </p>
-      )}
 
       <section className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">

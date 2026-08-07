@@ -7,12 +7,13 @@ export const SIDEBAR_CONFIG: Record<Role, SidebarConfig> = {
   admin: {
     brand: {
       initial: "A",
-      title: "Admin Portal",
-      subtitle: "IT Club Management",
+      title: "IU Club",
+      subtitle: "Admin Console",
     },
     sections: [
       {
         id: "main",
+        label: "ĐIỀU HƯỚNG",
         items: [
           {
             id: "overview",
@@ -114,8 +115,8 @@ export const SIDEBAR_CONFIG: Record<Role, SidebarConfig> = {
   leader: {
     brand: {
       initial: "L",
-      title: "Leader Portal",
-      subtitle: "IT Club Management",
+      title: "IU Club",
+      subtitle: "Leader Console",
     },
     sections: [
       {
@@ -240,8 +241,8 @@ export const SIDEBAR_CONFIG: Record<Role, SidebarConfig> = {
   member: {
     brand: {
       initial: "M",
-      title: "Member Portal",
-      subtitle: "Hệ thống Quản lý CLB",
+      title: "IU Club",
+      subtitle: "Member Console",
     },
     sections: [
       {
@@ -341,7 +342,7 @@ export const SIDEBAR_CONFIG: Record<Role, SidebarConfig> = {
   },
   // Ứng viên + Tân binh (candidate) — lịch PV, training, hồ sơ
   candidate: {
-    brand: { initial: "U", title: "Ứng viên", subtitle: "IU Club Recruitment" },
+    brand: { initial: "U", title: "IU Club", subtitle: "Ứng viên" },
     sections: [
       {
         id: "main",

@@ -6,6 +6,8 @@ export type ToastItem = {
   id: string;
   message: string;
   variant: ToastVariant;
+  /** true khi đang chạy hiệu ứng thoát trước lúc bị gỡ khỏi danh sách */
+  leaving?: boolean;
 };
 
 export type ToastApi = {

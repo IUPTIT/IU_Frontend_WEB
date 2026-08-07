@@ -230,12 +230,13 @@ export default function AdminDepartmentsPage() {
           <p className="text-xs font-semibold uppercase tracking-wider text-muted">
             Tổ chức CLB
           </p>
-          <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
-            Quản lý Ban
-          </h1>
-          <p className="mt-2 max-w-2xl text-sm text-muted">
-            Tạo Ban, chọn thành viên và chỉ định một Leader ngay trong cùng biểu mẫu.
-            Không liên quan đội training tân binh (màn Chia đội).
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
+              Quản lý Ban
+            </h1>
+          </div>
+          <p className="mt-2 text-sm text-muted max-w-xl">
+            Tạo Ban, chọn thành viên và chỉ định Leader trong cùng biểu mẫu.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">

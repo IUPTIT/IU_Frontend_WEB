@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Pencil, Plus, Trash2, Users } from "lucide-react";
 import Button from "../../../components/ui/Button";
 import Icon from "../../../components/ui/Icon";
+import { useToast } from "../../../context/useToast";
 import {
   assignMyDepartmentMember,
   getMyLedDepartment,
@@ -11,11 +12,11 @@ import {
 import type { ClubDepartment, DepartmentMember } from "../../../types/departments";
 
 export default function LeaderMembersPage() {
+  const toast = useToast();
   const [department, setDepartment] = useState<ClubDepartment | null>(null);
   const [members, setMembers] = useState<DepartmentMember[]>([]);
   const [unassigned, setUnassigned] = useState<DepartmentMember[]>([]);
   const [showAdd, setShowAdd] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -34,11 +35,6 @@ export default function LeaderMembersPage() {
     void load();
   }, [load]);
 
-  const notify = (message: string) => {
-    setToast(message);
-    window.setTimeout(() => setToast(null), 2500);
-  };
-
   if (error) {
     return <section className="neu-card !p-8 text-center text-muted">{error}</section>;
   }
@@ -48,9 +44,11 @@ export default function LeaderMembersPage() {
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wider text-muted">Ban đang phụ trách</p>
-          <h1 className="font-display text-3xl font-extrabold">{department?.name ?? "Đang tải..."}</h1>
-          <p className="mt-2 text-sm text-muted">
-            Leader có thể thêm Member chưa phân Ban và gỡ thành viên khỏi Ban mình.
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">{department?.name ?? "Đang tải..."}</h1>
+          </div>
+          <p className="mt-2 text-sm text-muted max-w-xl">
+            Thêm Member chưa phân Ban và gỡ thành viên khỏi Ban.
           </p>
         </div>
         <Button
@@ -61,8 +59,6 @@ export default function LeaderMembersPage() {
           Thêm thành viên
         </Button>
       </header>
-
-      {toast && <p className="rounded-2xl bg-accent/10 px-4 py-3 text-sm text-accent">{toast}</p>}
 
       {showAdd && (
         <div className="neu-card space-y-3 !p-4">
@@ -79,10 +75,10 @@ export default function LeaderMembersPage() {
                 onClick={async () => {
                   try {
                     await assignMyDepartmentMember(m.id);
-                    notify(`Đã thêm ${m.fullName} vào Ban.`);
+                    toast.success(`Đã thêm ${m.fullName} vào Ban.`);
                     await load();
                   } catch (err) {
-                    notify(err instanceof Error ? err.message : "Thêm thành viên thất bại.");
+                    toast.error(err instanceof Error ? err.message : "Thêm thành viên thất bại.");
                   }
                 }}
               >
@@ -136,10 +132,10 @@ export default function LeaderMembersPage() {
                           if (phone === null) return;
                           try {
                             await updateMyDepartmentMember(m.id, { name, phone });
-                            notify("Đã cập nhật thành viên.");
+                            toast.success("Đã cập nhật thành viên.");
                             await load();
                           } catch (err) {
-                            notify(err instanceof Error ? err.message : "Cập nhật thất bại.");
+                            toast.error(err instanceof Error ? err.message : "Cập nhật thất bại.");
                           }
                         }}
                       >
@@ -153,10 +149,10 @@ export default function LeaderMembersPage() {
                           if (!window.confirm(`Gỡ ${m.fullName} khỏi Ban?`)) return;
                           try {
                             await removeMyDepartmentMember(m.id);
-                            notify("Đã gỡ thành viên khỏi Ban.");
+                            toast.success("Đã gỡ thành viên khỏi Ban.");
                             await load();
                           } catch (err) {
-                            notify(err instanceof Error ? err.message : "Gỡ thành viên thất bại.");
+                            toast.error(err instanceof Error ? err.message : "Gỡ thành viên thất bại.");
                           }
                         }}
                       >

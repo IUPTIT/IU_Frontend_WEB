@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import logo from "../assets/logo.png";
+import logo from "../assets/logo-mark.png";
 
 type NavItem = { label: string; to: string; anchor?: string; children?: NavItem[] };
 

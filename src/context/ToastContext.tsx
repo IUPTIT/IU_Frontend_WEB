@@ -8,15 +8,28 @@ import { ToastContext, type ToastItem, type ToastVariant } from "./toast-context
 import ToastViewport from "../components/ui/ToastViewport";
 
 const AUTO_DISMISS_MS = 3200;
+/** Khớp thời lượng animation toast-out trong tailwind.config.js */
+const EXIT_MS = 440;
 
 type Props = { children: ReactNode };
 
 export function ToastProvider({ children }: Props) {
   const [items, setItems] = useState<ToastItem[]>([]);
 
-  const dismiss = useCallback((id: string) => {
+  const remove = useCallback((id: string) => {
     setItems((prev) => prev.filter((t) => t.id !== id));
   }, []);
+
+  /** Đánh dấu leaving → chạy hiệu ứng thoát → gỡ khỏi danh sách sau EXIT_MS */
+  const dismiss = useCallback(
+    (id: string) => {
+      setItems((prev) =>
+        prev.map((t) => (t.id === id ? { ...t, leaving: true } : t)),
+      );
+      window.setTimeout(() => remove(id), EXIT_MS);
+    },
+    [remove],
+  );
 
   const push = useCallback((message: string, variant: ToastVariant = "success") => {
     const id = `toast-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;

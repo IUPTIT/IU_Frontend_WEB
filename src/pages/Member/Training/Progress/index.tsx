@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import TrainingChatWidget from "../../../../components/training/TrainingChatWidget";
 import Badge from "../../../../components/ui/Badge";
+import { useToast } from "../../../../context/useToast";
 import {
   getMyMentorTasks,
   getMyTraining,
@@ -62,7 +63,7 @@ export default function MemberTrainingProgressPage() {
   const [progress, setProgress] = useState<TrainingProgress | null>(null);
   const [tasks, setTasks] = useState<MyMentorTask[]>([]);
   const [loading, setLoading] = useState(true);
-  const [toast, setToast] = useState<string | null>(null);
+  const toast = useToast();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -81,12 +82,11 @@ export default function MemberTrainingProgressPage() {
       setProgress(p);
       setTasks(t);
     } catch (err) {
-      setToast(err instanceof Error ? err.message : "Tải tiến độ thất bại");
-      window.setTimeout(() => setToast(null), 2500);
+      toast.error(err instanceof Error ? err.message : "Tải tiến độ thất bại");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     void load();
@@ -147,16 +147,9 @@ export default function MemberTrainingProgressPage() {
           Tiến độ & Kết quả
         </h1>
         <p className="text-sm text-muted">
-          Theo dõi % task đã duyệt và điểm mentor chấm — dữ liệu thật từ hệ
-          thống.
+          Theo dõi % task đã duyệt và điểm mentor chấm.
         </p>
       </header>
-
-      {toast && (
-        <div className="rounded-2xl bg-accent/15 px-4 py-2 text-sm font-medium text-accent">
-          {toast}
-        </div>
-      )}
 
       <div className="grid gap-5 lg:grid-cols-[1.4fr_1fr]">
         <article className="neu-card !p-5 space-y-4">

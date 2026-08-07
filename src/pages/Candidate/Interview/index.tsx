@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Button from "../../../components/ui/Button";
 import InterviewCalendar from "../../../components/InterviewCalendar";
+import { useToast } from "../../../context/useToast";
 import {
   changeSlot,
   confirmBooking,
@@ -29,7 +30,7 @@ function CandidateInterviewPage() {
   const [slots, setSlots] = useState<CandidateSlot[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
+  const toast = useToast();
 
   // Giữ chỗ: slot đang chọn + hạn xác nhận (countdown 150s)
   const [heldSlot, setHeldSlot] = useState<CandidateSlot | null>(null);
@@ -47,11 +48,6 @@ function CandidateInterviewPage() {
   });
   const [calYear, setCalYear] = useState(() => new Date().getFullYear());
   const [calMonth, setCalMonth] = useState(() => new Date().getMonth());
-
-  const showToast = (msg: string) => {
-    setToast(msg);
-    window.setTimeout(() => setToast(null), 3500);
-  };
 
   // reload gọi từ event handler (sau đặt/đổi lịch); mount dùng .then bên dưới
   const reload = useCallback(async () => {
@@ -101,11 +97,11 @@ function CandidateInterviewPage() {
       if (left === 0) {
         setHeldSlot(null);
         setHoldExpiresAt(null);
-        showToast("Hết thời gian giữ chỗ — chọn lại ca nhé.");
+        toast.info("Hết thời gian giữ chỗ — chọn lại ca nhé.");
       }
     }, 1000);
     return () => window.clearInterval(timer);
-  }, [holdExpiresAt]);
+  }, [holdExpiresAt, toast]);
 
   const handlePick = async (slot: CandidateSlot) => {
     if (busy) return;
@@ -115,10 +111,10 @@ function CandidateInterviewPage() {
       try {
         await changeSlot(slot._id);
         setChanging(false);
-        showToast("Đã đổi ca phỏng vấn thành công — kiểm tra email xác nhận.");
+        toast.success("Đã đổi ca phỏng vấn thành công — kiểm tra email xác nhận.");
         await reload();
       } catch (err) {
-        showToast(err instanceof Error ? err.message : "Đổi ca thất bại");
+        toast.error(err instanceof Error ? err.message : "Đổi ca thất bại");
       } finally {
         setBusy(false);
       }
@@ -132,7 +128,7 @@ function CandidateInterviewPage() {
       setHoldExpiresAt(expires);
       setRemaining(Math.max(0, Math.round((expires - Date.now()) / 1000)));
     } catch (err) {
-      showToast(err instanceof Error ? err.message : "Giữ chỗ thất bại");
+      toast.error(err instanceof Error ? err.message : "Giữ chỗ thất bại");
     } finally {
       setBusy(false);
     }
@@ -145,10 +141,10 @@ function CandidateInterviewPage() {
       await confirmBooking(heldSlot._id);
       setHeldSlot(null);
       setHoldExpiresAt(null);
-      showToast("Đặt lịch thành công — kiểm tra email xác nhận nhé!");
+      toast.success("Đặt lịch thành công — kiểm tra email xác nhận nhé!");
       await reload();
     } catch (err) {
-      showToast(err instanceof Error ? err.message : "Xác nhận thất bại");
+      toast.error(err instanceof Error ? err.message : "Xác nhận thất bại");
     } finally {
       setBusy(false);
     }
@@ -176,20 +172,18 @@ function CandidateInterviewPage() {
 
   return (
     <>
-      <section className="space-y-2">
-        <h1 className="font-display text-3xl font-extrabold tracking-tight">Lịch phỏng vấn</h1>
-        <p className="text-muted">
+      <div>
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
+            Lịch phỏng vấn
+          </h1>
+        </div>
+        <p className="mt-2 text-sm text-muted max-w-xl">
           Hồ sơ <span className="font-semibold text-foreground">{application.applicationCode}</span>
           {" · "}
           {typeof application.campaignId === "object" ? application.campaignId.name : ""}
         </p>
-      </section>
-
-      {toast && (
-        <p className="rounded-2xl bg-accent/10 px-4 py-3 text-sm text-accent" role="status">
-          {toast}
-        </p>
-      )}
+      </div>
 
       {/* Đã có lịch */}
       {bookedSlot && !changing && (
