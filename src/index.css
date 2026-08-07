@@ -34,7 +34,10 @@
       hover:-translate-y-px hover:shadow-extruded-hover
       active:translate-y-[0.5px] active:shadow-inset-sm
       focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
-      focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+      focus-visible:ring-offset-2 focus-visible:ring-offset-background
+      disabled:opacity-45 disabled:cursor-not-allowed disabled:shadow-inset-sm
+      disabled:hover:translate-y-0 disabled:hover:shadow-inset-sm
+      disabled:active:translate-y-0;
   }
 
   .neu-btn-primary {

@@ -70,6 +70,8 @@ export type Application = {
   fullName: string;
   email: string;
   phone?: string;
+  /** ISO date — dùng tạo MK mặc định DDMMYYYY khi gửi email Pass */
+  dateOfBirth?: string | null;
   /** VD: K62 - Khoa CNTT */
   education?: string;
   preferredDepartmentId: string; // Ban nguyện vọng (NV1 hoặc assigned)
@@ -139,6 +141,7 @@ export type ApplicationScore = {
 export type InterviewerRef = {
   id: string;
   name: string;
+  role?: "bcn" | "leader" | "member";
 };
 
 export type InterviewSlotStatus = "scheduled" | "missing_interviewers" | "done";

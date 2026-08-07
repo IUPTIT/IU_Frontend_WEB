@@ -39,6 +39,9 @@ function resolveNotifLink(
     if (link.startsWith("/admin/recruitment/interviews")) {
       return link.replace("/admin/", "/leader/");
     }
+    if (link.startsWith("/member/recruitment/interviews")) {
+      return link.replace("/member/", "/leader/");
+    }
     if (
       link.startsWith("/member/training") ||
       link.startsWith("/member/mentor")
@@ -50,16 +53,23 @@ function resolveNotifLink(
     if (link.startsWith("/leader/recruitment/interviews")) {
       return link.replace("/leader/", "/admin/");
     }
+    if (link.startsWith("/member/recruitment/interviews")) {
+      return link.replace("/member/", "/admin/");
+    }
     if (link.startsWith("/member/training")) {
       return ROUTES.admin.training.teams;
     }
   }
-  if (
-    role === "member" &&
-    isMentor &&
-    link.startsWith("/member/training/progress")
-  ) {
-    return ROUTES.member.mentorTasks;
+  if (role === "member") {
+    if (link.startsWith("/admin/recruitment/interviews")) {
+      return link.replace("/admin/", "/member/");
+    }
+    if (link.startsWith("/leader/recruitment/interviews")) {
+      return link.replace("/leader/", "/member/");
+    }
+    if (isMentor && link.startsWith("/member/training/progress")) {
+      return ROUTES.member.mentorTasks;
+    }
   }
   return link;
 }

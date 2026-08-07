@@ -66,8 +66,8 @@ function MentorManageModal({ open, onClose, onChanged }: Props) {
             Quản lý mentor
           </h2>
           <p className="mt-1 text-sm text-muted">
-            Đẩy quyền mentor cho member — mentor tự tạo lộ trình và dẫn team tân binh.
-            Leader mặc định là mentor.
+            Đẩy quyền Mentor training cho Member CLB — mentor tự tạo lộ trình và
+            dẫn team tân binh. Quyền này độc lập với Leader Ban.
           </p>
         </header>
 
@@ -88,26 +88,20 @@ function MentorManageModal({ open, onClose, onChanged }: Props) {
                     </p>
                     <p className="truncate text-xs text-muted">{c.email}</p>
                   </div>
-                  {c.roleLabel === "Leader" ? (
-                    <span className="shrink-0 rounded-full bg-accent/15 px-3 py-1 text-xs font-semibold text-accent">
-                      Mentor mặc định
-                    </span>
-                  ) : (
-                    <Button
-                      variant={c.isMentor ? "secondary" : "primary"}
-                      size="sm"
-                      className="!h-9 shrink-0"
-                      disabled={busyId === c.id}
-                      onClick={() => void toggle(c)}
-                    >
-                      {c.isMentor ? "Gỡ mentor" : "Đẩy làm mentor"}
-                    </Button>
-                  )}
+                  <Button
+                    variant={c.isMentor ? "secondary" : "primary"}
+                    size="sm"
+                    className="!h-9 shrink-0"
+                    disabled={busyId === c.id}
+                    onClick={() => void toggle(c)}
+                  >
+                    {c.isMentor ? "Gỡ mentor" : "Đẩy làm mentor"}
+                  </Button>
                 </li>
               ))}
               {candidates.length === 0 && (
                 <li className="px-3 py-10 text-center text-sm text-muted">
-                  Chưa có member/leader nào trong hệ thống.
+                  Chưa có thành viên CLB chính thức trong hệ thống.
                 </li>
               )}
             </ul>

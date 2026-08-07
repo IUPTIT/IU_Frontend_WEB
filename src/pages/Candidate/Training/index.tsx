@@ -1,35 +1,48 @@
 import { useCallback, useEffect, useState } from "react";
 import { TraineeTrainingHub } from "../../../components/training/TraineeTrainingHub";
+import { ROUTES } from "../../../constants/routes";
+import { usePortalUi } from "../../../context/usePortalUi";
 import {
   getMyMentorTasks,
   getMyTraining,
+  getMyTrainingProgress,
   type MyMentorTask,
   type MyTraining,
 } from "../../../services/trainingService";
 
 /**
- * Ứng viên / tân binh xem training — cùng layout soft-UI với Member.
- * Sau khi trúng tuyển user chuyển Member; route này giữ cho tài khoản còn role candidate
- * hoặc khi cần xem lại trạng thái trước bàn giao.
+ * Ứng viên / tân binh xem training — giữ role candidate đến khi hoàn thành training.
  */
 export default function CandidateTrainingPage() {
+  const { navigate } = usePortalUi();
   const [training, setTraining] = useState<MyTraining | null>(null);
   const [tasks, setTasks] = useState<MyMentorTask[]>([]);
+  const [progressPercent, setProgressPercent] = useState(0);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
     const me = await getMyTraining();
     const myTasks = me ? await getMyMentorTasks(me.trainee.id) : [];
-    return { me, myTasks };
+    let pct = 0;
+    if (me) {
+      try {
+        const p = await getMyTrainingProgress(me.trainee.id);
+        pct = p.percentComplete;
+      } catch {
+        pct = 0;
+      }
+    }
+    return { me, myTasks, pct };
   }, []);
 
   useEffect(() => {
     let alive = true;
     void load()
-      .then(({ me, myTasks }) => {
+      .then(({ me, myTasks, pct }) => {
         if (!alive) return;
         setTraining(me);
         setTasks(myTasks);
+        setProgressPercent(pct);
       })
       .finally(() => alive && setLoading(false));
     return () => {
@@ -38,9 +51,10 @@ export default function CandidateTrainingPage() {
   }, [load]);
 
   const reload = () => {
-    void load().then(({ me, myTasks }) => {
+    void load().then(({ me, myTasks, pct }) => {
       setTraining(me);
       setTasks(myTasks);
+      setProgressPercent(pct);
     });
   };
 
@@ -54,13 +68,26 @@ export default function CandidateTrainingPage() {
     );
   }
 
+  const subtitle = training
+    ? `Tiếp tục hành trình tại Ban ${training.trainee.departmentName}${
+        training.trainee.cohortLabel
+          ? ` · ${training.trainee.cohortLabel}`
+          : ""
+      }.`
+    : undefined;
+
   return (
     <TraineeTrainingHub
-      title="Đào tạo thành viên mới"
+      title="Training của tôi"
+      subtitle={subtitle}
       training={training}
       tasks={tasks}
+      progressPercent={progressPercent}
       onReload={reload}
       emptyMessage="Chương trình training mở sau khi bạn trúng tuyển và được Ban Chủ nhiệm bàn giao. Hiện bạn chưa có hồ sơ trainee."
+      onOpenTaskDetail={(id) =>
+        navigate(ROUTES.candidate.trainingTaskDetail(id))
+      }
     />
   );
 }

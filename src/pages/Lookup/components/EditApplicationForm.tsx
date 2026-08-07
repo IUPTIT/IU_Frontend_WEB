@@ -1,6 +1,10 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { editApplication, type PublicApplication } from "../../../services/publicRecruitmentService";
+import {
+  validatePersonName,
+  validatePhoneVN,
+} from "../../../utils/validateContact";
 
 type Props = {
   application: PublicApplication;
@@ -23,8 +27,18 @@ function EditApplicationForm({ application, onSaved, onCancel }: Props) {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setSaving(true);
     setError(null);
+    const nameErr = validatePersonName(fullName);
+    if (nameErr) {
+      setError(nameErr);
+      return;
+    }
+    const phoneErr = validatePhoneVN(phone);
+    if (phoneErr) {
+      setError(phoneErr);
+      return;
+    }
+    setSaving(true);
     try {
       const updated = await editApplication(application.code, {
         email: application.email,

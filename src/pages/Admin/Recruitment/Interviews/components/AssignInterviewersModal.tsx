@@ -72,8 +72,8 @@ function AssignInterviewersModal({ open, slot, interviewers, onClose, onSubmit }
             Phân công người phỏng vấn
           </h2>
           <p className="mt-1 text-sm text-muted">
-            Ca {slot.startTime} · {slot.locationOrLink} · {booked}/{capacity} chỗ — panel
-            chung cho mọi ứng viên trong ca
+            Ca {slot.startTime} · {slot.locationOrLink} · {booked}/{capacity} chỗ —
+            chọn BCN / Leader / Member. Ai trong panel đều chấm được.
           </p>
         </header>
         <div className="space-y-2 p-5 max-h-[50vh] overflow-y-auto">
@@ -93,6 +93,11 @@ function AssignInterviewersModal({ open, slot, interviewers, onClose, onSubmit }
                 onChange={() => toggle(iv.id)}
               />
               <span className="font-medium">{iv.name}</span>
+              {iv.role && (
+                <span className="ml-auto text-xs text-muted capitalize">
+                  {iv.role === "bcn" ? "BCN" : iv.role}
+                </span>
+              )}
             </label>
           ))}
           {error && <p className="text-sm text-rose-500">{error}</p>}

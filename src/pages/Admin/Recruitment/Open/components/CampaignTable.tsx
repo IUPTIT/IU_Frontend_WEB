@@ -20,16 +20,6 @@ import CampaignStatusBadge from "./CampaignStatusBadge";
 import type { RecruitmentCampaign } from "../../../../../types/recruitment";
 import { formatDate } from "../../../../../utils/formatDate";
 
-type Props = {
-  campaigns: RecruitmentCampaign[];
-  page: number;
-  pageSize: number;
-  onToggleActive: (id: string, active: boolean) => void;
-  onEdit: (campaign: RecruitmentCampaign) => void;
-  onDelete: (campaign: RecruitmentCampaign) => void;
-  onComplete?: (campaign: RecruitmentCampaign) => void;
-};
-
 const COLUMNS: DataTableColumn[] = [
   { id: "tt", label: "TT", width: 64, minWidth: 48, align: "center" },
   { id: "name", label: "Tên đợt đăng ký", width: 240, minWidth: 140, align: "left" },
@@ -39,6 +29,19 @@ const COLUMNS: DataTableColumn[] = [
   { id: "active", label: "Kích hoạt", width: 110, minWidth: 88, align: "center" },
   { id: "actions", label: "Thao tác", width: 110, minWidth: 88, align: "center" },
 ];
+
+export const CAMPAIGN_TABLE_COLUMNS = COLUMNS;
+
+type Props = {
+  campaigns: RecruitmentCampaign[];
+  page: number;
+  pageSize: number;
+  visibleIds?: string[];
+  onToggleActive: (id: string, active: boolean) => void;
+  onEdit: (campaign: RecruitmentCampaign) => void;
+  onDelete: (campaign: RecruitmentCampaign) => void;
+  onComplete?: (campaign: RecruitmentCampaign) => void;
+};
 
 function displayDate(iso: string | null) {
   return iso ? formatDate(iso) : "--/--/----";
@@ -50,13 +53,21 @@ function CampaignTable({
   campaigns,
   page,
   pageSize,
+  visibleIds,
   onToggleActive,
   onEdit,
   onDelete,
   onComplete,
 }: Props) {
   const startIndex = (page - 1) * pageSize;
-  const { widths, setWidth } = useColumnWidths(COLUMNS);
+  const displayColumns = useMemo(
+    () =>
+      visibleIds?.length
+        ? COLUMNS.filter((c) => visibleIds.includes(c.id))
+        : COLUMNS,
+    [visibleIds],
+  );
+  const { widths, setWidth } = useColumnWidths(displayColumns);
 
   // Cột định nghĩa qua TanStack Table — model bảng do thư viện quản lý
   const columns = useMemo(
@@ -95,7 +106,7 @@ function CampaignTable({
                 checked={c.isActive}
                 onChange={(checked) => onToggleActive(c.id, checked)}
                 aria-label={`Kích hoạt ${c.name}`}
-                disabled={c.status === "closed"}
+                disabled={c.status === "completed"}
               />
             </div>
           );
@@ -142,16 +153,15 @@ function CampaignTable({
   return (
     <DataTableShell minWidth={800}>
       <colgroup>
-        {COLUMNS.map((c) => (
+        {displayColumns.map((c) => (
           <col key={c.id} style={{ width: widths[c.id] }} />
         ))}
       </colgroup>
-      <DataTableHead columns={COLUMNS} widths={widths} onResize={setWidth} />
+      <DataTableHead columns={displayColumns} widths={widths} onResize={setWidth} />
       <tbody>
         {rows.length === 0 ? (
           <tr>
-            <td colSpan={COLUMNS.length}>
-              {/* Empty state — không để bảng trống trơn */}
+            <td colSpan={displayColumns.length}>
               <div className="flex flex-col items-center gap-3 py-14 text-center">
                 <div className="neu-well h-16 w-16 text-muted">
                   <Icon icon={FolderOpen} size={28} />
@@ -167,14 +177,19 @@ function CampaignTable({
         ) : (
           rows.map((row) => (
             <tr key={row.id}>
-              {row.getVisibleCells().map((cell) => {
-                const col = COLUMNS.find((c) => c.id === cell.column.id);
-                return (
-                  <DataTableCell key={cell.id} align={col?.align}>
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </DataTableCell>
-                );
-              })}
+              {row
+                .getVisibleCells()
+                .filter((cell) =>
+                  displayColumns.some((c) => c.id === cell.column.id),
+                )
+                .map((cell) => {
+                  const col = displayColumns.find((c) => c.id === cell.column.id);
+                  return (
+                    <DataTableCell key={cell.id} align={col?.align}>
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </DataTableCell>
+                  );
+                })}
             </tr>
           ))
         )}

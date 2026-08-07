@@ -18,6 +18,7 @@ import type {
   EmailTemplate,
   EmailTemplateCategory,
 } from "../../types/email";
+import { useToast } from "../../context/useToast";
 
 type Props = {
   open: boolean;
@@ -30,6 +31,8 @@ type Props = {
   preferredTemplateId?: string;
   title?: string;
   onSent?: (sent: number) => void;
+  /** Tự chạy preview khi template đã load (mặc định true) */
+  autoPreview?: boolean;
 };
 
 /**
@@ -45,7 +48,9 @@ function SendEmailModal({
   preferredTemplateId,
   title = "Gửi email",
   onSent,
+  autoPreview = true,
 }: Props) {
+  const toastApi = useToast();
   const bodyRef = useRef<HTMLTextAreaElement>(null);
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const [placeholders, setPlaceholders] = useState<EmailPlaceholder[]>([]);
@@ -56,14 +61,35 @@ function SendEmailModal({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
-  const [previewHtml, setPreviewHtml] = useState<{ subject: string; bodyHtml: string } | null>(null);
+  const [previewHtml, setPreviewHtml] = useState<{
+    subject: string;
+    bodyHtml: string;
+  } | null>(null);
   const [testEmail, setTestEmail] = useState("");
   const [showTest, setShowTest] = useState(false);
+  const [showAllRecipients, setShowAllRecipients] = useState(false);
 
   const sampleData = useMemo(() => {
     const first = recipients[0];
     return first?.data ?? {};
   }, [recipients]);
+
+  const runPreview = useCallback(
+    async (subj: string, bod: string, data: Record<string, string>) => {
+      if (!subj.trim() && !bod.trim()) return;
+      try {
+        const res = await previewEmail({
+          subject: subj,
+          body: bod,
+          sampleData: data,
+        });
+        setPreviewHtml(res);
+      } catch {
+        /* preview lỗi không chặn gửi */
+      }
+    },
+    [],
+  );
 
   const loadMeta = useCallback(async () => {
     try {
@@ -75,18 +101,26 @@ function SendEmailModal({
       setTemplates(active.length ? active : tpls);
       setPlaceholders(ph);
       const preferred =
-        (preferredTemplateId && tpls.find((t) => t.id === preferredTemplateId)) ||
+        (preferredTemplateId &&
+          tpls.find(
+            (t) =>
+              t.id === preferredTemplateId || t.slug === preferredTemplateId,
+          )) ||
         active[0] ||
         tpls[0];
       if (preferred) {
         setTemplateId(preferred.id);
         setSubject(preferred.subject);
         setBody(preferred.body);
-      } else {
-        setTemplateId("");
-        setSubject("");
-        setBody("");
+        return {
+          subject: preferred.subject,
+          body: preferred.body,
+        };
       }
+      setTemplateId("");
+      setSubject("");
+      setBody("");
+      return { subject: "", body: "" };
     } finally {
       setLoading(false);
     }
@@ -101,14 +135,29 @@ function SendEmailModal({
       setToast(null);
       setPreviewHtml(null);
       setShowTest(false);
+      setShowAllRecipients(false);
       setLoading(true);
     }
   }
 
   useEffect(() => {
     if (!open) return;
-    void loadMeta();
-  }, [open, loadMeta]);
+    let cancelled = false;
+    void (async () => {
+      const loaded = await loadMeta();
+      if (cancelled || !loaded) return;
+      if (autoPreview && recipients.length > 0) {
+        await runPreview(
+          loaded.subject,
+          loaded.body,
+          recipients[0]?.data ?? {},
+        );
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [open, loadMeta, autoPreview, recipients, runPreview]);
 
   const onPickTemplate = async (id: string) => {
     setTemplateId(id);
@@ -117,6 +166,9 @@ function SendEmailModal({
     if (tpl) {
       setSubject(tpl.subject);
       setBody(tpl.body);
+      if (autoPreview) {
+        await runPreview(tpl.subject, tpl.body, sampleData);
+      }
     }
   };
 
@@ -155,12 +207,20 @@ function SendEmailModal({
     setBusy(true);
     setError(null);
     try {
-      const res = await sendTestEmail({ to: testEmail, subject, body, sampleData });
+      const res = await sendTestEmail({
+        to: testEmail,
+        subject,
+        body,
+        sampleData,
+      });
       if (!res.ok) setError(res.message);
       else {
         setToast(res.message);
+        toastApi.success(res.message);
         setShowTest(false);
       }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Gửi thử thất bại");
     } finally {
       setBusy(false);
     }
@@ -168,7 +228,7 @@ function SendEmailModal({
 
   const handleSend = async () => {
     if (recipients.length === 0) {
-      setError("Chưa chọn người nhận.");
+      setError("Chưa có người nhận.");
       return;
     }
     if (!subject.trim() || !body.trim()) {
@@ -185,8 +245,15 @@ function SendEmailModal({
         body,
         module,
       });
-      onSent?.(res.sent);
-      setToast(`Đã gửi ${res.sent} email${res.failed ? `, thất bại ${res.failed}` : ""}.`);
+      if (res.sent > 0) {
+        onSent?.(res.sent);
+        toastApi.sent(res.sent);
+      } else if (res.failed > 0) {
+        toastApi.error(`Gửi thất bại ${res.failed} email.`);
+      }
+      setToast(
+        `Đã gửi ${res.sent} email${res.failed ? `, thất bại ${res.failed}` : ""}.`,
+      );
       window.setTimeout(() => {
         onClose();
       }, 900);
@@ -196,6 +263,10 @@ function SendEmailModal({
       setBusy(false);
     }
   };
+
+  const visibleRecipients = showAllRecipients
+    ? recipients
+    : recipients.slice(0, 12);
 
   return (
     <Modal
@@ -209,8 +280,13 @@ function SendEmailModal({
           <Button variant="ghost" onClick={onClose} disabled={busy}>
             Hủy
           </Button>
-          <Button variant="secondary" onClick={() => void handlePreview()} disabled={busy || loading} leftIcon={<Icon icon={Eye} size={16} />}>
-            Preview
+          <Button
+            variant="secondary"
+            onClick={() => void handlePreview()}
+            disabled={busy || loading}
+            leftIcon={<Icon icon={Eye} size={16} />}
+          >
+            Xem trước
           </Button>
           <Button
             variant="soft"
@@ -220,23 +296,34 @@ function SendEmailModal({
           >
             Gửi thử
           </Button>
-          <Button variant="primary" onClick={() => void handleSend()} disabled={busy || loading} leftIcon={<Icon icon={Send} size={16} />}>
+          <Button
+            variant="primary"
+            onClick={() => void handleSend()}
+            disabled={busy || loading}
+            leftIcon={<Icon icon={Send} size={16} />}
+          >
             Gửi email
           </Button>
         </>
       }
     >
       {loading ? (
-        <div className="h-48 animate-pulse rounded-2xl bg-background shadow-inset-sm" aria-busy />
+        <div
+          className="h-48 animate-pulse rounded-2xl bg-background shadow-inset-sm"
+          aria-busy
+        />
       ) : (
-        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_220px]">
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_240px]">
           <div className="space-y-4 min-w-0">
             <div>
               <span className="neu-field-label">Loại email (Template)</span>
               <Select
                 width="full"
                 value={templateId}
-                options={templates.map((t) => ({ value: t.id, label: t.name }))}
+                options={templates.map((t) => ({
+                  value: t.id,
+                  label: t.name,
+                }))}
                 onChange={(id) => void onPickTemplate(id)}
                 placeholder="Chọn template"
               />
@@ -256,7 +343,7 @@ function SendEmailModal({
               <span className="neu-field-label">Nội dung</span>
               <textarea
                 ref={bodyRef}
-                className="neu-input !h-auto min-h-[220px] py-3 font-mono text-sm resize-y"
+                className="neu-input !h-auto min-h-[180px] py-3 font-mono text-sm resize-y"
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
                 placeholder="Nội dung email..."
@@ -275,7 +362,13 @@ function SendEmailModal({
                     placeholder="admin@gmail.com"
                   />
                 </label>
-                <Button variant="primary" size="sm" className="!h-10" disabled={busy} onClick={() => void handleTest()}>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  className="!h-10"
+                  disabled={busy || !testEmail.trim()}
+                  onClick={() => void handleTest()}
+                >
                   Gửi test
                 </Button>
               </div>
@@ -283,8 +376,15 @@ function SendEmailModal({
 
             {previewHtml && (
               <div className="rounded-2xl border border-accent/20 bg-background p-4 shadow-inset-sm space-y-2">
-                <p className="text-xs font-semibold uppercase tracking-wide text-accent">Preview</p>
-                <p className="font-semibold text-foreground">{previewHtml.subject}</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-accent">
+                  Xem trước
+                  {recipients[0]
+                    ? ` · mẫu: ${recipients[0].name}`
+                    : ""}
+                </p>
+                <p className="font-semibold text-foreground">
+                  {previewHtml.subject}
+                </p>
                 <div
                   className="prose prose-sm max-w-none text-sm text-foreground [&_a]:text-accent"
                   dangerouslySetInnerHTML={{ __html: previewHtml.bodyHtml }}
@@ -301,9 +401,36 @@ function SendEmailModal({
           </div>
 
           <aside className="space-y-3">
+            <div className="rounded-2xl bg-accent/8 p-3 text-xs text-muted">
+              <p className="font-semibold text-foreground">
+                Người nhận ({recipients.length})
+              </p>
+              <ul className="mt-2 max-h-48 space-y-1.5 overflow-y-auto">
+                {visibleRecipients.map((r) => (
+                  <li key={r.id} className="leading-snug">
+                    <span className="block truncate font-medium text-foreground">
+                      {r.name}
+                    </span>
+                    <span className="block truncate">{r.email}</span>
+                  </li>
+                ))}
+              </ul>
+              {recipients.length > 12 && (
+                <button
+                  type="button"
+                  className="mt-2 text-accent font-medium hover:underline"
+                  onClick={() => setShowAllRecipients((v) => !v)}
+                >
+                  {showAllRecipients
+                    ? "Thu gọn"
+                    : `Xem thêm ${recipients.length - 12} người`}
+                </button>
+              )}
+            </div>
+
             <p className="neu-field-label !mb-0">Placeholder</p>
             <p className="text-xs text-muted">Click để chèn vào nội dung</p>
-            <ul className="max-h-[420px] space-y-1.5 overflow-y-auto rounded-2xl bg-background p-2 shadow-inset-sm">
+            <ul className="max-h-[280px] space-y-1.5 overflow-y-auto rounded-2xl bg-background p-2 shadow-inset-sm">
               {placeholders.map((p) => (
                 <li key={p.key}>
                   <button
@@ -318,17 +445,6 @@ function SendEmailModal({
                 </li>
               ))}
             </ul>
-            <div className="rounded-2xl bg-accent/8 p-3 text-xs text-muted">
-              <p className="font-semibold text-foreground">Người nhận</p>
-              <ul className="mt-2 max-h-28 space-y-1 overflow-y-auto">
-                {recipients.slice(0, 8).map((r) => (
-                  <li key={r.id} className="truncate">
-                    {r.name} · {r.email}
-                  </li>
-                ))}
-                {recipients.length > 8 && <li>+{recipients.length - 8} người nữa</li>}
-              </ul>
-            </div>
           </aside>
         </div>
       )}

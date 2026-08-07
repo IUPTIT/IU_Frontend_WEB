@@ -66,7 +66,11 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   } catch (err) {
     // Access token hết hạn → refresh rồi gọi lại đúng 1 lần
     const is401 = err instanceof ApiRequestError && err.status === 401;
-    const isAuthPath = path.startsWith("/auth/login") || path.startsWith("/auth/refresh");
+    const isAuthPath =
+      path.startsWith("/auth/login") ||
+      path.startsWith("/auth/refresh") ||
+      path.startsWith("/auth/forgot-password") ||
+      path.startsWith("/auth/reset-password");
     if (is401 && !isAuthPath && (await tryRefresh())) {
       const { data } = await rawRequest<T>(path, options);
       return data;

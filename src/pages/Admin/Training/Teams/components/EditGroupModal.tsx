@@ -8,7 +8,7 @@ import { updateTrainingGroup } from "../../../../../services/trainingService";
 import type { Trainee, TrainingGroup, TrainingProgram } from "../../../../../types/training";
 
 /**
- * Chỉnh sửa nhóm: đổi mentor, điều chỉnh thành viên (UC 37–38) —
+ * Chỉnh sửa nhóm: phân Mentor, điều chỉnh thành viên (UC 37–38) —
  * kế thừa modal soft-UI của trang Chia đội Admin.
  */
 export default function EditGroupModal({
@@ -110,7 +110,8 @@ export default function EditGroupModal({
               Chỉnh sửa nhóm training
             </h2>
             <p className="mt-1 text-sm text-muted">
-              Đổi mentor, lộ trình hoặc điều chỉnh thành viên giữa các nhóm.
+              Đổi Mentor training (Member CLB), lộ trình hoặc điều chỉnh tân binh.
+              Để trống Mentor = thu hồi quyền phụ trách đội này.
             </p>
           </div>
           <Button variant="icon" size="sm" aria-label="Đóng" onClick={onClose}>
@@ -139,14 +140,14 @@ export default function EditGroupModal({
 
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <span className="neu-field-label">Mentor phụ trách</span>
+              <span className="neu-field-label">Mentor training (Member CLB)</span>
               <Select
                 width="full"
                 value={mentorId}
                 onChange={setMentorId}
-                placeholder="Chọn mentor"
+                placeholder="Chọn Member / Leader CLB"
                 options={[
-                  { value: "", label: "— Chưa gán —" },
+                  { value: "", label: "— Thu hồi / chưa gán —" },
                   ...mentors.map((m) => ({
                     value: m.id,
                     label: `${m.name} (${m.roleLabel})`,
@@ -215,22 +216,28 @@ export default function EditGroupModal({
             </ul>
           </div>
 
-          {error && <p className="text-sm text-rose-500">{error}</p>}
         </div>
 
-        <footer className="flex gap-3 border-t border-black/5 px-5 py-4 sm:px-6">
-          <Button variant="secondary" className="flex-1" onClick={onClose}>
-            Hủy
-          </Button>
-          <Button
-            variant="primary"
-            className="flex-1"
-            disabled={saving}
-            onClick={() => void handleSave()}
-            leftIcon={<Icon icon={Pencil} size={16} />}
-          >
-            {saving ? "Đang lưu..." : "Lưu thay đổi"}
-          </Button>
+        <footer className="space-y-3 border-t border-black/5 px-5 py-4 sm:px-6">
+          {error && (
+            <p role="alert" className="text-sm font-medium text-rose-500">
+              {error}
+            </p>
+          )}
+          <div className="flex gap-3">
+            <Button variant="secondary" className="flex-1" onClick={onClose}>
+              Hủy
+            </Button>
+            <Button
+              variant="primary"
+              className="flex-1"
+              disabled={saving}
+              onClick={() => void handleSave()}
+              leftIcon={<Icon icon={Pencil} size={16} />}
+            >
+              {saving ? "Đang lưu..." : "Lưu thay đổi"}
+            </Button>
+          </div>
         </footer>
       </div>
     </div>

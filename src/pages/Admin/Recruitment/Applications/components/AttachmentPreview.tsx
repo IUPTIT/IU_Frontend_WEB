@@ -1,18 +1,24 @@
 import type { ApplicationAttachment } from "../../../../../types/recruitment";
 
-function isImage(url: string) {
-  return /\.(jpe?g|png|gif|webp)(\?|$)/i.test(url) || url.includes("/image/upload/");
+function isImage(url: string, kind: ApplicationAttachment["kind"]) {
+  if (kind === "pdf") return false;
+  return (
+    /\.(jpe?g|png|gif|webp)(\?|$)/i.test(url) ||
+    url.includes("/image/upload/")
+  );
 }
 
-function isPdf(url: string) {
-  return /\.pdf(\?|$)/i.test(url);
+/** PDF: đuôi .pdf, kind=pdf, hoặc Cloudinary raw/upload (CV thường không có đuôi file). */
+function isPdf(url: string, kind: ApplicationAttachment["kind"]) {
+  if (kind === "pdf") return true;
+  return /\.pdf(\?|$)/i.test(url) || /\/raw\/upload\//i.test(url);
 }
 
 /** Xem trực tiếp tài liệu đính kèm ngay trong trang — ảnh render <img>, PDF nhúng iframe */
 function AttachmentPreview({ attachment }: { attachment: ApplicationAttachment }) {
-  const { url, label } = attachment;
+  const { url, label, kind } = attachment;
 
-  if (isImage(url)) {
+  if (isImage(url, kind)) {
     return (
       <img
         src={url}
@@ -23,13 +29,23 @@ function AttachmentPreview({ attachment }: { attachment: ApplicationAttachment }
     );
   }
 
-  if (isPdf(url)) {
+  if (isPdf(url, kind)) {
     return (
-      <iframe
-        src={`${url}#toolbar=0`}
-        title={label}
-        className="h-96 w-full rounded-2xl shadow-inset-sm bg-background"
-      />
+      <div className="space-y-2">
+        <iframe
+          src={`${url}#toolbar=0`}
+          title={label}
+          className="h-96 w-full rounded-2xl shadow-inset-sm bg-background"
+        />
+        <a
+          href={url}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex text-sm font-medium text-accent hover:underline"
+        >
+          Mở {label} tab mới
+        </a>
+      </div>
     );
   }
 

@@ -5,6 +5,7 @@ import type { PublicApplication, PublicApplicationStatus } from "../../../servic
 type Props = {
   application: PublicApplication;
   withdrawing: boolean;
+  withdrawError?: string | null;
   onWithdraw: () => void;
   onEdit: () => void;
 };
@@ -27,7 +28,13 @@ function Row({ label, value }: { label: string; value: string }) {
   );
 }
 
-function ApplicationStatusCard({ application, withdrawing, onWithdraw, onEdit }: Props) {
+function ApplicationStatusCard({
+  application,
+  withdrawing,
+  withdrawError,
+  onWithdraw,
+  onEdit,
+}: Props) {
   const [confirmingWithdraw, setConfirmingWithdraw] = useState(false);
 
   const [now] = useState(() => Date.now());
@@ -91,6 +98,11 @@ function ApplicationStatusCard({ application, withdrawing, onWithdraw, onEdit }:
             >
               Rút đơn
             </button>
+          )}
+          {withdrawError && (
+            <p role="alert" className="text-sm font-medium text-red-300">
+              {withdrawError}
+            </p>
           )}
         </div>
       ) : (
