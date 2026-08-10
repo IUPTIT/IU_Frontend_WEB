@@ -1,12 +1,10 @@
 # syntax=docker/dockerfile:1
 
-# --- deps: cai full dependencies (co devDeps de build) ---
 FROM node:22-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --ignore-scripts
 
-# --- dev: vite dev server, source mount qua compose override ---
 # node_modules o / (ngoai bind-mount /app) de source mount khong che khuat.
 FROM node:22-alpine AS dev
 ENV NODE_ENV=development
@@ -18,7 +16,6 @@ COPY . .
 EXPOSE 5173
 CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
 
-# --- build: tsc + vite build -> dist/ (VITE_API_URL nhung luc nay) ---
 FROM node:22-alpine AS build
 WORKDIR /app
 ARG VITE_API_URL
@@ -27,7 +24,6 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build
 
-# --- runner: vite preview serve dist qua npm run start ---
 FROM node:22-alpine AS runner
 ENV NODE_ENV=production
 WORKDIR /app
