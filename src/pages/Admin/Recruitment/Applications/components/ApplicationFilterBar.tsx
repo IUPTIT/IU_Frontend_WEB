@@ -23,9 +23,10 @@ type Props = {
 const STATUS_OPTIONS: { value: ApplicationStatus | ""; label: string }[] = [
   { value: "", label: "Tất cả trạng thái" },
   { value: "submitted", label: getApplicationStatusLabel("submitted") },
-  { value: "screening", label: getApplicationStatusLabel("screening") },
   { value: "interview", label: getApplicationStatusLabel("interview") },
+  { value: "cv_failed", label: getApplicationStatusLabel("cv_failed") },
   { value: "interview_passed", label: getApplicationStatusLabel("interview_passed") },
+  { value: "interview_failed", label: getApplicationStatusLabel("interview_failed") },
   { value: "accepted", label: getApplicationStatusLabel("accepted") },
   { value: "rejected", label: getApplicationStatusLabel("rejected") },
 ];

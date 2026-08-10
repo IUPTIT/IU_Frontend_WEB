@@ -15,12 +15,16 @@ import MetricCard from "../../../components/ui/MetricCard";
 import Pagination from "../../../components/ui/Pagination";
 import Select from "../../../components/ui/Select";
 import { usePortalUi } from "../../../context/usePortalUi";
+import { useToast } from "../../../context/useToast";
+import { getDepartments } from "../../../services/departmentsService";
+import { validatePersonName } from "../../../utils/validateContact";
 import {
   createManagedAccount,
   deactivateAccount,
   getManagedAccounts,
   updateAccountRole,
 } from "../../../services/permissionsService";
+import type { ClubDepartment } from "../../../types/departments";
 import type { AccountRole, ManagedAccount } from "../../../types/permissions";
 import { formatDate } from "../../../utils/formatDate";
 
@@ -34,18 +38,19 @@ const ACCOUNT_COLUMNS: DataTableColumn[] = [
   { id: "actions", label: "Thao tác", width: 220, minWidth: 160, align: "center" },
 ];
 
-const DEPTS = [
-  { id: "dept-tech", name: "Ban Chuyên môn" },
-  { id: "dept-media", name: "Ban Truyền thông" },
-  { id: "dept-event", name: "Ban Sự kiện" },
-  { id: "dept-hr", name: "Ban Nhân sự" },
-];
-
 const ROLE_LABEL: Record<AccountRole, string> = {
   admin: "Admin (BCN)",
-  leader: "Leader",
+  leader: "Leader Ban",
   member: "Member",
 };
+
+function dualRoleLabel(a: ManagedAccount) {
+  const roles = a.roles?.length ? a.roles : [a.role];
+  if (roles.includes("member") && roles.includes("leader")) {
+    return "Leader Ban + Member";
+  }
+  return ROLE_LABEL[a.role];
+}
 
 function roleBadgeClass(role: AccountRole) {
   if (role === "admin") return "bg-violet-500/15 text-violet-700 dark:text-violet-300";
@@ -62,15 +67,18 @@ function CreateAccountDrawer({
   open,
   onClose,
   onCreated,
+  departments,
 }: {
   open: boolean;
   onClose: () => void;
   onCreated: () => void;
+  departments: ClubDepartment[];
 }) {
+  const defaultDeptId = departments[0]?.id ?? "";
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<AccountRole>("member");
-  const [departmentId, setDepartmentId] = useState("dept-tech");
+  const [departmentId, setDepartmentId] = useState(defaultDeptId);
   const [password, setPassword] = useState("Temp@123");
   const [isTraining, setIsTraining] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -84,7 +92,7 @@ function CreateAccountDrawer({
       setFullName("");
       setEmail("");
       setRole("member");
-      setDepartmentId("dept-tech");
+      setDepartmentId(defaultDeptId);
       setPassword("Temp@123");
       setIsTraining(true);
       setError(null);
@@ -94,16 +102,23 @@ function CreateAccountDrawer({
   if (!open) return null;
 
   const handleSave = async () => {
-    if (!fullName.trim()) {
-      setError("Họ tên là bắt buộc.");
+    const nameErr = validatePersonName(fullName);
+    if (nameErr) {
+      setError(nameErr);
       return;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
       setError("Email không hợp lệ.");
       return;
     }
-    if (password.trim().length < 6) {
-      setError("Mật khẩu tạm tối thiểu 6 ký tự.");
+    if (password.trim().length < 8) {
+      setError("Mật khẩu tạm tối thiểu 8 ký tự.");
+      return;
+    }
+    const dept =
+      departments.find((d) => d.id === departmentId) ?? departments[0];
+    if (!dept) {
+      setError("Chưa có Ban trong hệ thống — seed/tạo Ban trước.");
       return;
     }
     setSaving(true);
@@ -113,7 +128,8 @@ function CreateAccountDrawer({
         fullName,
         email,
         role,
-        departmentId,
+        departmentId: dept.id,
+        departmentName: dept.name,
         temporaryPassword: password,
         isTrainingMember: role === "member" ? isTraining : false,
       });
@@ -169,8 +185,8 @@ function CreateAccountDrawer({
 
           <div>
             <span className="neu-field-label">Role *</span>
-            <div className="grid grid-cols-3 gap-2">
-              {(["member", "leader", "admin"] as AccountRole[]).map((r) => (
+            <div className="grid grid-cols-2 gap-2">
+              {(["member", "admin"] as AccountRole[]).map((r) => (
                 <button
                   key={r}
                   type="button"
@@ -185,6 +201,10 @@ function CreateAccountDrawer({
                 </button>
               ))}
             </div>
+            <p className="mt-2 text-[11px] text-muted">
+              Leader Ban không cấp tại đây. Hãy tạo Member rồi chỉ định Leader
+              trong màn Quản lý Ban.
+            </p>
           </div>
 
           <div>
@@ -192,8 +212,9 @@ function CreateAccountDrawer({
             <Select
               width="full"
               value={departmentId}
-              options={DEPTS.map((d) => ({ value: d.id, label: d.name }))}
+              options={departments.map((d) => ({ value: d.id, label: d.name }))}
               onChange={setDepartmentId}
+              placeholder={departments.length ? "Chọn Ban" : "Chưa có Ban"}
             />
           </div>
 
@@ -237,29 +258,36 @@ function CreateAccountDrawer({
 
 function AdminPermissionsPage() {
   const { search } = usePortalUi();
+  const toast = useToast();
   const [accounts, setAccounts] = useState<ManagedAccount[]>([]);
+  const [departments, setDepartments] = useState<ClubDepartment[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [roleFilter, setRoleFilter] = useState<AccountRole | "">("");
   const [draftRole, setDraftRole] = useState<AccountRole | "">("");
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
   const [revokeTarget, setRevokeTarget] = useState<ManagedAccount | null>(null);
   const [revoking, setRevoking] = useState(false);
-
-  const showToast = (msg: string) => {
-    setToast(msg);
-    window.setTimeout(() => setToast(null), 2800);
-  };
 
   // loading khởi tạo true — refresh sau thao tác giữ nguyên bảng cũ
   const load = useCallback(async () => {
     try {
-      setAccounts(await getManagedAccounts());
+      const [accs, depts] = await Promise.all([
+        getManagedAccounts(),
+        getDepartments("active").catch(() => []),
+      ]);
+      setAccounts(accs);
+      setDepartments(depts);
+    } catch (err) {
+      toast.error(
+        err instanceof Error
+          ? `Không tải được tài khoản: ${err.message}`
+          : "Không tải được danh sách phân quyền.",
+      );
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     void load();
@@ -268,7 +296,10 @@ function AdminPermissionsPage() {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return accounts.filter((a) => {
-      if (roleFilter && a.role !== roleFilter) return false;
+      if (roleFilter) {
+        const roles = a.roles?.length ? a.roles : [a.role];
+        if (!roles.includes(roleFilter) && a.role !== roleFilter) return false;
+      }
       if (
         q &&
         !a.fullName.toLowerCase().includes(q) &&
@@ -295,8 +326,8 @@ function AdminPermissionsPage() {
   const counts = useMemo(() => {
     return {
       all: accounts.length,
-      member: accounts.filter((a) => a.role === "member").length,
-      leader: accounts.filter((a) => a.role === "leader").length,
+      member: accounts.filter((a) => (a.roles ?? [a.role]).includes("member")).length,
+      leader: accounts.filter((a) => (a.roles ?? [a.role]).includes("leader")).length,
       admin: accounts.filter((a) => a.role === "admin").length,
     };
   }, [accounts]);
@@ -307,11 +338,13 @@ function AdminPermissionsPage() {
     <>
       <section className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
-            Phân quyền &amp; Tài khoản
-          </h1>
-          <p className="mt-2 text-muted max-w-xl">
-            Cấp tài khoản, chọn role (Member / Leader / Admin) và quản lý quyền truy cập portal.
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
+              Phân quyền &amp; Tài khoản
+            </h1>
+          </div>
+          <p className="mt-2 text-sm text-muted max-w-xl">
+            Cấp tài khoản Member/Admin và quản lý quyền truy cập portal.
           </p>
         </div>
         <Button variant="primary" onClick={() => setDrawerOpen(true)} leftIcon={<Icon icon={Plus} size={18} />}>
@@ -319,16 +352,10 @@ function AdminPermissionsPage() {
         </Button>
       </section>
 
-      {toast && (
-        <p className="rounded-2xl bg-accent/10 px-4 py-3 text-sm text-accent" role="status">
-          {toast}
-        </p>
-      )}
-
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard label="Tổng TK" value={counts.all} tone="slate" icon={Users} />
         <MetricCard label="Member" value={counts.member} tone="emerald" icon={UserRound} />
-        <MetricCard label="Leader" value={counts.leader} tone="sky" icon={UserCog} />
+        <MetricCard label="Leader Ban" value={counts.leader} tone="sky" icon={UserCog} />
         <MetricCard label="Admin" value={counts.admin} tone="violet" icon={Shield} />
       </div>
 
@@ -390,7 +417,7 @@ function AdminPermissionsPage() {
                 </DataTableCell>
                 <DataTableCell>
                   <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${roleBadgeClass(a.role)}`}>
-                    {ROLE_LABEL[a.role]}
+                    {dualRoleLabel(a)}
                   </span>
                 </DataTableCell>
                 <DataTableCell>
@@ -401,22 +428,27 @@ function AdminPermissionsPage() {
                 </DataTableCell>
                 <DataTableCell>
                   <div className="flex flex-wrap items-center justify-center gap-2">
-                    <Select
-                      value={a.role}
-                      options={[
-                        { value: "member", label: "Member" },
-                        { value: "leader", label: "Leader" },
-                        { value: "admin", label: "Admin" },
-                      ]}
-                      onChange={async (role) => {
-                        await updateAccountRole(a.id, role as AccountRole);
-                        await load();
-                        showToast(`Đã đổi role ${a.fullName} → ${ROLE_LABEL[role as AccountRole]}.`);
-                      }}
-                      className="min-w-[120px]"
-                      triggerClassName="!h-9 !text-xs"
-                      ariaLabel={`Đổi role ${a.fullName}`}
-                    />
+                    {a.role === "leader" ? (
+                      <span className="text-xs text-muted">
+                        Quản lý tại màn Ban
+                      </span>
+                    ) : (
+                      <Select
+                        value={a.role}
+                        options={[
+                          { value: "member", label: "Member" },
+                          { value: "admin", label: "Admin" },
+                        ]}
+                        onChange={async (role) => {
+                          await updateAccountRole(a.id, role as AccountRole);
+                          await load();
+                          toast.success(`Đã đổi role ${a.fullName} → ${ROLE_LABEL[role as AccountRole]}.`);
+                        }}
+                        className="min-w-[120px]"
+                        triggerClassName="!h-9 !text-xs"
+                        ariaLabel={`Đổi role ${a.fullName}`}
+                      />
+                    )}
                     <Button
                       variant="danger-icon"
                       size="sm"
@@ -456,7 +488,7 @@ function AdminPermissionsPage() {
           try {
             await deactivateAccount(revokeTarget.id);
             await load();
-            showToast("Đã thu hồi tài khoản.");
+            toast.success("Đã thu hồi tài khoản.");
           } finally {
             setRevoking(false);
             setRevokeTarget(null);
@@ -469,9 +501,10 @@ function AdminPermissionsPage() {
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         onCreated={() => {
-          showToast("Đã tạo tài khoản thành công.");
+          toast.success("Đã tạo tài khoản thành công.");
           void load();
         }}
+        departments={departments}
       />
     </>
   );

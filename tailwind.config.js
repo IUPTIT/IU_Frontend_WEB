@@ -14,10 +14,23 @@ export default {
           light: "#8B84FF",
           secondary: "#38B2AC",
         },
+        // Thương hiệu — khớp logo-v2 (tím → magenta)
+        brand: {
+          DEFAULT: "#7C3AED",
+          from: "#6E2CE6",
+          to: "#E0348C",
+        },
+      },
+      backgroundImage: {
+        "brand-gradient": "linear-gradient(135deg, #6E2CE6 0%, #E0348C 100%)",
       },
       fontFamily: {
         display: ['"Plus Jakarta Sans"', "sans-serif"],
         sans: ['"DM Sans"', "sans-serif"],
+        // IU Club Studio — chữ tiêu đề & số liệu KPI khu quản lý
+        grotesk: ['"Space Grotesk"', '"Plus Jakarta Sans"', "sans-serif"],
+        // Data / mã / ngày / điểm — instrument face
+        mono: ['"Geist Mono"', "ui-monospace", "SFMono-Regular", "monospace"],
       },
       borderRadius: {
         card: "32px",
@@ -54,6 +67,32 @@ export default {
           "0%": { opacity: "0", transform: "translateX(24px) scale(1.02)" },
           "100%": { opacity: "1", transform: "translateX(0) scale(1)" },
         },
+        // Toast — trượt vào/ra từ mép phải, kèm co chiều cao khi thoát
+        "toast-in": {
+          "0%": { opacity: "0", transform: "translateX(115%) scale(0.95)" },
+          "70%": { opacity: "1" },
+          "100%": { opacity: "1", transform: "translateX(0) scale(1)" },
+        },
+        "toast-out": {
+          "0%": {
+            opacity: "1",
+            transform: "translateX(0) scale(1)",
+            maxHeight: "12rem",
+            marginBottom: "0.75rem",
+          },
+          "45%": {
+            opacity: "0",
+            transform: "translateX(115%) scale(0.95)",
+            maxHeight: "12rem",
+            marginBottom: "0.75rem",
+          },
+          "100%": {
+            opacity: "0",
+            transform: "translateX(115%) scale(0.95)",
+            maxHeight: "0px",
+            marginBottom: "0px",
+          },
+        },
         "arrow-nudge": {
           "0%, 100%": { transform: "translateX(0)" },
           "50%": { transform: "translateX(4px)" },
@@ -78,6 +117,8 @@ export default {
         "fade-up": "fade-up 0.6s ease-out both",
         "fade-in": "fade-in 0.5s ease-out both",
         "slide-in-right": "slide-in-right 0.7s ease-out both",
+        "toast-in": "toast-in 0.42s cubic-bezier(0.22, 1, 0.36, 1) both",
+        "toast-out": "toast-out 0.44s cubic-bezier(0.4, 0, 0.2, 1) both",
         "arrow-nudge": "arrow-nudge 1s ease-in-out infinite",
         "soft-pulse": "soft-pulse 2.4s ease-in-out infinite",
         shake: "shake 0.4s ease-in-out",

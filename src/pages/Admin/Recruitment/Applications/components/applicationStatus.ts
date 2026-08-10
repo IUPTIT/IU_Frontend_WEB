@@ -1,27 +1,31 @@
 import type { ApplicationStatus } from "../../../../../types/recruitment";
 
-/** Label trạng thái hiển thị trên UI Vòng hồ sơ (theo design) */
+/** Label trạng thái theo tài liệu nghiệp vụ (Phụ lục VIII.1) */
 export type ApplicationStatusLabel =
-  | "Mới nộp"
-  | "Đang đánh giá"
-  | "Chờ phỏng vấn"
+  | "Chờ xét duyệt"
+  | "Đạt vòng đơn"
+  | "Không đạt vòng đơn"
   | "Đạt phỏng vấn"
-  | "Đã đậu"
-  | "Loại";
+  | "Không đạt phỏng vấn"
+  | "Trúng tuyển"
+  | "Không trúng tuyển";
 
 export function getApplicationStatusLabel(status: ApplicationStatus): ApplicationStatusLabel {
   switch (status) {
     case "submitted":
-      return "Mới nộp";
     case "screening":
-      return "Đang đánh giá";
+      return "Chờ xét duyệt";
     case "interview":
-      return "Chờ phỏng vấn";
+      return "Đạt vòng đơn";
+    case "cv_failed":
+      return "Không đạt vòng đơn";
     case "interview_passed":
       return "Đạt phỏng vấn";
+    case "interview_failed":
+      return "Không đạt phỏng vấn";
     case "accepted":
-      return "Đã đậu";
+      return "Trúng tuyển";
     case "rejected":
-      return "Loại";
+      return "Không trúng tuyển";
   }
 }

@@ -4,6 +4,7 @@ import LandingSelect from "../../../components/LandingSelect";
 import LandingDatePicker from "../../../components/LandingDatePicker";
 import type { ApplicationForm } from "../types";
 import type { PublicCampaign, PublicQuestion } from "../../../services/publicRecruitmentService";
+import { validatePersonName, validatePhoneVN } from "../../../utils/validateContact";
 
 type Props = {
   campaign: PublicCampaign;
@@ -21,13 +22,15 @@ const MIN_AGE = 16;
 function validate(form: ApplicationForm, questions: PublicQuestion[]): Record<string, string> {
   const errors: Record<string, string> = {};
 
-  if (!form.fullName.trim()) errors.fullName = "Bắt buộc nhập họ và tên";
+  const nameErr = validatePersonName(form.fullName);
+  if (nameErr) errors.fullName = nameErr;
   if (!form.studentId.trim()) errors.studentId = "Bắt buộc nhập MSSV";
   if (!form.className.trim()) errors.className = "Bắt buộc nhập lớp";
   if (!form.faculty.trim()) errors.faculty = "Bắt buộc nhập khoa/ngành";
 
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errors.email = "Email không đúng định dạng";
-  if (!/^0\d{9}$/.test(form.phone)) errors.phone = "Số điện thoại phải đủ 10 số";
+  const phoneErr = validatePhoneVN(form.phone);
+  if (phoneErr) errors.phone = phoneErr;
 
   if (!form.dateOfBirth) {
     errors.dateOfBirth = "Bắt buộc chọn ngày sinh";

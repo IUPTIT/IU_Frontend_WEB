@@ -5,21 +5,28 @@ import Toggle from "../../components/ui/Toggle";
 import Avatar from "../../components/ui/Avatar";
 import Icon from "../../components/ui/Icon";
 import { useAuth } from "../../context/useAuth";
+import { useToast } from "../../context/useToast";
 import { usePreferences } from "../../context/usePreferences";
 import type { ThemeMode } from "../../context/preferences-context";
+import { changePassword, updateMyProfile } from "../../services/authService";
+import {
+  validatePersonName,
+  validatePhoneVN,
+} from "../../utils/validateContact";
 
 const ROLE_LABEL = {
   admin: "Ban Chủ nhiệm (Admin)",
   leader: "Leader",
-  member: "Member / Trainee",
-  candidate: "Ứng viên",
+  member: "Thành viên",
+  candidate: "Ứng viên / Tân binh",
 } as const;
 
 /**
  * Cài đặt dùng chung 3 role — hồ sơ, avatar, giao diện sáng/tối, thông báo, mật khẩu.
  */
 function SettingsPage() {
-  const { user, updateProfile } = useAuth();
+  const { user, replaceUser } = useAuth();
+  const toast = useToast();
   const {
     theme,
     setTheme,
@@ -34,8 +41,10 @@ function SettingsPage() {
   const [phone, setPhone] = useState(user?.phone ?? "");
   const [bio, setBio] = useState(user?.bio ?? "");
   const [pwd, setPwd] = useState({ current: "", next: "", confirm: "" });
-  const [toast, setToast] = useState<string | null>(null);
   const [pwdError, setPwdError] = useState<string | null>(null);
+  const [profileError, setProfileError] = useState<string | null>(null);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [savingPwd, setSavingPwd] = useState(false);
 
   // Đồng bộ form khi user đổi (adjust state during render)
   const [prevUser, setPrevUser] = useState(user);
@@ -48,67 +57,97 @@ function SettingsPage() {
 
   if (!user) return null;
 
-  const showToast = (msg: string) => {
-    setToast(msg);
-    window.setTimeout(() => setToast(null), 2500);
+  const saveAvatar = async (avatar: string, message: string) => {
+    setProfileError(null);
+    setSavingProfile(true);
+    try {
+      replaceUser(await updateMyProfile({ avatar }));
+      toast.success(message);
+    } catch (err) {
+      setProfileError(err instanceof Error ? err.message : "Lưu ảnh đại diện thất bại.");
+    } finally {
+      setSavingProfile(false);
+    }
   };
 
   const onPickAvatar = (file: File | null) => {
     if (!file) return;
     if (!file.type.startsWith("image/")) {
-      showToast("Vui lòng chọn file ảnh.");
+      toast.error("Vui lòng chọn file ảnh.");
       return;
     }
     if (file.size > 2 * 1024 * 1024) {
-      showToast("Ảnh tối đa 2MB.");
+      toast.error("Ảnh tối đa 2MB.");
       return;
     }
     const reader = new FileReader();
     reader.onload = () => {
-      updateProfile({ avatarDataUrl: String(reader.result) });
-      showToast("Đã cập nhật ảnh đại diện.");
+      void saveAvatar(String(reader.result), "Đã cập nhật ảnh đại diện.");
     };
     reader.readAsDataURL(file);
   };
 
-  const saveProfile = () => {
-    if (!name.trim()) {
-      showToast("Tên hiển thị không được trống.");
+  const saveProfile = async () => {
+    setProfileError(null);
+    const nameErr = validatePersonName(name);
+    if (nameErr) {
+      setProfileError(nameErr);
       return;
     }
-    updateProfile({ name: name.trim(), phone: phone.trim() || undefined, bio: bio.trim() || undefined });
-    showToast("Đã lưu thông tin tài khoản.");
+    const phoneErr = validatePhoneVN(phone, { emptyOk: true });
+    if (phoneErr) {
+      setProfileError(phoneErr);
+      return;
+    }
+    setSavingProfile(true);
+    try {
+      replaceUser(
+        await updateMyProfile({ name: name.trim(), phone: phone.trim(), bio: bio.trim() }),
+      );
+      toast.success("Đã lưu thông tin tài khoản.");
+    } catch (err) {
+      setProfileError(err instanceof Error ? err.message : "Lưu hồ sơ thất bại — thử lại.");
+    } finally {
+      setSavingProfile(false);
+    }
   };
 
-  const savePassword = () => {
+  const savePassword = async () => {
     setPwdError(null);
-    if (pwd.next.length < 6) {
-      setPwdError("Mật khẩu mới tối thiểu 6 ký tự.");
+    if (!pwd.current) {
+      setPwdError("Nhập mật khẩu hiện tại.");
+      return;
+    }
+    // Backend yêu cầu tối thiểu 8 ký tự
+    if (pwd.next.length < 8) {
+      setPwdError("Mật khẩu mới tối thiểu 8 ký tự.");
       return;
     }
     if (pwd.next !== pwd.confirm) {
       setPwdError("Xác nhận mật khẩu không khớp.");
       return;
     }
-    setPwd({ current: "", next: "", confirm: "" });
-    showToast("Đã đổi mật khẩu.");
+    setSavingPwd(true);
+    try {
+      replaceUser(await changePassword(pwd.current, pwd.next));
+      setPwd({ current: "", next: "", confirm: "" });
+      toast.success("Đã đổi mật khẩu.");
+    } catch (err) {
+      setPwdError(err instanceof Error ? err.message : "Đổi mật khẩu thất bại — thử lại.");
+    } finally {
+      setSavingPwd(false);
+    }
   };
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-8 animate-fade-in">
-      <header className="relative overflow-hidden rounded-card bg-gradient-to-br from-accent/18 via-violet-500/8 to-background p-6 sm:p-8 shadow-extruded ring-1 ring-accent/12 text-center sm:text-left">
-        <div className="pointer-events-none absolute -right-6 -top-8 h-36 w-36 rounded-full bg-accent/15 blur-3xl" aria-hidden />
-        <h1 className="relative font-display text-3xl sm:text-4xl font-extrabold tracking-tight">Cài đặt</h1>
-        <p className="relative mt-2 text-muted">
+      <header className="text-center sm:text-left">
+        <p className="eyebrow">Tài khoản</p>
+        <h1 className="mt-1.5 font-display text-3xl sm:text-4xl font-extrabold tracking-tight">Cài đặt</h1>
+        <p className="mt-2 text-muted">
           Quản lý hồ sơ, giao diện và tùy chọn tài khoản của bạn.
         </p>
       </header>
-
-      {toast && (
-        <p className="rounded-2xl bg-accent/10 px-4 py-3 text-sm text-accent" role="status">
-          {toast}
-        </p>
-      )}
 
       {/* Avatar + profile */}
       <section className="neu-card !p-6 space-y-6">
@@ -139,8 +178,27 @@ function SettingsPage() {
             <span className="inline-flex rounded-full bg-accent/15 px-2.5 py-1 text-xs font-semibold text-accent">
               {ROLE_LABEL[user.role]}
             </span>
+            {user.roles && user.roles.length > 1 && (
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {user.roles.map((r) => (
+                  <span
+                    key={r}
+                    className="inline-flex rounded-full bg-background px-2 py-0.5 text-[11px] font-medium text-muted shadow-inset-sm"
+                  >
+                    {ROLE_LABEL[r]}
+                  </span>
+                ))}
+              </div>
+            )}
             <div className="flex gap-2 pt-2">
-              <Button variant="soft" size="sm" className="!h-9" onClick={() => fileRef.current?.click()} leftIcon={<Icon icon={Upload} size={14} />}>
+              <Button
+                variant="soft"
+                size="sm"
+                className="!h-9"
+                disabled={savingProfile}
+                onClick={() => fileRef.current?.click()}
+                leftIcon={<Icon icon={Upload} size={14} />}
+              >
                 Tải ảnh lên
               </Button>
               {user.avatarDataUrl && (
@@ -148,10 +206,8 @@ function SettingsPage() {
                   variant="ghost"
                   size="sm"
                   className="!h-9"
-                  onClick={() => {
-                    updateProfile({ avatarDataUrl: undefined });
-                    showToast("Đã xóa ảnh đại diện.");
-                  }}
+                  disabled={savingProfile}
+                  onClick={() => void saveAvatar("", "Đã xóa ảnh đại diện.")}
                 >
                   Xóa ảnh
                 </Button>
@@ -190,9 +246,10 @@ function SettingsPage() {
           </label>
         </div>
 
+        {profileError && <p className="text-sm text-rose-500">{profileError}</p>}
         <div className="flex justify-end">
-          <Button variant="primary" onClick={saveProfile}>
-            Lưu hồ sơ
+          <Button variant="primary" disabled={savingProfile} onClick={() => void saveProfile()}>
+            {savingProfile ? "Đang lưu..." : "Lưu hồ sơ"}
           </Button>
         </div>
       </section>
@@ -294,8 +351,8 @@ function SettingsPage() {
         </div>
         {pwdError && <p className="text-sm text-rose-500">{pwdError}</p>}
         <div className="flex justify-end">
-          <Button variant="secondary" onClick={savePassword}>
-            Đổi mật khẩu
+          <Button variant="secondary" disabled={savingPwd} onClick={() => void savePassword()}>
+            {savingPwd ? "Đang đổi..." : "Đổi mật khẩu"}
           </Button>
         </div>
       </section>

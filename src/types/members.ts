@@ -24,8 +24,37 @@ export type CreateClubMemberInput = {
   email: string;
   phone?: string;
   role: Exclude<ClubMemberRole, "admin">;
-  departmentId: string;
-  departmentName: string;
+  departmentId?: string;
+  departmentName?: string;
   studentId?: string;
   generation?: string;
+};
+
+/** Một dòng đã map từ Excel — gửi lên BE validate/import */
+export type MemberImportRow = {
+  rowIndex?: number;
+  fullName: string;
+  email: string;
+  phone?: string;
+  studentId?: string;
+  generation?: string;
+  departmentName?: string;
+};
+
+export type MemberImportInvalid = {
+  rowIndex: number;
+  data: MemberImportRow;
+  errors: string[];
+};
+
+export type MemberImportValidateResult = {
+  valid: MemberImportRow[];
+  invalid: MemberImportInvalid[];
+};
+
+export type MemberImportResult = {
+  created: ClubMember[];
+  createdCount: number;
+  skippedCount: number;
+  invalid: MemberImportInvalid[];
 };

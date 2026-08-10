@@ -1,7 +1,7 @@
 // Recruitment (Admin) — campaigns/hồ sơ/câu hỏi/thống kê gọi API thật.
 // Phần chấm điểm vòng đơn & phỏng vấn backend CHƯA có endpoint — các hàm giữ
 // nguyên chữ ký, lưu in-memory (khởi đầu rỗng) để UI hoạt động, sẽ nối API sau.
-import { api } from "../api/client";
+import { api, ApiRequestError } from "../api/client";
 import type {
   Application,
   ApplicationAnswer,
@@ -78,6 +78,7 @@ type BackendApplication = {
   className: string;
   faculty: string;
   phone: string;
+  dateOfBirth?: string | null;
   avatarUrl: string;
   cvUrl: string;
   departmentPreferences: { department: string; priority: number }[];
@@ -88,6 +89,9 @@ type BackendApplication = {
   cvScore?: number | null;
   interviewScore?: number | null;
   resultNotifyStatus?: "pending" | "email_sent" | "converted";
+  needsManualReview?: boolean;
+  assignedDepartment?: string | null;
+  reviewerIds?: { _id: string; name: string; email: string }[] | string[];
 };
 
 // UI dùng thang 0-10, backend lưu 0-100 — quy đổi tại MỘT chỗ duy nhất
@@ -127,7 +131,14 @@ function toCampaign(c: BackendCampaign): RecruitmentCampaign {
       departmentName: q.department,
       quota: q.quota,
     })),
-    status: c.status === "open" ? "published" : c.status === "draft" ? "draft" : "closed",
+    status:
+      c.status === "open"
+        ? "published"
+        : c.status === "completed"
+          ? "completed"
+          : c.status === "draft"
+            ? "draft"
+            : "closed",
     isActive: c.status === "open",
     createdAt: c.createdAt,
     updatedAt: c.updatedAt,
@@ -160,7 +171,11 @@ function toApplication(a: BackendApplication): Application {
           ? "interview_passed"
           : a.status === "admitted"
             ? "accepted"
-            : "rejected";
+            : a.status === "failed_cv"
+              ? "cv_failed"
+              : a.status === "failed_interview"
+                ? "interview_failed"
+                : "rejected";
 
   const screeningResult: PassFail =
     a.status === "draft" || a.status === "pending_review"
@@ -168,7 +183,10 @@ function toApplication(a: BackendApplication): Application {
       : a.status === "failed_cv"
         ? "fail"
         : "pass";
-  const interviewResult: PassFail = ["passed_interview", "admitted"].includes(a.status)
+  // rejected (kết quả cuối) cũng đã Pass PV — state machine chỉ reject từ passed_interview
+  const interviewResult: PassFail = ["passed_interview", "admitted", "rejected"].includes(
+    a.status,
+  )
     ? "pass"
     : a.status === "failed_interview"
       ? "fail"
@@ -176,9 +194,8 @@ function toApplication(a: BackendApplication): Application {
   const finalResult: PassFail =
     a.status === "admitted" ? "pass" : a.status === "rejected" ? "fail" : "pending";
 
-  const preferred = [...(a.departmentPreferences ?? [])].sort(
-    (x, y) => x.priority - y.priority,
-  )[0]?.department;
+  const prefs = [...(a.departmentPreferences ?? [])].sort((x, y) => x.priority - y.priority);
+  const preferred = a.assignedDepartment || prefs[0]?.department;
 
   const attachments: Application["attachments"] = [];
   if (a.avatarUrl) {
@@ -194,9 +211,14 @@ function toApplication(a: BackendApplication): Application {
     fullName: a.fullName,
     email: a.email,
     phone: a.phone,
+    dateOfBirth: a.dateOfBirth
+      ? String(a.dateOfBirth).slice(0, 10)
+      : null,
     education: `${a.className} — ${a.faculty}`,
     preferredDepartmentId: preferred ?? "",
     preferredDepartmentName: preferred ?? "",
+    departmentPreferences: prefs,
+    assignedDepartment: a.assignedDepartment ?? null,
     status,
     screeningResult,
     interviewResult,
@@ -205,6 +227,13 @@ function toApplication(a: BackendApplication): Application {
     interviewScore: toUiScale(a.interviewScore),
     submittedAt: a.submittedAt ?? a.createdAt,
     attachments,
+    needsManualReview: a.needsManualReview ?? false,
+    reviewerIds: (a.reviewerIds ?? []).map((r) =>
+      typeof r === "string" ? r : r._id,
+    ),
+    reviewerNames: (a.reviewerIds ?? [])
+      .map((r) => (typeof r === "string" ? "" : r.name))
+      .filter(Boolean),
     resultNotifyStatus: a.resultNotifyStatus ?? "pending",
   };
 }
@@ -358,11 +387,60 @@ export async function getFormQuestions(campaignId: string): Promise<FormQuestion
 // ---- Applications (API thật) ----
 
 async function fetchApplications(campaignId?: string): Promise<BackendApplication[]> {
-  const query = campaignId ? `?campaignId=${campaignId}&limit=100` : "?limit=100";
-  const { applications } = await api.get<{ applications: BackendApplication[]; total: number }>(
-    `/recruitment/applications${query}`,
-  );
-  return applications;
+  const params = new URLSearchParams({ limit: "100", page: "1" });
+  if (campaignId) params.set("campaignId", campaignId);
+  // Lấy đủ trang nếu total > 100
+  const first = await api.get<{
+    applications: BackendApplication[];
+    total: number;
+    page: number;
+    limit: number;
+  }>(`/recruitment/applications?${params.toString()}`);
+  const all = [...first.applications];
+  const total = first.total ?? all.length;
+  const limit = first.limit ?? 100;
+  const pages = Math.ceil(total / limit);
+  for (let page = 2; page <= pages; page += 1) {
+    params.set("page", String(page));
+    const next = await api.get<{ applications: BackendApplication[] }>(
+      `/recruitment/applications?${params.toString()}`,
+    );
+    all.push(...next.applications);
+  }
+  return all;
+}
+
+/** List có phân trang server — dùng cho UI bảng */
+export async function getApplicationsPage(input: {
+  campaignId?: string;
+  department?: string;
+  status?: string;
+  page?: number;
+  limit?: number;
+}): Promise<{
+  items: Application[];
+  total: number;
+  page: number;
+  limit: number;
+}> {
+  const params = new URLSearchParams();
+  if (input.campaignId) params.set("campaignId", input.campaignId);
+  if (input.department) params.set("department", input.department);
+  if (input.status) params.set("status", input.status);
+  params.set("page", String(input.page ?? 1));
+  params.set("limit", String(input.limit ?? 20));
+  const data = await api.get<{
+    applications: BackendApplication[];
+    total: number;
+    page: number;
+    limit: number;
+  }>(`/recruitment/applications?${params.toString()}`);
+  return {
+    items: data.applications.map(toApplication),
+    total: data.total,
+    page: data.page,
+    limit: data.limit,
+  };
 }
 
 export async function getApplications(campaignId?: string): Promise<Application[]> {
@@ -370,15 +448,21 @@ export async function getApplications(campaignId?: string): Promise<Application[
 }
 
 export async function getApplicationById(id: string): Promise<Application | undefined> {
-  const all = await fetchApplications();
-  const found = all.find((a) => a._id === id);
-  return found ? toApplication(found) : undefined;
+  try {
+    const { application } = await api.get<{ application: BackendApplication }>(
+      `/recruitment/applications/${id}`,
+    );
+    return toApplication(application);
+  } catch (err) {
+    if (err instanceof ApiRequestError && err.status === 404) return undefined;
+    throw err;
+  }
 }
 
 export async function getApplicationAnswers(applicationId: string): Promise<ApplicationAnswer[]> {
-  const all = await fetchApplications();
-  const app = all.find((a) => a._id === applicationId);
-  if (!app) return [];
+  const { application: app } = await api.get<{ application: BackendApplication }>(
+    `/recruitment/applications/${applicationId}`,
+  );
   const questions = await getFormQuestions(campaignIdOf(app));
   const answerByField = new Map((app.answers ?? []).map((ans) => [ans.fieldId, ans.value]));
   return questions
@@ -498,6 +582,7 @@ function fromBackendCriteria(
 }
 
 function scorerOf(s: BackendScore): { id: string; name: string } {
+  if (!s.scoredBy) return { id: "", name: "" };
   return typeof s.scoredBy === "string"
     ? { id: s.scoredBy, name: "" }
     : { id: s.scoredBy._id, name: s.scoredBy.name };
@@ -581,9 +666,13 @@ export async function setScreeningDecision(
 
 export async function getInterviewers(): Promise<InterviewerRef[]> {
   const { interviewers } = await api.get<{
-    interviewers: { _id: string; name: string }[];
+    interviewers: { _id: string; name: string; role?: InterviewerRef["role"] }[];
   }>("/recruitment/interviewers");
-  return interviewers.map((u) => ({ id: u._id, name: u.name }));
+  return interviewers.map((u) => ({
+    id: u._id,
+    name: u.name,
+    role: u.role,
+  }));
 }
 
 // ---- Slot phỏng vấn (API thật) ----
@@ -613,6 +702,9 @@ type BackendBooking = {
 };
 
 function parseRowId(rowId: string) {
+  if (!rowId.includes("::")) {
+    return { slotId: rowId, bookingId: undefined as string | undefined, applicationId: undefined as string | undefined };
+  }
   const [slotId, bookingId, applicationId] = rowId.split("::");
   return { slotId, bookingId: bookingId || undefined, applicationId: applicationId || undefined };
 }
@@ -629,29 +721,28 @@ function addMinutes(start: string, minutes: number) {
   return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
 }
 
-function toUiSlot(s: BackendSlot, booking: BackendBooking | null): InterviewSlot {
-  const app = booking?.applicationId ?? null;
-  const preferred = app
-    ? [...(app.departmentPreferences ?? [])].sort((x, y) => x.priority - y.priority)[0]?.department
-    : undefined;
+/** 1 ca BE → 1 row UI (không nhân theo từng booking/ứng viên) */
+function toUiSlot(s: BackendSlot, bookings: BackendBooking[] = []): InterviewSlot {
   const interviewers = (s.interviewerIds ?? []).map((u) => ({ id: u._id, name: u.name }));
-  const done = booking?.status === "completed" || booking?.status === "no_show";
+  const bookedCount = s.bookedCount ?? bookings.length;
+  const allDone =
+    bookings.length > 0 &&
+    bookings.every((b) => b.status === "completed" || b.status === "no_show");
   return {
-    id: `${s._id}::${booking?._id ?? ""}::${app?._id ?? ""}`,
-    bookingId: booking?._id,
+    id: s._id,
     campaignId: s.campaignId,
     date: s.date.slice(0, 10),
     startTime: s.startTime,
     durationMinutes: Math.max(minutesBetween(s.startTime, s.endTime), 0),
     locationOrLink: s.location,
     capacity: s.capacity,
-    applicationId: app?._id,
-    candidateName: app?.fullName,
-    candidateDepartment: preferred,
+    bookedCount,
     interviewers,
-    // Không bắt buộc số lượng — chỉ cảnh báo khi ca CHƯA có ai phỏng vấn
-    requiredInterviewers: 1,
-    status: done ? "done" : interviewers.length === 0 ? "missing_interviewers" : "scheduled",
+    status: allDone
+      ? "done"
+      : interviewers.length === 0
+        ? "missing_interviewers"
+        : "scheduled",
   };
 }
 
@@ -666,11 +757,7 @@ async function fetchSlots(campaignId: string): Promise<InterviewSlot[]> {
     list.push(b);
     bySlot.set(b.slotId, list);
   }
-  return slots.flatMap((s) => {
-    const slotBookings = bySlot.get(s._id) ?? [];
-    if (!slotBookings.length) return [toUiSlot(s, null)];
-    return slotBookings.map((b) => toUiSlot(s, b));
-  });
+  return slots.map((s) => toUiSlot(s, bySlot.get(s._id) ?? []));
 }
 
 export async function getInterviewSlots(
@@ -682,6 +769,21 @@ export async function getInterviewSlots(
   return date ? rows.filter((r) => r.date === date) : rows;
 }
 
+/** Ca Leader/BCN đang phụ trách (interviewerIds chứa mình) */
+export async function getMyInterviewSlots(): Promise<InterviewSlot[]> {
+  const { slots, bookings } = await api.get<{
+    slots: BackendSlot[];
+    bookings: BackendBooking[];
+  }>("/recruitment/slots/mine");
+  const bySlot = new Map<string, BackendBooking[]>();
+  for (const b of bookings) {
+    const list = bySlot.get(b.slotId) ?? [];
+    list.push(b);
+    bySlot.set(b.slotId, list);
+  }
+  return slots.map((s) => toUiSlot(s, bySlot.get(s._id) ?? []));
+}
+
 export async function getInterviewDatesWithSlots(campaignId: string): Promise<string[]> {
   const rows = await fetchSlots(campaignId);
   return [...new Set(rows.map((r) => r.date))];
@@ -690,27 +792,31 @@ export async function getInterviewDatesWithSlots(campaignId: string): Promise<st
 export type BatchScheduleInput = {
   campaignId: string;
   date: string;
-  startTimes: string[];
-  durationMinutes: number;
+  /** Mỗi phần tử = 1 ca (sáng hoặc chiều) với giờ bắt đầu–kết thúc */
+  sessions: { startTime: string; endTime: string; label?: string }[];
   locationOrLink: string;
   /** Số ứng viên tối đa mỗi ca */
   capacity?: number;
+  /** Người PV phụ trách ca (chung cho mọi ứng viên trong ca) */
+  interviewerIds?: string[];
 };
 
-// Tạo ca TRỐNG cho từng khung giờ — ứng viên pass vòng đơn tự vào chọn ca,
-// người phỏng vấn phân công sau (nút "Phân công" trên từng ca)
-export async function createBatchInterviewSlots(input: BatchScheduleInput): Promise<InterviewSlot[]> {
+/** Tạo tối đa 2 ca/ngày (sáng/chiều) + gắn panel interviewer */
+export async function createBatchInterviewSlots(
+  input: BatchScheduleInput,
+): Promise<InterviewSlot[]> {
   const created: InterviewSlot[] = [];
-  for (const startTime of input.startTimes) {
+  for (const session of input.sessions) {
     const { slot } = await api.post<{ slot: BackendSlot }>("/recruitment/slots", {
       campaignId: input.campaignId,
       date: input.date,
-      startTime,
-      endTime: addMinutes(startTime, input.durationMinutes),
+      startTime: session.startTime,
+      endTime: session.endTime,
       location: input.locationOrLink,
-      capacity: input.capacity ?? 1,
+      capacity: input.capacity ?? 8,
+      interviewerIds: input.interviewerIds ?? [],
     });
-    created.push(toUiSlot(slot, null));
+    created.push(toUiSlot(slot, []));
   }
   return created;
 }
@@ -723,7 +829,7 @@ export async function assignInterviewersToSlot(
   const { slot } = await api.patch<{ slot: BackendSlot }>(`/recruitment/slots/${slotId}`, {
     interviewerIds: interviewers.map((i) => i.id),
   });
-  return toUiSlot(slot, null);
+  return toUiSlot(slot, []);
 }
 
 export type EditSlotPatch = {
@@ -753,7 +859,7 @@ export async function rescheduleInterviewSlot(
     `/recruitment/slots/${slotId}`,
     body,
   );
-  return toUiSlot(slot, null);
+  return toUiSlot(slot, []);
 }
 
 // Xoá ca — backend chặn nếu đã có ứng viên đặt lịch
@@ -786,6 +892,8 @@ export type SlotCandidate = {
   /** Điểm PV trung bình thang 10 (null = chưa chấm) */
   interviewScore: number | null;
   scoreCount: number;
+  /** Từng người chấm — thang 10 */
+  scores: { scoredBy: string; name: string; totalScore: number; comment: string }[];
 };
 
 export type SlotInfo = {
@@ -819,6 +927,13 @@ export async function getSlotCandidates(
       applicationId: BackendBookingApp | null;
       interviewScore: number | null;
       scoreCount: number;
+      scores?: {
+        scoredBy: string;
+        name: string;
+        totalScore: number;
+        comment: string;
+        attendance?: string | null;
+      }[];
     }[];
   }>(`/recruitment/slots/${slotId}`);
 
@@ -845,11 +960,18 @@ export async function getSlotCandidates(
         bookingStatus: b.status,
         interviewScore: toUiScale(b.interviewScore) ?? null,
         scoreCount: b.scoreCount,
+        scores: (b.scores ?? []).map((s) => ({
+          scoredBy: s.scoredBy,
+          name: s.name,
+          totalScore: toUiScale(s.totalScore) ?? 0,
+          comment: s.comment ?? "",
+        })),
       })),
   };
 }
 
 export type BookingReviewerScore = {
+  reviewerId: string;
   reviewerName: string;
   /** Thang 10 */
   totalScore: number;
@@ -911,7 +1033,13 @@ export async function getBookingDetail(bookingId: string): Promise<BookingDetail
     },
     averageScore: summary.count ? (toUiScale(summary.average) ?? null) : null,
     reviewerScores: summary.scores.map((s) => ({
-      reviewerName: typeof s.scoredBy === "object" ? s.scoredBy.name : "",
+      reviewerId:
+        typeof s.scoredBy === "object" && s.scoredBy && "_id" in s.scoredBy
+          ? String((s.scoredBy as { _id: string })._id)
+          : typeof s.scoredBy === "string"
+            ? s.scoredBy
+            : "",
+      reviewerName: typeof s.scoredBy === "object" ? (s.scoredBy as { name: string }).name : "",
       totalScore: toUiScale(s.totalScore) ?? 0,
       comment: s.comment,
       attendance: s.attendance,
@@ -926,6 +1054,8 @@ export async function saveBookingScore(input: {
   criteriaScores: { criteriaName: string; score: number; maxScore: number }[];
   comment: string;
   attendance: "present" | "absent";
+  /** BCN sửa điểm hộ interviewer */
+  asUserId?: string;
 }): Promise<void> {
   await api.post(`/recruitment/bookings/${input.bookingId}/score`, {
     applicationId: input.applicationId,
@@ -933,10 +1063,13 @@ export async function saveBookingScore(input: {
     criteriaScores: toBackendCriteria(input.criteriaScores),
     comment: input.comment,
     attendance: input.attendance,
+    ...(input.asUserId ? { asUserId: input.asUserId } : {}),
   });
 }
 
 export type InterviewResultRow = {
+  applicationId: string;
+  bookingId?: string;
   applicationCode: string;
   fullName: string;
   email: string;
@@ -958,7 +1091,11 @@ export type InterviewResultRow = {
 export async function getInterviewResults(campaignId: string): Promise<InterviewResultRow[]> {
   const { results } = await api.get<{
     results: {
-      booking: { status: string; applicationId: BackendBookingApp | null };
+      booking: {
+        _id?: string;
+        status: string;
+        applicationId: (BackendBookingApp & { _id: string }) | null;
+      };
       slot: { date: string; startTime: string; endTime: string; location: string } | null;
       averageScore: number | null;
       scores: { reviewerName: string; totalScore: number; comment: string }[];
@@ -970,6 +1107,8 @@ export async function getInterviewResults(campaignId: string): Promise<Interview
     .map((r) => {
       const app = r.booking.applicationId!;
       return {
+        applicationId: app._id,
+        bookingId: r.booking._id,
         applicationCode: app.applicationCode ?? "",
         fullName: app.fullName,
         email: app.email,
@@ -1065,7 +1204,12 @@ export async function setInterviewDecision(
 }
 
 export async function notifyInterviewResults(applicationIds: string[]): Promise<{ sent: number }> {
-  return { sent: applicationIds.length };
+  if (applicationIds.length === 0) return { sent: 0 };
+  const { notified } = await api.post<{ notified: number }>(
+    "/recruitment/applications/notify-interview",
+    { applicationIds },
+  );
+  return { sent: notified };
 }
 
 // Đánh dấu đã gửi email kết quả cuối (lưu backend — hiển thị cột "Trạng thái xử lý")
@@ -1077,20 +1221,131 @@ export async function notifyFinalResults(applicationIds: string[]): Promise<{ se
   return { sent: notified };
 }
 
+// Xác nhận trúng tuyển / không trúng tuyển — từ pool Đạt phỏng vấn
+export async function confirmFinalDecision(
+  applicationId: string,
+  status: "admitted" | "rejected",
+): Promise<Application | undefined> {
+  await api.post(`/recruitment/applications/${applicationId}/confirm-final`, { status });
+  return getApplicationById(applicationId);
+}
+
+/** Đổi ban chính thức (NV2/NV3) trước khi xác nhận trúng tuyển */
+export async function assignOfficialDepartment(
+  applicationId: string,
+  department: string,
+): Promise<Application | undefined> {
+  await api.patch(`/recruitment/applications/${applicationId}/assigned-department`, {
+    department,
+  });
+  return getApplicationById(applicationId);
+}
+
+/** Duyệt hàng loạt vòng đơn theo ngưỡng điểm (backend thang 0–100; UI truyền 0–10) */
+export async function bulkDecideCvByThreshold(
+  campaignId: string,
+  uiThreshold: number,
+  failBelow = true,
+): Promise<{ passed: number; failed: number; skipped: number }> {
+  return api.post("/recruitment/applications/bulk-decide-cv", {
+    campaignId,
+    threshold: uiThreshold * 10,
+    failBelow,
+  });
+}
+
 // Xác nhận trúng tuyển cuối — state machine tự enqueue job nâng role candidate → member
 export async function convertAcceptedToMembers(
   applicationIds: string[],
-): Promise<{ converted: number }> {
+): Promise<{ converted: number; failed: number }> {
   let converted = 0;
+  let failed = 0;
+  const errors: string[] = [];
   for (const id of applicationIds) {
     try {
       await api.post(`/recruitment/applications/${id}/confirm-final`, { status: "admitted" });
       converted += 1;
-    } catch {
-      // hồ sơ chưa đủ điều kiện (chưa passed_interview) — bỏ qua
+    } catch (err) {
+      failed += 1;
+      if (errors.length < 3) {
+        errors.push(err instanceof Error ? err.message : "Lỗi không xác định");
+      }
     }
   }
-  return { converted };
+  if (converted === 0 && failed > 0) {
+    throw new Error(errors[0] ?? "Không xác nhận được ứng viên nào.");
+  }
+  return { converted, failed };
+}
+
+export async function rejectFinalCandidates(
+  applicationIds: string[],
+): Promise<{ rejected: number; failed: number }> {
+  let rejected = 0;
+  let failed = 0;
+  const errors: string[] = [];
+  for (const id of applicationIds) {
+    try {
+      await api.post(`/recruitment/applications/${id}/confirm-final`, { status: "rejected" });
+      rejected += 1;
+    } catch (err) {
+      failed += 1;
+      if (errors.length < 3) {
+        errors.push(err instanceof Error ? err.message : "Lỗi không xác định");
+      }
+    }
+  }
+  if (rejected === 0 && failed > 0) {
+    throw new Error(errors[0] ?? "Không đánh dấu được ứng viên nào.");
+  }
+  return { rejected, failed };
+}
+
+export async function assignReviewers(
+  applicationId: string,
+  reviewerIds: string[],
+): Promise<Application | undefined> {
+  await api.post(`/recruitment/applications/${applicationId}/assign-reviewers`, {
+    reviewerIds,
+  });
+  return getApplicationById(applicationId);
+}
+
+export type UnbookedApplication = {
+  _id: string;
+  fullName: string;
+  email: string;
+  phone?: string;
+  applicationCode?: string;
+  bookingReminderSentAt?: string | null;
+  updatedAt: string;
+};
+
+export async function listUnbookedApplications(
+  campaignId: string,
+): Promise<UnbookedApplication[]> {
+  const { applications } = await api.get<{ applications: UnbookedApplication[] }>(
+    `/recruitment/campaigns/${campaignId}/unbooked`,
+  );
+  return applications;
+}
+
+export async function assignInterviewSlot(
+  applicationId: string,
+  slotId: string,
+): Promise<void> {
+  await api.post(`/recruitment/applications/${applicationId}/assign-slot`, { slotId });
+}
+
+export async function markUnbookedNoShow(applicationId: string): Promise<void> {
+  await api.post(`/recruitment/applications/${applicationId}/mark-unbooked-no-show`);
+}
+
+export async function completeCampaign(id: string): Promise<RecruitmentCampaign | undefined> {
+  const { campaign } = await api.post<{ campaign: BackendCampaign }>(
+    `/recruitment/campaigns/${id}/complete`,
+  );
+  return toCampaign(campaign);
 }
 
 export async function getPassedScreeningApplications(campaignId: string): Promise<Application[]> {

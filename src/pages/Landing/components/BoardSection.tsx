@@ -18,7 +18,7 @@ function initials(name: string) {
 
 function MemberCard({ member }: { member: BoardMember }) {
   return (
-    <div className="liquid-glass landing-card-solid landing-card-hover h-full rounded-3xl p-6 text-center">
+    <div className="liquid-glass landing-card-glass landing-card-hover h-full rounded-3xl p-6 text-center">
       {member.image ? (
         <img
           src={member.image}
@@ -123,12 +123,12 @@ function BoardSection() {
   }, [canSlide, paused, total]);
 
   return (
-    <section id="ban-dieu-hanh" className="relative z-10 mx-auto max-w-5xl px-6 pb-24">
+    <section id="ban-dieu-hanh" className="relative z-10 mx-auto max-w-5xl px-6 pb-16">
       <div className="text-center">
-        <p className="landing-headline text-sm font-semibold uppercase tracking-[0.3em] text-purple-400">
+        <p className="landing-headline text-xs font-semibold uppercase tracking-[0.3em] text-purple-400">
           Ban điều hành
         </p>
-        <h2 className="landing-headline mt-3 text-4xl font-semibold text-[hsl(var(--landing-foreground))] md:text-5xl">
+        <h2 className="landing-headline mt-3 text-3xl font-semibold text-[hsl(var(--landing-foreground))] md:text-4xl">
           Đội ngũ{" "}
           <span
             className="bg-clip-text text-transparent"
@@ -141,7 +141,7 @@ function BoardSection() {
       </div>
 
       <div
-        className="mt-14 flex items-center gap-4"
+        className="mt-10 flex items-center gap-4"
         onMouseEnter={() => setPaused(true)}
         onMouseLeave={() => setPaused(false)}
       >

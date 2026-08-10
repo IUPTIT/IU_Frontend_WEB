@@ -1,11 +1,2 @@
-﻿import PagePlaceholder from "../../../../components/shared/PagePlaceholder";
-
-// TODO: chờ ảnh thiết kế — giao task, deadline, tiến độ, chấm điểm
-export default function Page() {
-  return (
-    <PagePlaceholder
-      title="Task Training"
-      description="TODO: chờ ảnh thiết kế — giao task, deadline, tiến độ, chấm điểm"
-    />
-  );
-}
+﻿/** Leader Task Training — cùng UI mentor (giao task, deadline, chấm điểm) */
+export { default } from "../../../Member/MentorTasks";

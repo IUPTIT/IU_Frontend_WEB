@@ -16,6 +16,7 @@ function searchPlaceholderForPath(path: string): string {
   if (path.includes("/settings/email")) return "Tìm template, SMTP...";
   if (path.includes("/settings")) return "Tìm trong cài đặt...";
   if (path.includes("/permissions")) return "Tìm kiếm tài khoản, email...";
+  if (path.includes("/departments")) return "Tìm kiếm Ban, lĩnh vực...";
   if (path.includes("/members")) return "Tìm kiếm thành viên CLB...";
   if (path.includes("/training/teams")) return "Tìm kiếm theo tên đội training...";
   if (path.includes("/training/roadmap")) return "Tìm kiếm lộ trình, nhóm...";
@@ -52,49 +53,48 @@ function LayoutInner({ role, children }: { role: Role; children: ReactNode }) {
   }, [activePath, setSearch]);
 
   return (
-    <div className="portal-shell flex min-h-screen gap-4 sm:gap-6 bg-background p-4 sm:p-6">
-      {/* Desktop / Tablet rail — ≥768px, cao full viewport */}
-      <div className="hidden md:block shrink-0 sticky top-4 sm:top-6 h-[calc(100vh-2rem)] sm:h-[calc(100vh-3rem)] self-start">
+    <div className="portal-shell flex min-h-screen bg-background">
+      {/* Desktop / Tablet rail — ≥768px, full màn, sát mép trái */}
+      <div className="sticky top-0 z-20 hidden h-screen shrink-0 self-start md:block">
         <SideNavBar role={role} variant="rail" />
       </div>
 
-      {/* Mobile drawer — <768px */}
-      <div
-        className={`fixed inset-0 z-40 md:hidden transition-opacity duration-300 ease-out ${
-          mobileNavOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
-        }`}
-      >
-        <button
-          type="button"
-          className="absolute inset-0 bg-foreground/30 backdrop-blur-[2px]"
-          aria-label="Đóng menu"
-          tabIndex={mobileNavOpen ? 0 : -1}
-          onClick={closeMobileNav}
-        />
-        <div
-          className={`absolute inset-y-0 left-0 flex p-3 transition-transform duration-300 ease-out ${
-            mobileNavOpen ? "translate-x-0" : "-translate-x-full"
-          }`}
-          role="dialog"
-          aria-modal="true"
-          aria-hidden={!mobileNavOpen}
-          aria-label="Menu điều hướng"
-        >
-          <div className="h-full w-[min(288px,85vw)] overflow-hidden rounded-card shadow-extruded">
-            <SideNavBar role={role} variant="drawer" />
+      {/* Mobile drawer — chỉ mount khi mở để không chặn click trang */}
+      {mobileNavOpen && (
+        <div className="fixed inset-0 z-40 md:hidden pointer-events-auto opacity-100 transition-opacity duration-300 ease-out">
+          <button
+            type="button"
+            className="absolute inset-0 bg-foreground/30 backdrop-blur-[2px]"
+            aria-label="Đóng menu"
+            onClick={closeMobileNav}
+          />
+          <div
+            className="absolute inset-y-0 left-0 flex translate-x-0 p-3 transition-transform duration-300 ease-out"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Menu điều hướng"
+          >
+            <div className="h-full w-[min(288px,85vw)] overflow-hidden rounded-card shadow-extruded">
+              <SideNavBar role={role} variant="drawer" />
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
-      <div className="flex-1 min-w-0">
-        <TopBar
-          role={role}
-          search={search}
-          onSearchChange={setSearch}
-          onOpenMobileNav={openMobileNav}
-          searchPlaceholder={searchPlaceholderForPath(activePath)}
-        />
-        <main className="mx-auto max-w-7xl py-6 sm:py-8 space-y-6 sm:space-y-8 px-0">{children}</main>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+          {/* Sticky top bar — nền canvas đục, che nội dung cuộn phía sau */}
+          <div className="portal-topbar-bg sticky top-0 z-30 pb-3 pt-4 sm:pt-6">
+            <TopBar
+              role={role}
+              search={search}
+              onSearchChange={setSearch}
+              onOpenMobileNav={openMobileNav}
+              searchPlaceholder={searchPlaceholderForPath(activePath)}
+            />
+          </div>
+          <main className="space-y-6 pb-8 sm:space-y-8">{children}</main>
+        </div>
       </div>
     </div>
   );

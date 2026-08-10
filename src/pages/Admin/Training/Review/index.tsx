@@ -1,5 +1,13 @@
 ﻿import { useCallback, useEffect, useMemo, useState } from "react";
-import { Award, CircleCheck, CircleX, Download, Eye, Send } from "lucide-react";
+import {
+  Award,
+  CircleCheck,
+  CircleX,
+  Download,
+  Eye,
+  Send,
+  UserX,
+} from "lucide-react";
 import Button from "../../../../components/ui/Button";
 import ExportDataModal, {
   type ExportColumnDef,
@@ -11,17 +19,23 @@ import Pagination from "../../../../components/ui/Pagination";
 import Select from "../../../../components/ui/Select";
 import SendEmailModal from "../../../../components/ui/SendEmailModal";
 import { usePortalUi } from "../../../../context/usePortalUi";
+import { useToast } from "../../../../context/useToast";
 import useCountUp from "../../../../hooks/useCountUp";
 import {
   getTrainees,
   getTrainingReviewSummary,
+  handleIncompleteTrainee,
   issueCertificates,
   setTraineeEvalStatus,
   type TrainingReviewSummary,
 } from "../../../../services/trainingService";
 import { getCampaigns } from "../../../../services/recruitmentService";
 import type { RecruitmentCampaign } from "../../../../types/recruitment";
-import type { Trainee, TraineeEvalStatus } from "../../../../types/training";
+import type {
+  PenaltyActionType,
+  Trainee,
+  TraineeEvalStatus,
+} from "../../../../types/training";
 import type { EmailRecipient } from "../../../../types/email";
 import { traineeToEmailRecipient } from "../../../../utils/emailRecipients";
 
@@ -107,6 +121,7 @@ function StatCard({
 
 function TrainingReviewPage() {
   const { search } = usePortalUi();
+  const toast = useToast();
   const [campaigns, setCampaigns] = useState<RecruitmentCampaign[]>([]);
   // Đợt tuyển: user chọn thì ưu tiên, không thì lấy đợt đang mở / mới nhất
   const [campaignIdOverride, setCampaignIdOverride] = useState("");
@@ -132,15 +147,14 @@ function TrainingReviewPage() {
   const [applied, setApplied] = useState<DraftFilter>(EMPTY);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [exportOpen, setExportOpen] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
   const [emailOpen, setEmailOpen] = useState(false);
   const [emailRecipients, setEmailRecipients] = useState<EmailRecipient[]>([]);
   const [detailTrainee, setDetailTrainee] = useState<Trainee | null>(null);
-
-  const showToast = (msg: string) => {
-    setToast(msg);
-    window.setTimeout(() => setToast(null), 2800);
-  };
+  const [penaltyTarget, setPenaltyTarget] = useState<Trainee | null>(null);
+  const [penaltyAction, setPenaltyAction] =
+    useState<PenaltyActionType>("final_reminder");
+  const [penaltyReason, setPenaltyReason] = useState("");
+  const [penaltySaving, setPenaltySaving] = useState(false);
 
   // loading khởi tạo true — refresh sau thao tác giữ nguyên bảng cũ
   const load = useCallback(async () => {
@@ -151,10 +165,16 @@ function TrainingReviewPage() {
       ]);
       setTrainees(list);
       setSummary(sum);
+    } catch (err) {
+      toast.error(
+        err instanceof Error
+          ? `Không tải được đánh giá: ${err.message}`
+          : "Không tải được dữ liệu đánh giá training.",
+      );
     } finally {
       setLoading(false);
     }
-  }, [campaignId]);
+  }, [campaignId, toast]);
 
   useEffect(() => {
     let alive = true;
@@ -281,14 +301,19 @@ function TrainingReviewPage() {
         ? [...selected]
         : filtered.filter((t) => t.evalStatus === "qualified").map((t) => t.id);
     if (ids.length === 0) {
-      showToast("Không có học viên đủ điều kiện để cấp chứng nhận.");
+      toast.info("Không có học viên đủ điều kiện để cấp chứng nhận.");
       return;
     }
-    const res = await issueCertificates(ids);
-    await load();
-    await load();
-    setSelected(new Set());
-    showToast(`Đã cấp chứng nhận cho ${res.issued} học viên.`);
+    try {
+      const res = await issueCertificates(ids);
+      await load();
+      setSelected(new Set());
+      toast.success(`Đã cấp chứng nhận cho ${res.issued} học viên.`);
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Cấp chứng nhận thất bại.",
+      );
+    }
   };
 
   const handleEval = async (
@@ -297,14 +322,46 @@ function TrainingReviewPage() {
   ) => {
     try {
       await setTraineeEvalStatus(traineeId, evalStatus);
-      showToast(
+      toast.success(
         evalStatus === "qualified"
           ? "Đã đánh dấu Đạt."
           : "Đã đánh dấu Chưa đạt.",
       );
       await load();
     } catch (err) {
-      showToast(err instanceof Error ? err.message : "Cập nhật thất bại.");
+      toast.error(err instanceof Error ? err.message : "Cập nhật thất bại.");
+    }
+  };
+
+  const handlePenalty = async () => {
+    if (!penaltyTarget || !penaltyReason.trim()) {
+      toast.info("Vui lòng nhập lý do xử lý.");
+      return;
+    }
+    if (penaltyAction === "extend_once" && penaltyTarget.extendedOnce) {
+      toast.info("Tân binh này đã được gia hạn 1 lần.");
+      return;
+    }
+    setPenaltySaving(true);
+    try {
+      await handleIncompleteTrainee(penaltyTarget.id, {
+        action: penaltyAction,
+        reason: penaltyReason.trim(),
+      });
+      toast.success(
+        penaltyAction === "remove_from_club"
+          ? `Đã loại ${penaltyTarget.fullName} khỏi CLB.`
+          : penaltyAction === "extend_once"
+            ? `Đã gia hạn deadline +7 ngày cho ${penaltyTarget.fullName}.`
+            : `Đã gửi nhắc lần cuối tới ${penaltyTarget.fullName}.`,
+      );
+      setPenaltyTarget(null);
+      setPenaltyReason("");
+      await load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Xử lý thất bại.");
+    } finally {
+      setPenaltySaving(false);
     }
   };
 
@@ -312,11 +369,10 @@ function TrainingReviewPage() {
     <>
       <section className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
-            Đánh giá &amp; Hoàn thành
-          </h1>
-          <div className="mt-2 flex flex-wrap items-center gap-2 text-muted">
-            <span>Tổng kết đợt training — theo dõi tiến độ tân binh.</span>
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
+              Đánh giá &amp; Hoàn thành
+            </h1>
             <Select
               value={campaignId}
               options={campaigns.map((c) => ({ value: c.id, label: c.name }))}
@@ -327,6 +383,9 @@ function TrainingReviewPage() {
               triggerClassName="!shadow-extruded-sm !h-10 text-accent !font-semibold"
             />
           </div>
+          <p className="mt-2 text-sm text-muted max-w-xl">
+            Tổng kết đợt training — theo dõi tiến độ tân binh.
+          </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button
@@ -349,7 +408,7 @@ function TrainingReviewPage() {
                   ? trainees.filter((t) => selected.has(t.id))
                   : filtered;
               if (list.length === 0) {
-                showToast(
+                toast.info(
                   "Chọn học viên hoặc để trống để gửi theo bộ lọc hiện tại.",
                 );
                 return;
@@ -370,15 +429,6 @@ function TrainingReviewPage() {
           </Button>
         </div>
       </section>
-
-      {toast && (
-        <p
-          className="rounded-2xl bg-accent/10 px-4 py-3 text-sm text-accent"
-          role="status"
-        >
-          {toast}
-        </p>
-      )}
 
       <div className="grid gap-4 sm:grid-cols-3">
         <StatCard title="Tổng tân binh" value={summary.totalTrainees} />
@@ -607,6 +657,23 @@ function TrainingReviewPage() {
                                 <Icon icon={CircleX} size={17} />
                               </button>
                             )}
+                            {(t.evalStatus === "failed" ||
+                              t.evalStatus === "studying") &&
+                              t.status !== "removed" && (
+                              <button
+                                type="button"
+                                aria-label={`Xử lý không hoàn thành: ${t.fullName}`}
+                                title="Nhắc / loại khỏi CLB"
+                                className="flex h-8 w-8 items-center justify-center rounded-full text-amber-600 shadow-extruded-sm transition-colors hover:bg-amber-500/10"
+                                onClick={() => {
+                                  setPenaltyTarget(t);
+                                  setPenaltyAction("final_reminder");
+                                  setPenaltyReason("");
+                                }}
+                              >
+                                <Icon icon={UserX} size={17} />
+                              </button>
+                            )}
                             {t.evalStatus === "certified" && (
                               <span
                                 className="flex h-8 w-8 items-center justify-center text-sky-500"
@@ -729,6 +796,70 @@ function TrainingReviewPage() {
         </div>
       )}
 
+      {penaltyTarget && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          role="presentation"
+        >
+          <button
+            type="button"
+            className="absolute inset-0 bg-foreground/35 backdrop-blur-[2px]"
+            aria-label="Đóng"
+            onClick={() => setPenaltyTarget(null)}
+          />
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="relative z-10 w-full max-w-md space-y-4 rounded-card bg-background p-5 shadow-extruded"
+          >
+            <h2 className="font-display text-xl font-extrabold">
+              Xử lý không hoàn thành
+            </h2>
+            <p className="text-sm text-muted">
+              {penaltyTarget.fullName} — nhắc lần cuối, gia hạn 1 lần, hoặc loại
+              khỏi CLB
+            </p>
+            <Select
+              value={penaltyAction}
+              onChange={(v) => setPenaltyAction(v as PenaltyActionType)}
+              options={[
+                { value: "final_reminder", label: "Nhắc nhở lần cuối" },
+                {
+                  value: "extend_once",
+                  label: penaltyTarget.extendedOnce
+                    ? "Gia hạn 1 lần (đã dùng)"
+                    : "Gia hạn deadline +7 ngày (1 lần)",
+                },
+                { value: "remove_from_club", label: "Loại khỏi CLB" },
+              ]}
+            />
+            <textarea
+              className="neu-input min-h-[88px] w-full text-sm"
+              placeholder="Lý do *"
+              value={penaltyReason}
+              onChange={(e) => setPenaltyReason(e.target.value)}
+            />
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setPenaltyTarget(null)}
+              >
+                Huỷ
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                disabled={penaltySaving}
+                onClick={() => void handlePenalty()}
+              >
+                Xác nhận
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <ExportDataModal
         open={exportOpen}
         onClose={() => setExportOpen(false)}
@@ -737,7 +868,7 @@ function TrainingReviewPage() {
         columns={exportColumns}
         rows={filtered}
         filenameBase="danh_gia_training"
-        onExported={(n) => showToast(`Đã tải xuống ${n} dòng (CSV).`)}
+        onExported={(n) => toast.success(`Đã tải xuống ${n} dòng (CSV).`)}
       />
 
       <SendEmailModal
@@ -748,7 +879,7 @@ function TrainingReviewPage() {
         category="training"
         preferredTemplateId="tpl-training-complete"
         title="Gửi email training"
-        onSent={(sent) => showToast(`Đã gửi email tới ${sent} học viên.`)}
+        onSent={(sent) => toast.success(`Đã gửi email tới ${sent} học viên.`)}
       />
     </>
   );

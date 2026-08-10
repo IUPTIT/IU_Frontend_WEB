@@ -5,6 +5,7 @@ import Icon from "../../../../components/ui/Icon";
 import SendEmailModal from "../../../../components/ui/SendEmailModal";
 import { useAuth } from "../../../../context/useAuth";
 import { usePortalUi } from "../../../../context/usePortalUi";
+import { useToast } from "../../../../context/useToast";
 import { ROUTES } from "../../../../constants/routes";
 import {
   getApplicationAnswers,
@@ -13,11 +14,14 @@ import {
   getScreeningCriteria,
   saveApplicationScore,
   setScreeningDecision,
+  getInterviewers,
+  assignReviewers,
 } from "../../../../services/recruitmentService";
 import type {
   Application,
   ApplicationAnswer,
   ApplicationAttachment,
+  InterviewerRef,
   ScreeningCriterion,
 } from "../../../../types/recruitment";
 import { applicationToEmailRecipient } from "../../../../utils/emailRecipients";
@@ -60,6 +64,7 @@ function AttachmentIcon({ kind }: { kind: ApplicationAttachment["kind"] }) {
 function ApplicationDetailPage({ applicationId }: Props) {
   const { navigate } = usePortalUi();
   const { user } = useAuth();
+  const toast = useToast();
 
   const [app, setApp] = useState<Application | null>(null);
   const [answers, setAnswers] = useState<ApplicationAnswer[]>([]);
@@ -69,40 +74,51 @@ function ApplicationDetailPage({ applicationId }: Props) {
   const [reviewerName, setReviewerName] = useState("Admin");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
   const [emailOpen, setEmailOpen] = useState(false);
+  const [reviewers, setReviewers] = useState<InterviewerRef[]>([]);
+  const [selectedReviewerIds, setSelectedReviewerIds] = useState<string[]>([]);
+  const [assigning, setAssigning] = useState(false);
 
   const showToast = (msg: string) => {
-    setToast(msg);
-    window.setTimeout(() => setToast(null), 2500);
+    toast.info(msg);
   };
 
   const load = useCallback(async () => {
+    setLoading(true);
     try {
-      const [detail, ans, crit, score] = await Promise.all([
-        getApplicationById(applicationId),
-        getApplicationAnswers(applicationId),
-        getScreeningCriteria(),
-        getApplicationScore(applicationId),
+      // Hồ sơ chính trước — phụ (điểm/answers) fail không làm trắng cả trang
+      const detail = await getApplicationById(applicationId);
+      setApp(detail ?? null);
+      setSelectedReviewerIds(detail?.reviewerIds ?? []);
+      if (!detail) return;
+
+      const [ans, crit, score, interviewerList] = await Promise.all([
+        getApplicationAnswers(applicationId).catch(() => [] as ApplicationAnswer[]),
+        getScreeningCriteria().catch(() => [] as ScreeningCriterion[]),
+        getApplicationScore(applicationId).catch(() => undefined),
+        getInterviewers().catch(() => [] as InterviewerRef[]),
       ]);
-
-      if (!detail) {
-        setApp(null);
-        return;
-      }
-
-      setApp(detail);
       setAnswers(ans);
       setCriteria(crit);
-      setReviewerName(score?.reviewerName ?? user?.name ?? "Admin");
-
-      const scoreMap: Record<string, string> = {};
-      for (const c of crit) {
-        const found = score?.criteriaScores.find((s) => s.criteriaId === c.id);
-        scoreMap[c.id] = found != null ? String(found.score) : "";
+      setReviewers(interviewerList);
+      if (score) {
+        const map: Record<string, string> = {};
+        for (const c of score.criteriaScores) map[c.criteriaId] = String(c.score);
+        setScores(map);
+        setComment(score.comment ?? "");
+        setReviewerName(score.reviewerName ?? user?.name ?? "Admin");
+      } else {
+        setScores({});
+        setComment("");
+        setReviewerName(user?.name ?? "Admin");
       }
-      setScores(scoreMap);
-      setComment(score?.comment ?? "");
+    } catch (err) {
+      setApp(null);
+      showToast(
+        err instanceof Error
+          ? `Không tải được hồ sơ: ${err.message}`
+          : "Không tải được chi tiết hồ sơ.",
+      );
     } finally {
       setLoading(false);
     }
@@ -122,8 +138,10 @@ function ApplicationDetailPage({ applicationId }: Props) {
       score: Number.parseFloat(scores[c.id] || "0") || 0,
     }));
 
+  const canScore = app?.status === "submitted";
+
   const handleSave = async () => {
-    if (!app || !user) return;
+    if (!app || !user || !canScore) return;
     setSaving(true);
     try {
       await saveApplicationScore({
@@ -135,13 +153,15 @@ function ApplicationDetailPage({ applicationId }: Props) {
       });
       showToast("Đã lưu đánh giá.");
       await load();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Lưu đánh giá thất bại.");
     } finally {
       setSaving(false);
     }
   };
 
   const handleDecision = async (result: "pass" | "fail") => {
-    if (!app || !user) return;
+    if (!app || !user || !canScore) return;
     setSaving(true);
     try {
       await saveApplicationScore({
@@ -155,6 +175,14 @@ function ApplicationDetailPage({ applicationId }: Props) {
       showToast(result === "pass" ? "Đã Pass vòng đơn." : "Đã loại hồ sơ.");
       // Quyết định xong → quay về bảng danh sách hồ sơ (chờ 1 nhịp cho toast hiện)
       window.setTimeout(backToList, 900);
+    } catch (err) {
+      showToast(
+        err instanceof Error
+          ? err.message
+          : result === "pass"
+            ? "Pass vòng đơn thất bại."
+            : "Loại hồ sơ thất bại.",
+      );
     } finally {
       setSaving(false);
     }
@@ -223,25 +251,21 @@ function ApplicationDetailPage({ applicationId }: Props) {
             size="md"
             leftIcon={<Icon icon={Send} size={16} />}
             onClick={() => setEmailOpen(true)}
+            title="Gửi email kết quả vòng đơn (Pass / Trượt) — không phải nhắc lịch PV"
           >
-            Gửi email
+            Gửi email vòng đơn
           </Button>
           <Button
             variant="primary"
             size="md"
-            disabled={saving}
+            disabled={saving || !canScore}
+            title={canScore ? "Lưu đánh giá" : "Hồ sơ đã qua vòng đơn — không thể chấm lại"}
             onClick={() => void handleSave()}
           >
             Lưu đánh giá
           </Button>
         </div>
       </header>
-
-      {toast && (
-        <p className="rounded-2xl bg-accent/10 px-4 py-3 text-sm text-accent" role="status">
-          {toast}
-        </p>
-      )}
 
       <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(0,1fr)]">
         {/* Left column */}
@@ -351,6 +375,68 @@ function ApplicationDetailPage({ applicationId }: Props) {
 
           <section className="neu-card !p-6 space-y-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
+              <h3 className="font-display text-lg font-bold">Phân công người chấm</h3>
+              {app.status === "submitted" && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  disabled={assigning || selectedReviewerIds.length === 0}
+                  onClick={async () => {
+                    setAssigning(true);
+                    try {
+                      await assignReviewers(applicationId, selectedReviewerIds);
+                      showToast("Đã phân công người chấm.");
+                      await load();
+                    } catch {
+                      showToast("Phân công thất bại.");
+                    } finally {
+                      setAssigning(false);
+                    }
+                  }}
+                >
+                  {assigning ? "Đang lưu..." : "Lưu phân công"}
+                </Button>
+              )}
+            </div>
+            <p className="text-sm text-muted">
+              Mỗi hồ sơ có thể gán nhiều người chấm để tránh thiên vị. Chỉ người được gán (và BCN) mới
+              chấm được.
+            </p>
+            {app.reviewerNames && app.reviewerNames.length > 0 && (
+              <p className="text-sm text-foreground">
+                Đã gán: <b>{app.reviewerNames.join(", ")}</b>
+              </p>
+            )}
+            <div className="flex flex-wrap gap-2">
+              {reviewers.map((r) => {
+                const checked = selectedReviewerIds.includes(r.id);
+                return (
+                  <label
+                    key={r.id}
+                    className={`inline-flex cursor-pointer items-center gap-2 rounded-2xl px-3 py-2 text-sm shadow-inset-sm ${
+                      checked ? "bg-accent/15 text-accent" : "bg-background text-muted"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      className="accent-accent"
+                      checked={checked}
+                      disabled={app.status !== "submitted"}
+                      onChange={() => {
+                        setSelectedReviewerIds((prev) =>
+                          checked ? prev.filter((id) => id !== r.id) : [...prev, r.id],
+                        );
+                      }}
+                    />
+                    {r.name}
+                  </label>
+                );
+              })}
+            </div>
+          </section>
+
+          <section className="neu-card !p-6 space-y-5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <h3 className="font-display text-lg font-bold">Phần Đánh Giá (Vòng Đơn)</h3>
               <span className="inline-flex rounded-full bg-muted/15 px-3 py-1 text-xs font-medium text-muted">
                 Người chấm: {reviewerName}
@@ -369,7 +455,8 @@ function ApplicationDetailPage({ applicationId }: Props) {
                     min={0}
                     max={c.maxScore}
                     step={0.5}
-                    className="neu-input !h-11 max-w-[100px] text-center font-semibold"
+                    disabled={!canScore}
+                    className="neu-input !h-11 max-w-[100px] text-center font-semibold disabled:opacity-60"
                     value={scores[c.id] ?? ""}
                     onChange={(e) => setScores((prev) => ({ ...prev, [c.id]: e.target.value }))}
                     aria-label={c.name}
@@ -391,17 +478,25 @@ function ApplicationDetailPage({ applicationId }: Props) {
               <textarea
                 id="screening-comment"
                 rows={5}
-                className="neu-input !h-auto min-h-[120px] py-3 resize-y text-sm leading-relaxed"
+                disabled={!canScore}
+                className="neu-input !h-auto min-h-[120px] py-3 resize-y text-sm leading-relaxed disabled:opacity-60"
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
                 placeholder="Nhập nhận xét về hồ sơ ứng viên..."
               />
             </div>
 
+            {!canScore && (
+              <p className="text-sm text-muted">
+                Hồ sơ không còn ở trạng thái chờ xét duyệt — không thể lưu điểm hoặc quyết định lại.
+              </p>
+            )}
+
             <div className="flex flex-wrap items-center justify-end gap-3 pt-1">
               <button
                 type="button"
-                disabled={saving}
+                disabled={saving || !canScore}
+                title={canScore ? "Loại hồ sơ" : "Hồ sơ đã qua vòng đơn"}
                 onClick={() => void handleDecision("fail")}
                 className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl px-5 text-sm font-semibold text-white
                   bg-rose-500 shadow-extruded-sm transition-all duration-300
@@ -417,7 +512,8 @@ function ApplicationDetailPage({ applicationId }: Props) {
               </button>
               <button
                 type="button"
-                disabled={saving}
+                disabled={saving || !canScore}
+                title={canScore ? "Pass vòng đơn" : "Hồ sơ đã qua vòng đơn"}
                 onClick={() => void handleDecision("pass")}
                 className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl px-5 text-sm font-semibold text-white
                   bg-accent shadow-extruded-sm transition-all duration-300
@@ -442,8 +538,23 @@ function ApplicationDetailPage({ applicationId }: Props) {
         recipients={[applicationToEmailRecipient(app)]}
         module="recruitment-screening"
         category="recruitment"
-        preferredTemplateId="tpl-screening"
-        title={`Gửi email — ${app.fullName}`}
+        preferredTemplateId={
+          app.status === "cv_failed" || app.screeningResult === "fail"
+            ? "tpl-cv-fail"
+            : app.status === "interview" ||
+                app.status === "interview_passed" ||
+                app.status === "interview_failed" ||
+                app.status === "accepted" ||
+                app.status === "rejected" ||
+                app.screeningResult === "pass"
+              ? "tpl-cv-pass"
+              : "tpl-cv-pass"
+        }
+        title={
+          app.status === "cv_failed" || app.screeningResult === "fail"
+            ? `Gửi email Trượt vòng đơn — ${app.fullName}`
+            : `Gửi email Pass vòng đơn — ${app.fullName}`
+        }
         onSent={(sent) => showToast(`Đã gửi ${sent} email.`)}
       />
     </div>

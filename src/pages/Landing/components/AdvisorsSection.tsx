@@ -15,10 +15,10 @@ const ADVISORS = [
 
 function AdvisorsSection() {
   return (
-    <section id="co-van" className="relative z-10 mx-auto max-w-5xl px-6 pb-24">
+    <section id="co-van" className="relative z-10 mx-auto max-w-5xl px-6 pb-16">
       <div className="text-center">
-        <p className="landing-headline text-sm font-semibold uppercase tracking-[0.3em] text-purple-400">Cố vấn</p>
-        <h2 className="landing-headline mt-3 text-4xl font-semibold text-[hsl(var(--landing-foreground))] md:text-5xl">
+        <p className="landing-headline text-xs font-semibold uppercase tracking-[0.3em] text-purple-400">Cố vấn</p>
+        <h2 className="landing-headline mt-3 text-3xl font-semibold text-[hsl(var(--landing-foreground))] md:text-4xl">
           Những người{" "}
           <span
             className="bg-clip-text text-transparent"
@@ -27,16 +27,16 @@ function AdvisorsSection() {
             dẫn đường
           </span>
         </h2>
-        <p className="mx-auto mt-6 max-w-3xl leading-relaxed text-[hsl(var(--landing-foreground)/0.75)]">
+        <p className="mx-auto mt-5 max-w-2xl text-sm leading-relaxed text-[hsl(var(--landing-foreground)/0.75)] md:text-base">
           Để phát triển thành một CLB vững mạnh và đoàn kết như hiện nay, ngay từ những ngày đầu tiên IU Club đã rất
           may mắn khi nhận được sự hỗ trợ, chỉ dẫn từ các thầy cô cố vấn đã có nhiều năm kinh nghiệm giảng dạy tại VIỆN
           KHOA HỌC KỸ THUẬT BƯU ĐIỆN.
         </p>
       </div>
 
-      <div className="mx-auto mt-14 grid max-w-3xl gap-8 md:grid-cols-2">
+      <div className="mx-auto mt-10 grid max-w-3xl gap-6 md:grid-cols-2">
         {ADVISORS.map((advisor) => (
-          <div key={advisor.name} className="liquid-glass landing-card-solid landing-card-hover overflow-hidden rounded-3xl">
+          <div key={advisor.name} className="liquid-glass landing-card-glass landing-card-hover overflow-hidden rounded-3xl">
             <img
               src={advisor.image}
               alt={advisor.name}

@@ -3,7 +3,9 @@ import { ArrowLeft, Save } from "lucide-react";
 import Button from "../../../../components/ui/Button";
 import Icon from "../../../../components/ui/Icon";
 import { ROUTES } from "../../../../constants/routes";
+import { useAuth } from "../../../../context/useAuth";
 import { usePortalUi } from "../../../../context/usePortalUi";
+import { useToast } from "../../../../context/useToast";
 import {
   getBookingDetail,
   getInterviewCriteria,
@@ -15,12 +17,20 @@ import type { InterviewCriterion } from "../../../../types/recruitment";
 import { formatDate } from "../../../../utils/formatDate";
 
 /**
- * Trang note phỏng vấn 1 ứng viên: ghi chú quá trình + chấm điểm theo tiêu chí.
- * Mỗi người chấm 1 bản ghi độc lập (chấm lại thì ghi đè của chính mình).
- * Quyết định pass/fail cuối làm ở trang Kết quả sau khi thảo luận.
+ * Trang note phỏng vấn 1 ứng viên: ghi chú + chấm điểm.
+ * Mỗi interviewer 1 bản ghi; BCN có thể sửa điểm hộ bất kỳ reviewer nào.
  */
 function InterviewCandidateNotePage({ bookingId }: { bookingId: string }) {
+  const { user } = useAuth();
+  const isBcn = user?.role === "admin";
+  const routes =
+    user?.role === "member"
+      ? ROUTES.member.recruitment
+      : user?.role === "leader"
+        ? ROUTES.leader.recruitment
+        : ROUTES.admin.recruitment;
   const { navigate } = usePortalUi();
+  const toast = useToast();
   const [detail, setDetail] = useState<BookingDetail | null>(null);
   const [criteria, setCriteria] = useState<InterviewCriterion[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,17 +39,19 @@ function InterviewCandidateNotePage({ bookingId }: { bookingId: string }) {
   const [scores, setScores] = useState<Record<string, string>>({});
   const [note, setNote] = useState("");
   const [attendance, setAttendance] = useState<"present" | "absent">("present");
+  const [editAsUserId, setEditAsUserId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [deciding, setDeciding] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
-    setToast(msg);
-    window.setTimeout(() => setToast(null), 2800);
+    toast.info(msg);
   };
 
   const load = useCallback(async () => {
-    const [data, crit] = await Promise.all([getBookingDetail(bookingId), getInterviewCriteria()]);
+    const [data, crit] = await Promise.all([
+      getBookingDetail(bookingId),
+      getInterviewCriteria(),
+    ]);
     setDetail(data);
     setCriteria(crit);
   }, [bookingId]);
@@ -53,7 +65,8 @@ function InterviewCandidateNotePage({ bookingId }: { bookingId: string }) {
         setCriteria(crit);
       })
       .catch((err: unknown) => {
-        if (alive) setError(err instanceof Error ? err.message : "Không tải được dữ liệu");
+        if (alive)
+          setError(err instanceof Error ? err.message : "Không tải được dữ liệu");
       })
       .finally(() => {
         if (alive) setLoading(false);
@@ -64,7 +77,13 @@ function InterviewCandidateNotePage({ bookingId }: { bookingId: string }) {
   }, [bookingId]);
 
   if (loading) {
-    return <div className="neu-card h-64 animate-pulse" aria-busy="true" aria-label="Đang tải" />;
+    return (
+      <div
+        className="neu-card h-64 animate-pulse"
+        aria-busy="true"
+        aria-label="Đang tải"
+      />
+    );
   }
   if (error || !detail) {
     return (
@@ -95,13 +114,26 @@ function InterviewCandidateNotePage({ bookingId }: { bookingId: string }) {
         applicationId: detail.applicationId,
         criteriaScores: criteria.map((c) => ({
           criteriaName: c.name,
-          score: attendance === "absent" ? 0 : Number.parseFloat(scores[c.id] || "0") || 0,
+          score:
+            attendance === "absent"
+              ? 0
+              : Number.parseFloat(scores[c.id] || "0") || 0,
           maxScore: c.maxScore,
         })),
         comment: note.trim(),
         attendance,
+        ...(editAsUserId && isBcn ? { asUserId: editAsUserId } : {}),
       });
-      showToast("Đã lưu điểm & ghi chú.");
+      showToast(
+        editAsUserId && isBcn
+          ? "Đã cập nhật điểm hộ reviewer."
+          : attendance === "absent"
+            ? "Đã đánh dấu Vắng mặt. Booking chỉ đóng khi đủ panel chấm — BCN xác nhận Fail riêng."
+            : "Đã lưu điểm & ghi chú. Trạng thái ca hoàn tất khi đủ người PV trong panel đã chấm.",
+      );
+      setEditAsUserId(null);
+      setScores({});
+      setNote("");
       await load();
     } catch (err) {
       showToast(err instanceof Error ? err.message : "Lưu thất bại — thử lại.");
@@ -114,13 +146,31 @@ function InterviewCandidateNotePage({ bookingId }: { bookingId: string }) {
     setDeciding(true);
     try {
       await setInterviewDecision(detail.applicationId, result);
-      showToast(result === "pass" ? "Đã đánh dấu ĐẠT phỏng vấn." : "Đã đánh dấu KHÔNG ĐẠT.");
+      showToast(
+        result === "pass"
+          ? "Đã đánh dấu ĐẠT phỏng vấn."
+          : "Đã đánh dấu KHÔNG ĐẠT.",
+      );
       await load();
     } catch (err) {
-      showToast(err instanceof Error ? err.message : "Cập nhật kết quả thất bại.");
+      showToast(
+        err instanceof Error ? err.message : "Cập nhật kết quả thất bại.",
+      );
     } finally {
       setDeciding(false);
     }
+  };
+
+  const startEditReviewer = (
+    reviewerId: string,
+    reviewerName: string,
+    comment: string,
+  ) => {
+    if (!isBcn || !reviewerId) return;
+    setEditAsUserId(reviewerId);
+    setNote(comment);
+    setAttendance("present");
+    showToast(`Đang sửa điểm hộ: ${reviewerName}`);
   };
 
   const avgPreview = (() => {
@@ -128,6 +178,11 @@ function InterviewCandidateNotePage({ bookingId }: { bookingId: string }) {
     if (!criteria.length || vals.some((v) => Number.isNaN(v))) return null;
     return Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 10) / 10;
   })();
+
+  const editingName =
+    editAsUserId &&
+    detail.reviewerScores.find((s) => s.reviewerId === editAsUserId)
+      ?.reviewerName;
 
   return (
     <>
@@ -137,35 +192,56 @@ function InterviewCandidateNotePage({ bookingId }: { bookingId: string }) {
             variant="soft"
             size="sm"
             className="!h-10"
-            onClick={() => navigate(ROUTES.admin.recruitment.interviewSlot(detail.slot.slotId))}
+            onClick={() => navigate(routes.interviewSlot(detail.slot.slotId))}
             leftIcon={<Icon icon={ArrowLeft} size={15} />}
           >
             Quay lại
           </Button>
-          <h1 className="font-display text-3xl font-extrabold tracking-tight">{detail.fullName}</h1>
+          <h1 className="font-display text-3xl font-extrabold tracking-tight">
+            {detail.fullName}
+          </h1>
           <p className="text-muted">
-            {detail.applicationCode} · {detail.department} · Ca {detail.slot.startTime}-
-            {detail.slot.endTime} ngày {formatDate(detail.slot.date)} tại {detail.slot.location}
+            {detail.applicationCode} · {detail.department} · Ca{" "}
+            {detail.slot.startTime}-{detail.slot.endTime} ngày{" "}
+            {formatDate(detail.slot.date)} tại {detail.slot.location}
           </p>
         </div>
         {detail.averageScore != null && (
           <div className="neu-well-sm !px-5 !py-3 text-center">
             <p className="text-xs text-muted">Điểm TB hiện tại</p>
-            <p className="text-2xl font-extrabold text-accent">{detail.averageScore.toFixed(1)}</p>
+            <p className="text-2xl font-extrabold text-accent">
+              {detail.averageScore.toFixed(1)}
+            </p>
           </div>
         )}
       </section>
 
-      {toast && (
-        <p className="rounded-2xl bg-accent/10 px-4 py-3 text-sm text-accent" role="status">
-          {toast}
-        </p>
-      )}
-
       <div className="grid gap-5 lg:grid-cols-[1fr_360px]">
-        {/* Cột trái: note + chấm điểm của TÔI */}
         <section className="neu-card space-y-5 !p-6">
-          <h2 className="font-display text-lg font-bold">Phỏng vấn & chấm điểm</h2>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="font-display text-lg font-bold">
+              Phỏng vấn & chấm điểm
+            </h2>
+            {editingName && (
+              <button
+                type="button"
+                className="text-xs text-accent hover:underline"
+                onClick={() => {
+                  setEditAsUserId(null);
+                  setNote("");
+                  setScores({});
+                }}
+              >
+                Huỷ sửa hộ ({editingName})
+              </button>
+            )}
+          </div>
+
+          {editingName && (
+            <p className="rounded-xl bg-amber-500/10 px-3 py-2 text-sm text-amber-800 dark:text-amber-200">
+              Bạn đang sửa điểm với tư cách <b>{editingName}</b> (quyền BCN).
+            </p>
+          )}
 
           <div className="flex flex-wrap items-center gap-3">
             <span className="neu-field-label !mb-0">Điểm danh:</span>
@@ -201,7 +277,9 @@ function InterviewCandidateNotePage({ bookingId }: { bookingId: string }) {
                     step={0.5}
                     className="neu-input !h-11"
                     value={scores[c.id] ?? ""}
-                    onChange={(e) => setScores((s) => ({ ...s, [c.id]: e.target.value }))}
+                    onChange={(e) =>
+                      setScores((s) => ({ ...s, [c.id]: e.target.value }))
+                    }
                   />
                 </label>
               ))}
@@ -214,7 +292,7 @@ function InterviewCandidateNotePage({ bookingId }: { bookingId: string }) {
             </span>
             <textarea
               className="neu-input !h-auto min-h-[160px] resize-y py-3 text-sm"
-              placeholder="Câu hỏi đã hỏi, câu trả lời nổi bật, thái độ, điểm mạnh/yếu, nhận định..."
+              placeholder="Câu hỏi đã hỏi, câu trả lời nổi bật, thái độ, điểm mạnh/yếu..."
               value={note}
               onChange={(e) => setNote(e.target.value)}
             />
@@ -224,7 +302,7 @@ function InterviewCandidateNotePage({ bookingId }: { bookingId: string }) {
             <p className="text-sm text-muted">
               {avgPreview != null && attendance === "present" && (
                 <>
-                  Điểm trung bình của bạn:{" "}
+                  Điểm trung bình:{" "}
                   <span className="font-bold text-accent">{avgPreview}</span>
                 </>
               )}
@@ -236,12 +314,15 @@ function InterviewCandidateNotePage({ bookingId }: { bookingId: string }) {
               onClick={() => void handleSave()}
               leftIcon={<Icon icon={Save} size={16} />}
             >
-              {saving ? "Đang lưu..." : "Lưu điểm & ghi chú"}
+              {saving
+                ? "Đang lưu..."
+                : editingName
+                  ? "Lưu điểm hộ reviewer"
+                  : "Lưu điểm & ghi chú"}
             </Button>
           </div>
         </section>
 
-        {/* Cột phải: điểm & note của các reviewer (thảo luận) */}
         <aside className="neu-card space-y-4 !p-6">
           <h2 className="font-display text-lg font-bold">
             Đánh giá đã lưu ({detail.reviewerScores.length})
@@ -250,29 +331,60 @@ function InterviewCandidateNotePage({ bookingId }: { bookingId: string }) {
             <p className="text-sm text-muted">Chưa có ai chấm ứng viên này.</p>
           ) : (
             <ul className="space-y-3">
-              {detail.reviewerScores.map((s, i) => (
-                <li key={i} className="rounded-2xl bg-accent/5 p-4">
+              {detail.reviewerScores.map((s) => (
+                <li
+                  key={s.reviewerId || s.reviewerName}
+                  className="rounded-2xl bg-accent/5 p-4"
+                >
                   <div className="flex items-center justify-between gap-3">
-                    <p className="font-semibold text-foreground">{s.reviewerName || "Reviewer"}</p>
+                    <p className="font-semibold text-foreground">
+                      {s.reviewerName || "Reviewer"}
+                    </p>
                     <span className="font-bold text-accent">
-                      {s.attendance === "absent" ? "Vắng" : s.totalScore.toFixed(1)}
+                      {s.attendance === "absent"
+                        ? "Vắng"
+                        : s.totalScore.toFixed(1)}
                     </span>
                   </div>
-                  {s.comment && <p className="mt-2 text-sm text-muted">{s.comment}</p>}
+                  {s.comment && (
+                    <p className="mt-2 text-sm text-muted">{s.comment}</p>
+                  )}
+                  {isBcn && s.reviewerId && (
+                    <button
+                      type="button"
+                      className="mt-2 text-xs font-medium text-accent hover:underline"
+                      onClick={() =>
+                        startEditReviewer(s.reviewerId, s.reviewerName, s.comment)
+                      }
+                    >
+                      Sửa điểm (BCN)
+                    </button>
+                  )}
                 </li>
               ))}
             </ul>
           )}
-          {/* Kết luận vòng PV — làm sau khi các reviewer đã chấm và thảo luận */}
-          {detail.applicationStatus === "passed_cv" ? (
+          {isBcn && detail.applicationStatus === "passed_cv" ? (
             <div className="space-y-2 border-t border-black/5 pt-4">
-              <p className="text-sm font-semibold text-foreground">Kết luận vòng phỏng vấn</p>
+              <p className="text-sm font-semibold text-foreground">
+                Kết luận vòng phỏng vấn
+              </p>
+              {detail.reviewerScores.some((s) => s.attendance === "absent") && (
+                <p className="rounded-xl bg-rose-500/10 px-3 py-2 text-xs text-rose-700 dark:text-rose-300">
+                  Có đánh dấu Vắng mặt — bạn cần xác nhận <b>Không đạt</b> để Fail
+                  hồ sơ (hệ thống không tự Fail).
+                </p>
+              )}
               <div className="flex gap-2">
                 <Button
                   variant="primary"
                   size="sm"
                   className="!h-11 flex-1"
-                  disabled={deciding || detail.reviewerScores.length === 0}
+                  disabled={
+                    deciding ||
+                    detail.reviewerScores.length === 0 ||
+                    detail.reviewerScores.every((s) => s.attendance === "absent")
+                  }
                   onClick={() => void handleDecide("pass")}
                 >
                   Đạt phỏng vấn
@@ -288,14 +400,22 @@ function InterviewCandidateNotePage({ bookingId }: { bookingId: string }) {
                 </Button>
               </div>
               <p className="text-xs text-muted">
-                Cần ít nhất 1 đánh giá đã lưu. Không đạt sẽ tự khoá tài khoản + gửi email.
-                Trúng tuyển chính thức chốt ở trang <b>Kết quả</b>.
+                Chỉ BCN chốt Đạt/Trượt. Vắng mặt chỉ là điểm danh — phải bấm Không
+                đạt để Fail. Cần ≥1 đánh giá đã lưu.
               </p>
             </div>
           ) : (
             <p className="text-xs text-muted">
-              Trạng thái hồ sơ: <b>{detail.applicationStatus === "passed_interview" ? "Đã đạt phỏng vấn" : detail.applicationStatus === "failed_interview" ? "Không đạt phỏng vấn" : detail.applicationStatus}</b>
-              {" · "}Kết luận cuối (trúng tuyển / loại) ở trang <b>Kết quả</b>.
+              Trạng thái hồ sơ:{" "}
+              <b>
+                {detail.applicationStatus === "passed_interview"
+                  ? "Đã đạt phỏng vấn"
+                  : detail.applicationStatus === "failed_interview"
+                    ? "Không đạt phỏng vấn"
+                    : detail.applicationStatus === "passed_cv"
+                      ? "Chờ BCN duyệt kết quả PV"
+                      : detail.applicationStatus}
+              </b>
             </p>
           )}
         </aside>

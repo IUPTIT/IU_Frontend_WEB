@@ -7,6 +7,8 @@ export type AuthUser = {
   name: string;
   email: string;
   role: Role;
+  /** Additive roles — dual Member+Leader = ["member","leader"] */
+  roles?: Role[];
   phone?: string;
   bio?: string;
   avatarDataUrl?: string;
@@ -16,6 +18,8 @@ export type AuthUser = {
   sourceApplicationId?: string;
   /** Member được đẩy quyền mentor dẫn team vòng training */
   isMentor?: boolean;
+  /** Ch.2.4: Đang training | Chính thức (chỉ khi role=member) */
+  memberStatus?: "training" | "official" | null;
 };
 
 // Backend dùng role "bcn" cho Ban Chủ nhiệm — frontend gọi là "admin"
@@ -26,22 +30,35 @@ type BackendUser = {
   name: string;
   email: string;
   role: BackendRole;
+  roles?: BackendRole[];
   avatar?: string;
+  phone?: string;
+  bio?: string;
   requirePasswordChange?: boolean;
   sourceApplicationId?: string | null;
   isMentor?: boolean;
+  memberStatus?: "training" | "official" | null;
 };
 
+function mapRole(r: BackendRole): Role {
+  return r === "bcn" ? "admin" : r;
+}
+
 function toAuthUser(u: BackendUser): AuthUser {
+  const roles = (u.roles?.length ? u.roles : [u.role]).map(mapRole);
   return {
     id: u.id,
     name: u.name,
     email: u.email,
-    role: u.role === "bcn" ? "admin" : u.role,
+    role: mapRole(u.role),
+    roles,
+    phone: u.phone || undefined,
+    bio: u.bio || undefined,
     avatarDataUrl: u.avatar || undefined,
     requirePasswordChange: u.requirePasswordChange ?? false,
     sourceApplicationId: u.sourceApplicationId ?? undefined,
     isMentor: u.isMentor ?? false,
+    memberStatus: u.memberStatus ?? null,
   };
 }
 
@@ -77,6 +94,17 @@ export async function restoreSession(): Promise<AuthUser | null> {
     setAccessToken(null);
     return null;
   }
+}
+
+/** User tự cập nhật hồ sơ của mình — trả user đã lưu ở backend */
+export async function updateMyProfile(patch: {
+  name?: string;
+  phone?: string;
+  bio?: string;
+  avatar?: string;
+}): Promise<AuthUser> {
+  const { user } = await api.patch<{ user: BackendUser }>("/auth/me", patch);
+  return toAuthUser(user);
 }
 
 /** Đổi mật khẩu — backend cấp lại token mới và trả user đã cập nhật */

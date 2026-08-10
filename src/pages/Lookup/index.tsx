@@ -4,6 +4,7 @@ import BackgroundVideo from "../../components/LandingBackgroundVideo";
 import LandingFooter from "../../components/LandingFooter";
 import LookupForm from "./components/LookupForm";
 import ApplicationStatusCard from "./components/ApplicationStatusCard";
+import EditApplicationForm from "./components/EditApplicationForm";
 import { lookupApplication, withdrawApplication } from "../../services/publicRecruitmentService";
 import type { PublicApplication } from "../../services/publicRecruitmentService";
 import "../../styles/landing.css";
@@ -14,11 +15,15 @@ function LookupPage() {
   const [searching, setSearching] = useState(false);
   const [withdrawing, setWithdrawing] = useState(false);
   const [withdrawn, setWithdrawn] = useState(false);
+  const [withdrawError, setWithdrawError] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false);
 
   const handleSearch = async (query: string) => {
     setSearching(true);
     setNotFound(false);
     setWithdrawn(false);
+    setWithdrawError(null);
+    setEditing(false);
     try {
       setResult(await lookupApplication(query));
     } catch {
@@ -29,16 +34,19 @@ function LookupPage() {
     }
   };
 
-  // Rút đơn = backend xoá hồ sơ — sau khi rút không còn gì để hiển thị
   const handleWithdraw = async () => {
     if (!result || withdrawing) return;
     setWithdrawing(true);
+    setWithdrawError(null);
     try {
       await withdrawApplication(result.code, result.email);
       setResult(null);
       setWithdrawn(true);
-    } catch {
-      // giữ nguyên kết quả cũ nếu rút thất bại
+      setEditing(false);
+    } catch (err) {
+      setWithdrawError(
+        err instanceof Error ? err.message : "Rút đơn thất bại — thử lại.",
+      );
     } finally {
       setWithdrawing(false);
     }
@@ -68,8 +76,24 @@ function LookupPage() {
                 Đã rút đơn thành công — hồ sơ của bạn đã được xoá. Bạn có thể nộp đơn mới khi đợt tuyển còn mở.
               </p>
             )}
-            {result && (
-              <ApplicationStatusCard application={result} withdrawing={withdrawing} onWithdraw={handleWithdraw} />
+            {result && !editing && (
+              <ApplicationStatusCard
+                application={result}
+                withdrawing={withdrawing}
+                withdrawError={withdrawError}
+                onWithdraw={handleWithdraw}
+                onEdit={() => setEditing(true)}
+              />
+            )}
+            {result && editing && (
+              <EditApplicationForm
+                application={result}
+                onSaved={(app) => {
+                  setResult(app);
+                  setEditing(false);
+                }}
+                onCancel={() => setEditing(false)}
+              />
             )}
           </div>
         </main>

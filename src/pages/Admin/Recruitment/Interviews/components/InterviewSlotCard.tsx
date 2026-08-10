@@ -8,6 +8,8 @@ type Props = {
   onReschedule: (slot: InterviewSlot) => void;
   onDelete: (slot: InterviewSlot) => void;
   onOpenCandidates: (slot: InterviewSlot) => void;
+  /** Leader xem ca được phân — ẩn sửa/xoá/phân công */
+  readOnly?: boolean;
 };
 
 function initials(name: string) {
@@ -15,10 +17,18 @@ function initials(name: string) {
   return ((p[0]?.[0] ?? "") + (p[p.length - 1]?.[0] ?? "")).toUpperCase();
 }
 
-function InterviewSlotCard({ slot, onAssign, onReschedule, onDelete, onOpenCandidates }: Props) {
+function InterviewSlotCard({
+  slot,
+  onAssign,
+  onReschedule,
+  onDelete,
+  onOpenCandidates,
+  readOnly = false,
+}: Props) {
   const filled = slot.interviewers.length;
-  const need = slot.requiredInterviewers;
-  const missing = filled < need;
+  const missing = filled === 0;
+  const capacity = slot.capacity ?? 1;
+  const booked = slot.bookedCount ?? 0;
   const barClass = missing ? "bg-rose-400" : "bg-emerald-400";
 
   return (
@@ -30,31 +40,33 @@ function InterviewSlotCard({ slot, onAssign, onReschedule, onDelete, onOpenCandi
           <span className="text-[11px] text-muted">{slot.durationMinutes} phút</span>
         </div>
 
-        <div className="min-w-[140px] flex-1 space-y-1">
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted">Ứng viên</p>
-          <div className="flex items-center gap-2.5">
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-accent/15 text-xs font-bold text-accent">
-              {initials(slot.candidateName ?? "?")}
-            </span>
-            <div>
-              <p className="font-semibold text-foreground">{slot.candidateName ?? "—"}</p>
-              <p className="text-xs text-muted">{slot.candidateDepartment}</p>
-            </div>
-          </div>
+        <div className="min-w-[120px] flex-1 space-y-1">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted">
+            Chỗ trong ca
+          </p>
+          <p className="font-display text-2xl font-extrabold text-accent">
+            {booked}
+            <span className="text-base font-semibold text-muted">/{capacity}</span>
+          </p>
+          <p className="text-xs text-muted">ứng viên đã đặt lịch</p>
         </div>
 
-        <div className="min-w-[160px] flex-1 space-y-1">
+        <div className="min-w-[180px] flex-[1.4] space-y-1">
           <p className="text-[10px] font-semibold uppercase tracking-wide text-muted">
-            Người phỏng vấn ({filled}/{need})
+            Người phỏng vấn ({filled})
           </p>
           {filled === 0 ? (
-            <button
-              type="button"
-              onClick={() => onAssign(slot)}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-dashed border-accent/40 px-3 py-2 text-xs font-medium text-accent hover:bg-accent/8 transition-colors"
-            >
-              <Icon icon={Plus} size={16} /> Thêm người PV
-            </button>
+            readOnly ? (
+              <p className="text-xs text-muted">Chưa có người PV</p>
+            ) : (
+              <button
+                type="button"
+                onClick={() => onAssign(slot)}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-dashed border-accent/40 px-3 py-2 text-xs font-medium text-accent hover:bg-accent/8 transition-colors"
+              >
+                <Icon icon={Plus} size={16} /> Thêm người PV
+              </button>
+            )
           ) : (
             <div className="flex flex-wrap items-center gap-2">
               {slot.interviewers.map((iv) => (
@@ -68,13 +80,13 @@ function InterviewSlotCard({ slot, onAssign, onReschedule, onDelete, onOpenCandi
                   {iv.name}
                 </span>
               ))}
-              {missing && (
+              {!readOnly && (
                 <button
                   type="button"
                   onClick={() => onAssign(slot)}
                   className="text-xs font-medium text-accent hover:underline"
                 >
-                  + Thêm
+                  Sửa panel
                 </button>
               )}
             </div>
@@ -91,11 +103,21 @@ function InterviewSlotCard({ slot, onAssign, onReschedule, onDelete, onOpenCandi
                   : "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
             }`}
           >
-            {missing ? "Thiếu người" : slot.status === "done" ? "Đã xong" : "Đã xếp"}
+            {missing ? "Thiếu người PV" : slot.status === "done" ? "Đã xong" : "Đã xếp"}
           </span>
           <p className="flex items-center gap-1 text-xs text-muted">
-            <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden>
-              <path d="M10 17s5-4.2 5-8a5 5 0 1 0-10 0c0 3.8 5 8 5 8Z" strokeLinejoin="round" />
+            <svg
+              className="h-3.5 w-3.5"
+              viewBox="0 0 20 20"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              aria-hidden
+            >
+              <path
+                d="M10 17s5-4.2 5-8a5 5 0 1 0-10 0c0 3.8 5 8 5 8Z"
+                strokeLinejoin="round"
+              />
               <circle cx="10" cy="9" r="1.5" />
             </svg>
             {slot.locationOrLink}
@@ -110,25 +132,28 @@ function InterviewSlotCard({ slot, onAssign, onReschedule, onDelete, onOpenCandi
             >
               <Icon icon={Users} size={15} />
             </button>
-            <button
-              type="button"
-              title="Sửa ca"
-              aria-label="Sửa ca"
-              className="flex h-9 w-9 items-center justify-center rounded-xl text-muted shadow-extruded-sm transition-all duration-300 ease-out hover:text-accent active:shadow-inset-sm focus-visible:ring-2 ring-accent ring-offset-2 ring-offset-background"
-              onClick={() => onReschedule(slot)}
-            >
-              <Icon icon={Pencil} size={15} />
-            </button>
-            {/* Chấm điểm thực hiện trong trang danh sách ứng viên theo ca (icon Users) */}
-            <button
-              type="button"
-              title="Xoá ca"
-              aria-label="Xoá ca"
-              className="flex h-9 w-9 items-center justify-center rounded-xl text-rose-500 shadow-extruded-sm transition-all duration-300 ease-out hover:text-rose-600 active:shadow-inset-sm focus-visible:ring-2 ring-accent ring-offset-2 ring-offset-background"
-              onClick={() => onDelete(slot)}
-            >
-              <Icon icon={Trash2} size={15} />
-            </button>
+            {!readOnly && (
+              <>
+                <button
+                  type="button"
+                  title="Sửa ca"
+                  aria-label="Sửa ca"
+                  className="flex h-9 w-9 items-center justify-center rounded-xl text-muted shadow-extruded-sm transition-all duration-300 ease-out hover:text-accent active:shadow-inset-sm focus-visible:ring-2 ring-accent ring-offset-2 ring-offset-background"
+                  onClick={() => onReschedule(slot)}
+                >
+                  <Icon icon={Pencil} size={15} />
+                </button>
+                <button
+                  type="button"
+                  title="Xoá ca"
+                  aria-label="Xoá ca"
+                  className="flex h-9 w-9 items-center justify-center rounded-xl text-rose-500 shadow-extruded-sm transition-all duration-300 ease-out hover:text-rose-600 active:shadow-inset-sm focus-visible:ring-2 ring-accent ring-offset-2 ring-offset-background"
+                  onClick={() => onDelete(slot)}
+                >
+                  <Icon icon={Trash2} size={15} />
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>

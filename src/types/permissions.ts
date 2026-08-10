@@ -7,6 +7,8 @@ export type ManagedAccount = {
   fullName: string;
   email: string;
   role: AccountRole;
+  /** Additive roles — dual Member+Leader = ["member","leader"] */
+  roles?: AccountRole[];
   /** Member đang trong chương trình training */
   isTrainingMember?: boolean;
   departmentId?: string;

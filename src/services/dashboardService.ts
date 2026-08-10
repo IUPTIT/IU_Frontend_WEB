@@ -1,16 +1,30 @@
-// Service cho dashboard Admin — hiện trả mock data, khi có backend chỉ sửa file này.
+// Service tổng quan Admin — số liệu thật từ BE.
 import { api } from "../api/client";
-import type { StatCard, WeeklySubmission } from "../types/admin";
-import { statCards, weeklySubmissions } from "../pages/Admin/mockData";
+import type {
+  FunnelStage,
+  PendingReview,
+  StatCard,
+  TraineeDepartment,
+  TrainingScore,
+  WeeklySubmission,
+} from "../types/admin";
 
-const USE_MOCK = true; // đổi false khi backend sẵn sàng
+export type DashboardOverview = {
+  id: string;
+  label: string;
+  statCards: StatCard[];
+  recruitmentFunnel: FunnelStage[];
+  weeklySubmissions: WeeklySubmission[];
+  dailySubmissions: WeeklySubmission[];
+  trainingScores: TrainingScore[];
+  traineeTotal: number;
+  traineeDepartments: TraineeDepartment[];
+  pendingReview: PendingReview;
+};
 
-export async function getStatCards(): Promise<StatCard[]> {
-  if (USE_MOCK) return statCards;
-  return api.get<StatCard[]>("/dashboard/stats");
-}
-
-export async function getWeeklySubmissions(): Promise<WeeklySubmission[]> {
-  if (USE_MOCK) return weeklySubmissions;
-  return api.get<WeeklySubmission[]>("/dashboard/submissions");
+export async function getDashboardOverview(): Promise<DashboardOverview> {
+  const { overview } = await api.get<{ overview: DashboardOverview }>(
+    "/admin/dashboard/overview",
+  );
+  return overview;
 }

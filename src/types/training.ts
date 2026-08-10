@@ -4,7 +4,10 @@ export type TraineeStatus = "pending" | "in_progress" | "completed" | "removed";
 
 export type TrainingTaskStatus = "todo" | "submitted" | "graded" | "overdue";
 
-export type PenaltyActionType = "final_reminder" | "remove_from_club";
+export type PenaltyActionType =
+  | "final_reminder"
+  | "extend_once"
+  | "remove_from_club";
 
 export type LessonKind = "doc" | "video" | "practice";
 
@@ -34,6 +37,9 @@ export type Trainee = {
   sessionsTotal?: number;
   evalStatus?: TraineeEvalStatus;
   cohortLabel?: string; // VD: Tân binh - Khóa K20
+  certificateCode?: string;
+  certificateIssuedAt?: string;
+  extendedOnce?: boolean;
 };
 
 export type TrainingStage = {
@@ -63,6 +69,8 @@ export type TrainingProgram = {
   departmentName: string;
   /** User id của người tạo (mentor) — dùng lọc "lộ trình của tôi" */
   createdById?: string;
+  /** Ngưỡng % task approved để chốt Đạt (mặc định 80) */
+  passThresholdPercent?: number;
   stages: TrainingStage[];
   lessons: TrainingLesson[];
   createdAt: string;

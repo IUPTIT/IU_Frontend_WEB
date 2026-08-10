@@ -1,9 +1,9 @@
-// Training (Đào tạo) — programs/teams/trainees gọi API thật (/api/v1/training).
-// Phần tasks/submissions/progress (portal Leader & Member) backend CHƯA có
-// endpoint — vẫn dùng mock, sẽ nối API ở PR sau.
+// Training (Đào tạo thành viên mới) — programs / teams / tasks / progress / chat
 import { api } from "../api/client";
 import type {
+  PenaltyActionType,
   Trainee,
+  TrainingChatMessage,
   TrainingGroup,
   TrainingMentor,
   TrainingProgram,
@@ -11,11 +11,6 @@ import type {
   TrainingTask,
   TrainingTaskSubmission,
 } from "../types/training";
-import {
-  mockTaskSubmissions,
-  mockTrainingProgress,
-  mockTrainingTasks,
-} from "../mocks/training.mock";
 
 // ---- Kiểu backend ----
 
@@ -38,6 +33,9 @@ type BackendTrainee = {
     mentorId: { _id: string; name: string } | null;
   } | null;
   cohortLabel: string;
+  certificateCode?: string;
+  certificateIssuedAt?: string | null;
+  extendedOnce?: boolean;
 };
 
 type BackendStage = {
@@ -62,6 +60,7 @@ type BackendProgram = {
   _id: string;
   name: string;
   department: string;
+  passThresholdPercent?: number;
   stages: BackendStage[];
   lessons: BackendLesson[];
   createdBy?: string | null;
@@ -101,6 +100,9 @@ function toTrainee(t: BackendTrainee): Trainee {
     mentorReviewStatus: t.mentorReviewStatus ?? "draft",
     mentorReviewSubmittedAt: t.mentorReviewSubmittedAt ?? undefined,
     cohortLabel: t.cohortLabel || undefined,
+    certificateCode: t.certificateCode || undefined,
+    certificateIssuedAt: t.certificateIssuedAt ?? undefined,
+    extendedOnce: t.extendedOnce ?? false,
   };
 }
 
@@ -110,7 +112,8 @@ function toProgram(p: BackendProgram): TrainingProgram {
     name: p.name,
     departmentId: p.department,
     departmentName: p.department,
-    createdById: p.createdBy ?? undefined,
+    createdById: p.createdBy != null ? String(p.createdBy) : undefined,
+    passThresholdPercent: p.passThresholdPercent ?? 80,
     stages: p.stages.map((s) => ({
       id: s.stageId,
       name: s.name,
@@ -186,8 +189,13 @@ export async function getMyTraining(): Promise<MyTraining | null> {
         groupId: trainee.groupId ?? undefined,
         mentorId: group?.mentorId?._id,
         mentorName: group?.mentorId?.name,
+        avgScore: trainee.mentorScore ?? undefined,
+        mentorNote: trainee.mentorNote || undefined,
+        mentorReviewStatus: trainee.mentorReviewStatus,
         evalStatus: trainee.evalStatus,
         cohortLabel: trainee.cohortLabel || undefined,
+        certificateCode: trainee.certificateCode || undefined,
+        certificateIssuedAt: trainee.certificateIssuedAt ?? undefined,
       },
       group: group
         ? {
@@ -220,6 +228,9 @@ type BackendTaskAssignment = {
   submittedAt: string | null;
   feedback: string;
   score: number | null;
+  reviewedAt?: string | null;
+  workStartedAt?: string | null;
+  progressLogs?: { content: string; createdAt: string }[];
 };
 
 type BackendMentorTask = {
@@ -246,6 +257,9 @@ export type MyMentorTask = {
   submittedAt?: string;
   feedback?: string;
   score?: number;
+  reviewedAt?: string;
+  workStartedAt?: string;
+  progressLogs: { content: string; createdAt: string }[];
 };
 
 function assignmentTraineeId(a: BackendTaskAssignment): string {
@@ -276,6 +290,12 @@ export async function getMyMentorTasks(
       submittedAt: mine?.submittedAt ?? undefined,
       feedback: mine?.feedback || undefined,
       score: mine?.score ?? undefined,
+      reviewedAt: mine?.reviewedAt ?? undefined,
+      workStartedAt: mine?.workStartedAt ?? undefined,
+      progressLogs: (mine?.progressLogs ?? []).map((l) => ({
+        content: l.content,
+        createdAt: l.createdAt,
+      })),
     };
   });
 }
@@ -286,6 +306,14 @@ export async function submitMentorTask(
   input: { submissionUrl?: string; submissionNote?: string },
 ): Promise<void> {
   await api.post(`/training/tasks/${taskId}/submit`, input);
+}
+
+/** Tân binh ghi nhật ký tiến độ (trước khi nộp chính thức) */
+export async function addTaskProgressLog(
+  taskId: string,
+  content: string,
+): Promise<void> {
+  await api.post(`/training/tasks/${taskId}/progress-log`, { content });
 }
 
 // ---- Task mentor giao (phía mentor: giao / xem bài nộp / chấm) ----
@@ -367,6 +395,7 @@ export async function createMentorTask(input: {
   description?: string;
   attachmentUrl?: string;
   deadline?: string;
+  assigneeIds?: string[];
 }): Promise<void> {
   await api.post("/training/tasks", {
     groupId: input.groupId,
@@ -374,6 +403,7 @@ export async function createMentorTask(input: {
     description: input.description ?? "",
     attachmentUrl: input.attachmentUrl ?? "",
     deadline: input.deadline ?? null,
+    ...(input.assigneeIds?.length ? { assigneeIds: input.assigneeIds } : {}),
   });
 }
 
@@ -463,15 +493,14 @@ export async function setMentorFlag(
   await api.patch(`/training/mentors/${userId}`, { isMentor });
 }
 
-/** Random chia đều tân binh chưa có team cho các mentor (mỗi team dùng lộ trình riêng của mentor) */
+/** Tự động chia nhóm — BE chưa có; báo rõ thay vì gọi 404 */
 export async function autoAssignTeams(
-  fallbackProgramId?: string,
-  campaignId?: string,
+  _fallbackProgramId?: string,
+  _campaignId?: string,
 ): Promise<{ assigned: number; mentors: number; groups: unknown[] }> {
-  return api.post("/training/groups/auto-assign", {
-    programId: fallbackProgramId || null,
-    campaignId: campaignId || null,
-  });
+  throw new Error(
+    "Chức năng tự động chia nhóm chưa được bật — hãy tạo nhóm thủ công tại Quản lý nhóm.",
+  );
 }
 
 // ---- Programs ----
@@ -501,6 +530,7 @@ export type SaveProgramInput = {
   name: string;
   departmentId: string;
   departmentName: string;
+  passThresholdPercent?: number;
   stages: TrainingProgram["stages"];
   lessons: TrainingProgram["lessons"];
 };
@@ -513,6 +543,38 @@ export async function createTrainingProgram(
     {
       name: input.name,
       department: input.departmentName || input.departmentId,
+      passThresholdPercent: input.passThresholdPercent ?? 80,
+      stages: input.stages.map((s) => ({
+        stageId: s.id,
+        name: s.name,
+        order: s.order,
+        weekLabel: s.weekLabel ?? "",
+        durationWeeks: s.durationWeeks ?? null,
+      })),
+      lessons: input.lessons.map((l) => ({
+        lessonId: l.id,
+        stageId: l.stageId,
+        title: l.title,
+        content: l.content ?? "",
+        attachmentUrl: l.attachmentUrl ?? "",
+        kind: l.kind ?? null,
+        durationLabel: l.durationLabel ?? "",
+      })),
+    },
+  );
+  return toProgram(program);
+}
+
+export async function updateTrainingProgram(
+  id: string,
+  input: SaveProgramInput,
+): Promise<TrainingProgram> {
+  const { program } = await api.patch<{ program: BackendProgram }>(
+    `/training/programs/${id}`,
+    {
+      name: input.name,
+      department: input.departmentName || input.departmentId,
+      passThresholdPercent: input.passThresholdPercent ?? 80,
       stages: input.stages.map((s) => ({
         stageId: s.id,
         name: s.name,
@@ -557,13 +619,14 @@ export async function getTrainingGroupById(
 
 export type CreateGroupInput = {
   name: string;
-  programId: string;
-  departmentId: string;
+  programId?: string;
+  departmentId?: string;
   departmentName: string;
   specialtyLabel?: string;
   mentorId?: string;
   mentorName?: string;
   memberIds: string[];
+  campaignId?: string;
 };
 
 export async function createTrainingGroup(
@@ -573,14 +636,37 @@ export async function createTrainingGroup(
     "/training/groups",
     {
       name: input.name,
-      programId: input.programId,
-      department: input.departmentName || input.departmentId,
+      programId: input.programId || null,
+      department: input.departmentName || input.departmentId || "Tổng hợp",
       specialtyLabel: input.specialtyLabel ?? "",
       mentorId: input.mentorId || null,
       memberIds: input.memberIds,
+      campaignId: input.campaignId || null,
     },
   );
   return toGroup(group);
+}
+
+export async function updateTrainingGroup(
+  id: string,
+  input: Partial<{
+    name: string;
+    programId: string | null;
+    department: string;
+    specialtyLabel: string;
+    mentorId: string | null;
+    memberIds: string[];
+  }>,
+): Promise<TrainingGroup> {
+  const { group } = await api.patch<{ group: BackendGroup }>(
+    `/training/groups/${id}`,
+    input,
+  );
+  return toGroup(group);
+}
+
+export async function deleteTrainingGroup(id: string): Promise<void> {
+  await api.delete(`/training/groups/${id}`);
 }
 
 // ---- Đánh giá tổng kết ----
@@ -611,6 +697,15 @@ export async function saveMentorTraineeReview(
   await api.patch(`/training/trainees/${traineeId}/mentor-review`, input);
 }
 
+export async function confirmTrainingCompletion(
+  traineeId: string,
+  note?: string,
+): Promise<void> {
+  await api.post(`/training/trainees/${traineeId}/confirm-completion`, {
+    note: note ?? "",
+  });
+}
+
 export async function setTraineeEvalStatus(
   traineeId: string,
   evalStatus: NonNullable<Trainee["evalStatus"]>,
@@ -624,32 +719,141 @@ export async function issueCertificates(
   return api.post<{ issued: number }>("/training/certificates", { traineeIds });
 }
 
+export async function handleIncompleteTrainee(
+  traineeId: string,
+  input: { action: PenaltyActionType; reason: string },
+): Promise<void> {
+  await api.post(`/training/trainees/${traineeId}/incomplete-action`, input);
+}
+
 export async function notifyTrainingGroups(
   groupIds: string[],
 ): Promise<{ sent: number }> {
-  // Email gửi qua module email (SendEmailModal) — hàm này chỉ trả số lượng
-  return { sent: groupIds.length };
+  return api.post<{ sent: number }>("/training/groups/notify", { groupIds });
 }
 
-// ---- Tasks / submissions / progress — CHƯA có backend, vẫn mock ----
-// TODO: nối API khi backend có module training tasks
+/** Cập nhật deadline / nội dung task (Leader UC #2) */
+export async function updateMentorTask(
+  taskId: string,
+  input: {
+    title?: string;
+    description?: string;
+    attachmentUrl?: string;
+    deadline?: string | null;
+  },
+): Promise<void> {
+  await api.patch(`/training/tasks/${taskId}`, input);
+}
+
+// ---- Tasks / submissions / progress (API thật) ----
 
 export async function getTrainingTasks(
   groupId?: string,
 ): Promise<TrainingTask[]> {
-  if (!groupId) return mockTrainingTasks;
-  return mockTrainingTasks.filter((t) => t.groupId === groupId);
+  const tasks = await getMentorTasks(groupId);
+  return tasks.map((t) => ({
+    id: t.id,
+    groupId: t.groupId ?? "",
+    title: t.title,
+    description: t.description ?? "",
+    assigneeIds: t.assignments.map((a) => a.traineeId),
+    attachmentUrl: t.attachmentUrl,
+    deadline: t.deadline ?? "",
+    createdBy: "",
+    createdAt: t.createdAt,
+  }));
 }
 
 export async function getTaskSubmissions(
   taskId?: string,
 ): Promise<TrainingTaskSubmission[]> {
-  if (!taskId) return mockTaskSubmissions;
-  return mockTaskSubmissions.filter((s) => s.taskId === taskId);
+  const tasks = await getMentorTasks();
+  const list = taskId ? tasks.filter((t) => t.id === taskId) : tasks;
+  return list.flatMap((t) =>
+    t.assignments
+      .filter((a) => a.status !== "assigned")
+      .map((a) => ({
+        id: `${t.id}-${a.traineeId}`,
+        taskId: t.id,
+        traineeId: a.traineeId,
+        linkUrl: a.submissionUrl,
+        note: a.submissionNote,
+        submittedAt: a.submittedAt ?? "",
+        score: a.score,
+        feedback: a.feedback,
+        status:
+          a.status === "approved"
+            ? ("graded" as const)
+            : a.status === "rejected"
+              ? ("todo" as const)
+              : ("submitted" as const),
+      })),
+  );
 }
 
 export async function getMyTrainingProgress(
-  traineeId: string,
+  _traineeId?: string,
 ): Promise<TrainingProgress> {
-  return { ...mockTrainingProgress, traineeId };
+  const { progress } = await api.get<{
+    progress: TrainingProgress & { submittedOrDone?: number };
+  }>("/training/me/progress");
+  return {
+    traineeId: progress.traineeId,
+    percentComplete: progress.percentComplete,
+    completedTasks: progress.completedTasks,
+    totalTasks: progress.totalTasks,
+  };
+}
+
+// ---- Chat nhóm training ----
+
+type BackendMessage = {
+  _id: string;
+  groupId: string;
+  content: string;
+  createdAt: string;
+  senderId: { _id: string; name: string; role?: string } | string;
+};
+
+export async function getGroupMessages(
+  groupId: string,
+): Promise<TrainingChatMessage[]> {
+  const { messages } = await api.get<{ messages: BackendMessage[] }>(
+    `/training/groups/${groupId}/messages`,
+  );
+  return messages
+    .map((m) => ({
+      id: m._id,
+      groupId: m.groupId,
+      senderId: typeof m.senderId === "string" ? m.senderId : m.senderId._id,
+      senderName:
+        typeof m.senderId === "string" ? "Thành viên" : m.senderId.name,
+      content: m.content,
+      createdAt: m.createdAt,
+    }))
+    .reverse();
+}
+
+export async function sendGroupMessage(
+  groupId: string,
+  content: string,
+): Promise<TrainingChatMessage> {
+  const { message } = await api.post<{ message: BackendMessage }>(
+    `/training/groups/${groupId}/messages`,
+    { content },
+  );
+  return {
+    id: message._id,
+    groupId: message.groupId,
+    senderId:
+      typeof message.senderId === "string"
+        ? message.senderId
+        : message.senderId._id,
+    senderName:
+      typeof message.senderId === "string"
+        ? "Thành viên"
+        : message.senderId.name,
+    content: message.content,
+    createdAt: message.createdAt,
+  };
 }

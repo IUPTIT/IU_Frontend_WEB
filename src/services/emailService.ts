@@ -1,9 +1,9 @@
-// TODO: MOCK — thay bằng fetch tới /email/* khi BE sẵn sàng.
+// SMTP/history vẫn mock cục bộ; template CRUD + gửi thật qua BE.
+import { api } from "../api/client";
 import {
   EMAIL_PLACEHOLDERS,
   historyStore,
   smtpStore,
-  templatesStore,
 } from "../mocks/email.mock";
 import type {
   EmailHistoryItem,
@@ -12,6 +12,8 @@ import type {
   EmailPreviewResult,
   EmailTemplate,
   EmailTemplateCategory,
+  EmailAutomationRule,
+  UpdateEmailAutomationRuleInput,
   SendEmailRequest,
   SendEmailResult,
   SendTestRequest,
@@ -29,7 +31,23 @@ const DEFAULT_SAMPLE: Record<string, string> = Object.fromEntries(
   EMAIL_PLACEHOLDERS.map((p) => [p.key, p.sample]),
 );
 
-/** GET /email/config */
+type BackendTemplate = EmailTemplate & { _id?: string };
+
+function toTemplate(t: BackendTemplate): EmailTemplate {
+  return {
+    id: t.id || String(t._id),
+    name: t.name,
+    category: t.category,
+    subject: t.subject,
+    body: t.body,
+    status: t.status,
+    slug: t.slug ?? null,
+    createdAt: t.createdAt,
+    updatedAt: t.updatedAt,
+  };
+}
+
+/** GET /email/config — vẫn mock FE (SMTP thật đọc từ .env BE) */
 export async function getSmtpConfig(): Promise<SmtpConfig> {
   await delay();
   return { ...smtpStore };
@@ -42,7 +60,7 @@ export async function saveSmtpConfig(config: SmtpConfig): Promise<SmtpConfig> {
   return { ...smtpStore };
 }
 
-/** POST /email/test — kiểm tra kết nối SMTP (mock) */
+/** POST /email/test — kiểm tra kết nối SMTP (mock UI) */
 export async function testSmtpConnection(): Promise<{ ok: boolean; message: string }> {
   await delay(700);
   if (!smtpStore.enabled) {
@@ -54,55 +72,64 @@ export async function testSmtpConnection(): Promise<{ ok: boolean; message: stri
   return { ok: true, message: `Kết nối tới ${smtpStore.host}:${smtpStore.port} thành công.` };
 }
 
-/** GET /email/templates */
-export async function getEmailTemplates(category?: EmailTemplateCategory | ""): Promise<EmailTemplate[]> {
-  await delay();
-  const list = [...templatesStore].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
-  if (!category) return list;
-  return list.filter((t) => t.category === category);
+/** GET /admin/email-templates */
+export async function getEmailTemplates(
+  category?: EmailTemplateCategory | "",
+): Promise<EmailTemplate[]> {
+  const q = category ? `?category=${encodeURIComponent(category)}` : "";
+  const { templates } = await api.get<{ templates: BackendTemplate[] }>(
+    `/admin/email-templates${q}`,
+  );
+  return templates.map(toTemplate);
 }
 
-/** GET /email/templates/{id} */
+/** GET /admin/email-templates/:id — hoặc tìm theo slug (tpl-passed) */
 export async function getEmailTemplate(id: string): Promise<EmailTemplate | null> {
-  await delay(200);
-  return templatesStore.find((t) => t.id === id) ?? null;
+  try {
+    const { template } = await api.get<{ template: BackendTemplate }>(
+      `/admin/email-templates/${id}`,
+    );
+    return toTemplate(template);
+  } catch {
+    const all = await getEmailTemplates();
+    return all.find((t) => t.id === id || t.slug === id) ?? null;
+  }
 }
 
-/** POST /email/templates */
+/** POST /admin/email-templates */
 export async function createEmailTemplate(
   input: Omit<EmailTemplate, "id" | "createdAt" | "updatedAt">,
 ): Promise<EmailTemplate> {
-  await delay(400);
-  const now = new Date().toISOString();
-  const row: EmailTemplate = { ...input, id: uid("tpl"), createdAt: now, updatedAt: now };
-  templatesStore.unshift(row);
-  return row;
+  const { template } = await api.post<{ template: BackendTemplate }>(
+    "/admin/email-templates",
+    {
+      name: input.name,
+      category: input.category,
+      subject: input.subject,
+      body: input.body,
+      status: input.status,
+      slug: input.slug ?? null,
+    },
+  );
+  return toTemplate(template);
 }
 
-/** PUT /email/templates/{id} */
+/** PATCH /admin/email-templates/:id */
 export async function updateEmailTemplate(
   id: string,
   patch: Partial<Omit<EmailTemplate, "id" | "createdAt">>,
 ): Promise<EmailTemplate | null> {
-  await delay(400);
-  const idx = templatesStore.findIndex((t) => t.id === id);
-  if (idx < 0) return null;
-  const next = {
-    ...templatesStore[idx],
-    ...patch,
-    updatedAt: new Date().toISOString(),
-  };
-  templatesStore[idx] = next;
-  return next;
+  const { template } = await api.patch<{ template: BackendTemplate }>(
+    `/admin/email-templates/${id}`,
+    patch,
+  );
+  return toTemplate(template);
 }
 
-/** DELETE /email/templates/{id} */
+/** DELETE /admin/email-templates/:id */
 export async function deleteEmailTemplate(id: string): Promise<boolean> {
-  await delay(300);
-  const before = templatesStore.length;
-  const idx = templatesStore.findIndex((t) => t.id === id);
-  if (idx >= 0) templatesStore.splice(idx, 1);
-  return templatesStore.length < before;
+  await api.delete(`/admin/email-templates/${id}`);
+  return true;
 }
 
 export async function duplicateEmailTemplate(id: string): Promise<EmailTemplate | null> {
@@ -117,7 +144,7 @@ export async function duplicateEmailTemplate(id: string): Promise<EmailTemplate 
   });
 }
 
-/** Placeholder library */
+/** Placeholder library (tĩnh FE) */
 export async function getEmailPlaceholders(
   category?: EmailTemplateCategory | "",
 ): Promise<EmailPlaceholder[]> {
@@ -126,7 +153,7 @@ export async function getEmailPlaceholders(
   return EMAIL_PLACEHOLDERS.filter((p) => p.categories.includes(category));
 }
 
-/** POST /email/preview — BE render; mock trên FE */
+/** POST /email/preview — render FE */
 export async function previewEmail(req: EmailPreviewRequest): Promise<EmailPreviewResult> {
   await delay(250);
   const data = { ...DEFAULT_SAMPLE, ...req.sampleData };
@@ -136,96 +163,144 @@ export async function previewEmail(req: EmailPreviewRequest): Promise<EmailPrevi
   };
 }
 
-/** POST /email/send-test */
+/** POST /email/send-test → thật qua /admin/emails/send */
 export async function sendTestEmail(req: SendTestRequest): Promise<{ ok: boolean; message: string }> {
-  await delay(600);
-  if (!smtpStore.enabled) {
-    return { ok: false, message: "SMTP đang tắt." };
-  }
   if (!req.to.trim()) {
     return { ok: false, message: "Nhập email nhận thử." };
   }
-  const data = { ...DEFAULT_SAMPLE, ...req.sampleData };
+  const data = {
+    ...DEFAULT_SAMPLE,
+    ...req.sampleData,
+    // Nếu sample có email người nhận thật thì ưu tiên (tránh sample BCN)
+    ...(req.sampleData?.email ? { email: req.sampleData.email } : {}),
+  };
   const subject = renderPlaceholders(req.subject, data);
   const body = renderPlaceholders(req.body, data);
-  const item: EmailHistoryItem = {
-    id: uid("hist"),
-    recipientId: "test",
-    recipientName: "Test recipient",
-    recipientEmail: req.to.trim(),
-    subject,
-    body,
-    templateId: null,
-    templateName: "Send Test",
-    module: "test",
-    status: "sent",
-    sentAt: new Date().toISOString(),
-    sentBy: "Admin",
-  };
-  historyStore.unshift(item);
-  return { ok: true, message: `Đã gửi thử tới ${req.to}.` };
+  try {
+    const result = await api.post<{ sent: number; failed: number; logged?: number }>(
+      "/admin/emails/send",
+      {
+        messages: [
+          {
+            to: req.to.trim(),
+            subject,
+            html: body.includes("<")
+              ? `<div style="margin:0;padding:16px 4px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.6;color:#1a1a1a;background:#ffffff">${body}</div>`
+              : `<div style="margin:0;padding:16px 4px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.6;color:#1a1a1a;background:#ffffff;white-space:pre-wrap">${body}</div>`,
+            text: body.replace(/<[^>]+>/g, " "),
+          },
+        ],
+      },
+    );
+    if ((result.logged ?? 0) > 0 && result.sent === 0) {
+      return {
+        ok: true,
+        message: `SMTP tắt — đã ghi log thử tới ${req.to} (chưa gửi thật).`,
+      };
+    }
+    return { ok: true, message: `Đã gửi thử tới ${req.to}.` };
+  } catch (err) {
+    return {
+      ok: false,
+      message: err instanceof Error ? err.message : "Gửi thử thất bại.",
+    };
+  }
 }
 
 /**
- * POST /email/send
- * Dùng subject/body từ FE (không lấy lại từ DB template).
+ * POST /admin/emails/send — render placeholder phía FE, gửi SMTP phía BE.
  */
 export async function sendEmails(req: SendEmailRequest): Promise<SendEmailResult> {
-  await delay(700);
-  if (!smtpStore.enabled) {
-    throw new Error("SMTP đang tắt. Bật cấu hình trong Email Configuration.");
+  if (req.recipients.length === 0) {
+    throw new Error("Chưa chọn người nhận.");
   }
-  const tpl = req.templateId ? templatesStore.find((t) => t.id === req.templateId) : null;
-  let sent = 0;
-  let failed = 0;
-  const historyIds: string[] = [];
+  if (!req.subject.trim() || !req.body.trim()) {
+    throw new Error("Subject và nội dung không được trống.");
+  }
 
-  for (const r of req.recipients) {
-    try {
-      if (!r.email) throw new Error("Thiếu email người nhận");
-      const data = { ...DEFAULT_SAMPLE, ...r.data, candidate_name: r.data.candidate_name || r.name };
+  const tpl = req.templateId ? await getEmailTemplate(req.templateId) : null;
+  const messages = req.recipients
+    .filter((r) => r.email)
+    .map((r) => {
+      const data = {
+        ...DEFAULT_SAMPLE,
+        ...r.data,
+        candidate_name: r.data.candidate_name || r.name,
+        // Luôn dùng email người nhận làm {{email}} (tài khoản portal) — không lấy sample BCN
+        email: r.email,
+      };
       const subject = renderPlaceholders(req.subject, data);
       const body = renderPlaceholders(req.body, data);
-      const item: EmailHistoryItem = {
-        id: uid("hist"),
-        recipientId: r.id,
-        recipientName: r.name,
-        recipientEmail: r.email,
+      return {
+        to: r.email,
         subject,
-        body,
-        templateId: req.templateId,
-        templateName: tpl?.name ?? null,
-        module: req.module,
-        status: "sent",
-        sentAt: new Date().toISOString(),
-        sentBy: "Admin",
+        html: body.includes("<")
+          ? `<div style="margin:0;padding:16px 4px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.6;color:#1a1a1a;background:#ffffff">${body}</div>`
+          : `<div style="margin:0;padding:16px 4px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.6;color:#1a1a1a;background:#ffffff;white-space:pre-wrap">${body}</div>`,
+        text: body.replace(/<[^>]+>/g, " "),
+        _meta: { r, subject, body },
       };
-      historyStore.unshift(item);
-      historyIds.push(item.id);
-      sent += 1;
-    } catch (e) {
-      failed += 1;
-      const item: EmailHistoryItem = {
-        id: uid("hist"),
-        recipientId: r.id,
-        recipientName: r.name,
-        recipientEmail: r.email || "—",
-        subject: req.subject,
-        body: req.body,
-        templateId: req.templateId,
-        templateName: tpl?.name ?? null,
-        module: req.module,
-        status: "failed",
-        error: e instanceof Error ? e.message : "Gửi thất bại",
-        sentAt: new Date().toISOString(),
-        sentBy: "Admin",
-      };
-      historyStore.unshift(item);
-      historyIds.push(item.id);
-    }
+    });
+
+  if (messages.length === 0) {
+    throw new Error("Không có địa chỉ email hợp lệ để gửi.");
   }
 
-  return { sent, failed, historyIds };
+  const result = await api.post<{
+    sent: number;
+    failed: number;
+    logged?: number;
+    errors?: { to: string; message: string }[];
+  }>("/admin/emails/send", {
+    messages: messages.map(({ to, subject, html, text }) => ({
+      to,
+      subject,
+      html,
+      text,
+    })),
+  });
+
+  const logged = result.logged ?? 0;
+  const historyIds: string[] = [];
+  for (const msg of messages) {
+    const failedErr = result.errors?.find((e) => e.to === msg.to);
+    const item: EmailHistoryItem = {
+      id: uid("hist"),
+      recipientId: msg._meta.r.id,
+      recipientName: msg._meta.r.name,
+      recipientEmail: msg.to,
+      subject: msg._meta.subject,
+      body: msg._meta.body,
+      templateId: req.templateId,
+      templateName: tpl?.name ?? null,
+      module: req.module,
+      status: failedErr ? "failed" : result.sent > 0 ? "sent" : "queued",
+      error: failedErr?.message,
+      sentAt: new Date().toISOString(),
+      sentBy: "Admin",
+    };
+    historyStore.unshift(item);
+    historyIds.push(item.id);
+  }
+
+  if (result.sent === 0 && result.failed > 0 && logged === 0) {
+    throw new Error(
+      result.errors?.[0]?.message ?? `Gửi thất bại toàn bộ (${result.failed} email).`,
+    );
+  }
+
+  if (result.sent === 0 && logged > 0) {
+    throw new Error(
+      `SMTP đang tắt — đã ghi log ${logged} email, chưa gửi thật. Bật SMTP trong .env rồi thử lại.`,
+    );
+  }
+
+  return {
+    sent: result.sent,
+    failed: result.failed,
+    logged,
+    historyIds,
+  };
 }
 
 /** GET /email/history */
@@ -248,4 +323,35 @@ export async function resendEmailHistory(id: string): Promise<boolean> {
   };
   historyStore.unshift(copy);
   return true;
+}
+
+/** GET /admin/email-automation-rules */
+export async function getEmailAutomationRules(): Promise<EmailAutomationRule[]> {
+  const { rules } = await api.get<{ rules: EmailAutomationRule[] }>(
+    "/admin/email-automation-rules",
+  );
+  return rules;
+}
+
+/** PATCH /admin/email-automation-rules/:id */
+export async function updateEmailAutomationRule(
+  id: string,
+  patch: UpdateEmailAutomationRuleInput,
+): Promise<EmailAutomationRule> {
+  const { rule } = await api.patch<{ rule: EmailAutomationRule }>(
+    `/admin/email-automation-rules/${id}`,
+    patch,
+  );
+  return rule;
+}
+
+/** POST /admin/email-automation-rules/restore-defaults */
+export async function restoreEmailAutomationDefaults(): Promise<
+  EmailAutomationRule[]
+> {
+  const { rules } = await api.post<{ rules: EmailAutomationRule[] }>(
+    "/admin/email-automation-rules/restore-defaults",
+    {},
+  );
+  return rules;
 }

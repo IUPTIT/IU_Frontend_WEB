@@ -78,6 +78,17 @@ function CampaignFormBuilderStep({ draft, onChange, onBack, onNext, onSaveDraft,
     onChange({ questions: draft.questions.filter((q) => q.id !== id) });
   };
 
+  const moveQuestion = (id: string, dir: -1 | 1) => {
+    const idx = draft.questions.findIndex((q) => q.id === id);
+    if (idx < 0) return;
+    const next = idx + dir;
+    if (next < 0 || next >= draft.questions.length) return;
+    const copy = [...draft.questions];
+    const [item] = copy.splice(idx, 1);
+    copy.splice(next, 0, item);
+    onChange({ questions: copy });
+  };
+
   const duplicateQuestion = (id: string) => {
     const src = draft.questions.find((q) => q.id === id);
     if (!src) return;
@@ -224,6 +235,24 @@ function CampaignFormBuilderStep({ draft, onChange, onBack, onNext, onSaveDraft,
                   aria-label="Nội dung câu hỏi"
                 />
                 <div className="flex shrink-0 gap-2">
+                  <button
+                    type="button"
+                    className="neu-btn h-10 w-10 !px-0 rounded-full"
+                    aria-label="Đưa câu hỏi lên"
+                    disabled={draft.questions[0]?.id === q.id}
+                    onClick={() => moveQuestion(q.id, -1)}
+                  >
+                    ↑
+                  </button>
+                  <button
+                    type="button"
+                    className="neu-btn h-10 w-10 !px-0 rounded-full"
+                    aria-label="Đưa câu hỏi xuống"
+                    disabled={draft.questions[draft.questions.length - 1]?.id === q.id}
+                    onClick={() => moveQuestion(q.id, 1)}
+                  >
+                    ↓
+                  </button>
                   <button
                     type="button"
                     className="neu-btn h-10 w-10 !px-0 rounded-full"

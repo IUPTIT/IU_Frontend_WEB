@@ -1,6 +1,6 @@
 /** Types module Tuyển dụng (Recruitment) — Admin */
 
-export type CampaignStatus = "draft" | "published" | "closed";
+export type CampaignStatus = "draft" | "published" | "closed" | "completed";
 
 export type QuestionType =
   | "short_text"
@@ -36,7 +36,7 @@ export type RecruitmentCampaign = {
 };
 
 /** Label trạng thái hiển thị trên UI danh sách */
-export type CampaignStatusLabel = "Đang diễn ra" | "Đã kết thúc" | "Nháp";
+export type CampaignStatusLabel = "Đang mở" | "Đã đóng" | "Đã hoàn tất" | "Nháp";
 
 export type FormOption = {
   id: string;
@@ -60,7 +60,9 @@ export type ApplicationStatus =
   | "interview"
   | "interview_passed"
   | "accepted"
-  | "rejected";
+  | "rejected"
+  | "cv_failed"
+  | "interview_failed";
 
 export type Application = {
   id: string;
@@ -68,10 +70,16 @@ export type Application = {
   fullName: string;
   email: string;
   phone?: string;
+  /** ISO date — dùng tạo MK mặc định DDMMYYYY khi gửi email Pass */
+  dateOfBirth?: string | null;
   /** VD: K62 - Khoa CNTT */
   education?: string;
-  preferredDepartmentId: string; // Ban nguyện vọng
+  preferredDepartmentId: string; // Ban nguyện vọng (NV1 hoặc assigned)
   preferredDepartmentName: string;
+  /** Toàn bộ NV theo thứ tự ưu tiên — dùng đổi ban trước trúng tuyển */
+  departmentPreferences: { department: string; priority: number }[];
+  /** Ban chính thức BCN gán (nếu có) */
+  assignedDepartment?: string | null;
   status: ApplicationStatus;
   screeningResult: PassFail;
   interviewResult: PassFail;
@@ -81,6 +89,11 @@ export type Application = {
   interviewScore?: number;
   submittedAt: string;
   attachments?: ApplicationAttachment[];
+  /** Cảnh báo chênh điểm reviewer >30% */
+  needsManualReview?: boolean;
+  /** Người được phân công chấm vòng đơn */
+  reviewerIds?: string[];
+  reviewerNames?: string[];
   /** Trạng thái xử lý sau kết quả cuối: chờ / đã gửi email / đã chuyển Member */
   resultNotifyStatus?: "pending" | "email_sent" | "converted";
 };
@@ -128,14 +141,15 @@ export type ApplicationScore = {
 export type InterviewerRef = {
   id: string;
   name: string;
+  role?: "bcn" | "leader" | "member";
 };
 
 export type InterviewSlotStatus = "scheduled" | "missing_interviewers" | "done";
 
 export type InterviewSlot = {
-  /** Row id tổng hợp — service tự parse, UI chỉ dùng làm key/tham chiếu */
+  /** ID ca backend (hoặc row id cũ slotId::… — service tự parse) */
   id: string;
-  /** ID booking backend (có khi slot đã gán ứng viên) */
+  /** ID booking backend (chỉ khi view flatten theo ứng viên — legacy) */
   bookingId?: string;
   campaignId: string;
   date: string; // YYYY-MM-DD
@@ -144,11 +158,14 @@ export type InterviewSlot = {
   locationOrLink: string;
   /** Số ứng viên tối đa của ca */
   capacity?: number;
+  /** Số ứng viên đã đặt lịch vào ca */
+  bookedCount?: number;
   applicationId?: string;
   candidateName?: string;
   candidateDepartment?: string;
   interviewers: InterviewerRef[];
-  requiredInterviewers: number;
+  /** @deprecated Không còn bắt buộc số PV tối thiểu — giữ để tương thích */
+  requiredInterviewers?: number;
   status: InterviewSlotStatus;
 };
 

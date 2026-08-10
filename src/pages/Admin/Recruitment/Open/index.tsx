@@ -4,6 +4,7 @@ import Button from "../../../../components/ui/Button";
 import Icon from "../../../../components/ui/Icon";
 import Pagination from "../../../../components/ui/Pagination";
 import { usePortalUi } from "../../../../context/usePortalUi";
+import { useToast } from "../../../../context/useToast";
 import {
   createCampaign,
   deleteCampaign,
@@ -12,22 +13,24 @@ import {
   getFormQuestions,
   setCampaignActive,
   updateCampaign,
+  completeCampaign,
 } from "../../../../services/recruitmentService";
 import type { RecruitmentCampaign } from "../../../../types/recruitment";
 import ConfirmDialog from "../../../../components/ui/ConfirmDialog";
 import CampaignTable from "./components/CampaignTable";
 import CampaignWizard from "./components/CampaignWizard";
+import { getDepartments } from "../../../../services/departmentsService";
 import type { CampaignDraft, QuestionDraft } from "./wizard/types";
-import { DEFAULT_QUOTAS, uid } from "./wizard/types";
+import { createEmptyDraft, quotasFromDepartments, uid } from "./wizard/types";
 
 const PAGE_SIZE = 5;
 
 function RecruitmentOpenPage() {
   const { search } = usePortalUi();
+  const toast = useToast();
   const [campaigns, setCampaigns] = useState<RecruitmentCampaign[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
-  const [toast, setToast] = useState<string | null>(null);
   const [mode, setMode] = useState<"list" | "wizard">("list");
   // Đợt đang sửa (null = tạo mới) + draft prefill cho wizard
   const [editing, setEditing] = useState<RecruitmentCampaign | null>(null);
@@ -35,8 +38,7 @@ function RecruitmentOpenPage() {
   const [editLocks, setEditLocks] = useState<{ nameAndOpen?: boolean; questions?: boolean }>({});
 
   const showToast = (msg: string) => {
-    setToast(msg);
-    window.setTimeout(() => setToast(null), 2500);
+    toast.info(msg);
   };
 
   // loading khởi tạo true — refresh sau thao tác giữ nguyên bảng cũ, không nháy skeleton
@@ -91,6 +93,16 @@ function RecruitmentOpenPage() {
     setDeleteTarget(campaign);
   };
 
+  const handleComplete = async (campaign: RecruitmentCampaign) => {
+    try {
+      await completeCampaign(campaign.id);
+      await load();
+      showToast(`Đã đánh dấu hoàn tất: ${campaign.name}`);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Không thể hoàn tất đợt tuyển.");
+    }
+  };
+
   const confirmDelete = async () => {
     if (!deleteTarget) return;
     setDeleting(true);
@@ -116,11 +128,24 @@ function RecruitmentOpenPage() {
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
   };
 
+  const handleCreateNew = async () => {
+    try {
+      const departments = await getDepartments("active");
+      setEditing(null);
+      setEditDraft(createEmptyDraft(quotasFromDepartments(departments)));
+      setEditLocks({});
+      setMode("wizard");
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Không tải được danh sách Ban.");
+    }
+  };
+
   const handleEdit = async (campaign: RecruitmentCampaign) => {
     try {
-      const [questions, applications] = await Promise.all([
+      const [questions, applications, departments] = await Promise.all([
         getFormQuestions(campaign.id),
         getApplications(campaign.id),
+        getDepartments("active"),
       ]);
       const published = campaign.status !== "draft";
       setEditLocks({
@@ -141,6 +166,20 @@ function RecruitmentOpenPage() {
         options: q.options?.map((o) => ({ id: o.id, label: o.label })) ?? [],
       }));
 
+      const quotas = quotasFromDepartments(departments, campaign.quotas);
+      // Ban trong đợt nhưng không còn trong danh mục active
+      for (const q of campaign.quotas) {
+        if (!quotas.some((x) => x.departmentName === q.departmentName)) {
+          quotas.push({
+            departmentId: uid("dept"),
+            departmentName: q.departmentName,
+            icon: "code",
+            tone: "blue",
+            quota: q.quota,
+          });
+        }
+      }
+
       setEditing(campaign);
       setEditDraft({
         name: campaign.name,
@@ -148,23 +187,7 @@ function RecruitmentOpenPage() {
         openAt: toLocalInput(campaign.openAt),
         closeAt: toLocalInput(campaign.closeAt),
         description: campaign.description ?? "",
-        // Ghép chỉ tiêu thật vào 4 ban mặc định (giữ icon/tông màu), ban lạ thêm cuối
-        quotas: [
-          ...DEFAULT_QUOTAS.map((base) => ({
-            ...base,
-            quota:
-              campaign.quotas.find((q) => q.departmentName === base.departmentName)?.quota ?? 0,
-          })),
-          ...campaign.quotas
-            .filter((q) => !DEFAULT_QUOTAS.some((b) => b.departmentName === q.departmentName))
-            .map((q) => ({
-              departmentId: uid("dept"),
-              departmentName: q.departmentName,
-              icon: "code" as const,
-              tone: "blue" as const,
-              quota: q.quota,
-            })),
-        ],
+        quotas,
         questions: draftQuestions,
         activateOnPublish: campaign.isActive,
         notifyOnPublish: false,
@@ -243,11 +266,6 @@ function RecruitmentOpenPage() {
   if (mode === "wizard") {
     return (
       <>
-        {toast && (
-          <p className="rounded-2xl bg-accent/10 px-4 py-3 text-sm text-accent" role="status">
-            {toast}
-          </p>
-        )}
         <CampaignWizard
           key={editing?.id ?? "new"}
           initialDraft={editDraft ?? undefined}
@@ -267,28 +285,21 @@ function RecruitmentOpenPage() {
     <>
       <section className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
-            Danh sách đợt tuyển dụng
-          </h1>
-          <p className="mt-2 text-muted max-w-xl">
-            Quản lý và theo dõi các chiến dịch tuyển thành viên mới.
-          </p>
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
+              Danh sách đợt tuyển dụng
+            </h1>
+          </div>
         </div>
         <Button
           variant="soft"
           size="md"
-          onClick={() => setMode("wizard")}
+          onClick={() => void handleCreateNew()}
           leftIcon={<Icon icon={Plus} size={18} />}
         >
           THÊM MỚI
         </Button>
       </section>
-
-      {toast && (
-        <p className="rounded-2xl bg-accent/10 px-4 py-3 text-sm text-accent" role="status">
-          {toast}
-        </p>
-      )}
 
       {loading ? (
         <div className="neu-card h-64 animate-pulse" aria-busy="true" aria-label="Đang tải" />
@@ -301,6 +312,7 @@ function RecruitmentOpenPage() {
             onToggleActive={handleToggle}
             onEdit={handleEdit}
             onDelete={handleDelete}
+            onComplete={handleComplete}
           />
           <Pagination page={safePage} totalPages={totalPages} onChange={setPage} />
         </>

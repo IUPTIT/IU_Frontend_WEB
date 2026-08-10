@@ -6,6 +6,7 @@ import Icon from "../../../../components/ui/Icon";
 import Select from "../../../../components/ui/Select";
 import SendEmailModal from "../../../../components/ui/SendEmailModal";
 import { usePortalUi } from "../../../../context/usePortalUi";
+import { useToast } from "../../../../context/useToast";
 import { ROUTES } from "../../../../constants/routes";
 import ExportDataModal, { type ExportColumnDef } from "../../../../components/ui/ExportDataModal";
 import {
@@ -20,6 +21,10 @@ import {
   getPassedScreeningApplications,
   notifyInterviewResults,
   rescheduleInterviewSlot,
+  listUnbookedApplications,
+  assignInterviewSlot,
+  markUnbookedNoShow,
+  type UnbookedApplication,
 } from "../../../../services/recruitmentService";
 import type {
   Application,
@@ -91,6 +96,7 @@ const EXPORT_COLUMNS: ExportColumnDef<InterviewResultRowUi>[] = [
 
 function RecruitmentInterviewsPage() {
   const { navigate } = usePortalUi();
+  const toastApi = useToast();
   const [tab, setTab] = useState<TabId>("schedule");
   const [campaigns, setCampaigns] = useState<RecruitmentCampaign[]>([]);
   const [campaignId, setCampaignId] = useState("");
@@ -109,7 +115,6 @@ function RecruitmentInterviewsPage() {
   const [statusFilter, setStatusFilter] = useState<"" | "scheduled" | "missing_interviewers" | "done">("");
   const [draftStatus, setDraftStatus] = useState(statusFilter);
   const [loading, setLoading] = useState(true);
-  const [toast, setToast] = useState<string | null>(null);
   const [emailOpen, setEmailOpen] = useState(false);
   const [emailRecipients, setEmailRecipients] = useState<EmailRecipient[]>([]);
   const [emailTpl, setEmailTpl] = useState("tpl-interview");
@@ -121,10 +126,14 @@ function RecruitmentInterviewsPage() {
   const [deletingSlot, setDeletingSlot] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [exportRows, setExportRows] = useState<InterviewResultRowUi[]>([]);
+  const [resultRows, setResultRows] = useState<InterviewResultRowUi[]>([]);
+  const [unbooked, setUnbooked] = useState<UnbookedApplication[]>([]);
+  const [assignAppId, setAssignAppId] = useState("");
+  const [assignSlotId, setAssignSlotId] = useState("");
+  const [unbookedBusy, setUnbookedBusy] = useState(false);
 
   const showToast = (msg: string) => {
-    setToast(msg);
-    window.setTimeout(() => setToast(null), 2800);
+    toastApi.info(msg);
   };
 
   useEffect(() => {
@@ -154,14 +163,24 @@ function RecruitmentInterviewsPage() {
   const reloadSlots = useCallback(async (cid: string) => {
     if (!cid) return;
     try {
-      const [all, dates, apps] = await Promise.all([
+      const [all, dates, apps, waiting, results] = await Promise.all([
         getInterviewSlots(cid),
         getInterviewDatesWithSlots(cid),
         getPassedScreeningApplications(cid),
+        listUnbookedApplications(cid),
+        getInterviewResults(cid).catch(() => [] as InterviewResultRowUi[]),
       ]);
       setSlots(all);
       setMarkedDates(new Set(dates));
       setCandidates(apps);
+      setUnbooked(waiting);
+      setResultRows(results);
+    } catch (err) {
+      showToast(
+        err instanceof Error
+          ? `Không tải được lịch PV: ${err.message}`
+          : "Không tải được lịch phỏng vấn.",
+      );
     } finally {
       setLoading(false);
     }
@@ -185,9 +204,9 @@ function RecruitmentInterviewsPage() {
         if (statusFilter && s.status !== statusFilter) return false;
         if (!q) return true;
         return (
-          (s.candidateName ?? "").toLowerCase().includes(q) ||
+          s.locationOrLink.toLowerCase().includes(q) ||
           s.interviewers.some((i) => i.name.toLowerCase().includes(q)) ||
-          s.locationOrLink.toLowerCase().includes(q)
+          s.startTime.includes(q)
         );
       })
       .sort((a, b) => a.startTime.localeCompare(b.startTime));
@@ -200,14 +219,17 @@ function RecruitmentInterviewsPage() {
     return { total, missing, scheduled };
   }, [daySlots]);
 
-  const resultRows = useMemo(() => {
-    return slots
-      .filter((s) => s.applicationId)
-      .map((s) => {
-        const app = candidates.find((c) => c.id === s.applicationId);
-        return { slot: s, app };
-      });
-  }, [slots, candidates]);
+  const decidedResults = useMemo(
+    () =>
+      resultRows.filter(
+        (r) =>
+          r.applicationStatus === "passed_interview" ||
+          r.applicationStatus === "failed_interview" ||
+          r.applicationStatus === "admitted" ||
+          r.applicationStatus === "rejected",
+      ),
+    [resultRows],
+  );
 
   const dateLabel = (() => {
     const parts = selectedDate.split("-").map(Number);
@@ -227,16 +249,16 @@ function RecruitmentInterviewsPage() {
       </nav>
 
       <section className="flex flex-wrap items-end justify-between gap-4">
-        <div className="space-y-2 min-w-0">
-          <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
-            {tab === "schedule" ? "Lịch phỏng vấn" : "Kết quả phỏng vấn"}
-          </h1>
-          <div className="flex flex-wrap items-center gap-2 text-muted text-sm sm:text-base">
-            <span>Đợt tuyển</span>
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
+              {tab === "schedule" ? "Lịch phỏng vấn" : "Kết quả phỏng vấn"}
+            </h1>
             <Select
               value={campaignId}
               options={campaigns.map((c) => ({ value: c.id, label: c.name }))}
               onChange={setCampaignId}
+              ariaLabel="Chọn đợt tuyển"
               className="min-w-[200px]"
               triggerClassName="!h-10 !shadow-extruded-sm text-accent !font-semibold"
             />
@@ -308,25 +330,26 @@ function RecruitmentInterviewsPage() {
                 className="!h-11"
                 leftIcon={<Icon icon={Send} size={16} />}
                 onClick={() => {
-                  const rows = daySlots
-                    .map((slot) => ({
-                      slot,
-                      app: candidates.find((c) => c.id === slot.applicationId),
-                    }))
-                    .filter((r): r is { slot: InterviewSlot; app: Application } => !!r.app);
+                  const dayBookings = resultRows.filter((r) => r.slotDate === selectedDate);
+                  const rows = dayBookings
+                    .map((r) => {
+                      const app = candidates.find((c) => c.id === r.applicationId);
+                      return app ? { row: r, app } : null;
+                    })
+                    .filter((x): x is { row: InterviewResultRowUi; app: Application } => !!x);
                   if (rows.length === 0) {
-                    showToast("Chưa có ứng viên trong lịch ngày này để gửi thư mời.");
+                    showToast("Chưa có ứng viên đặt lịch ngày này để gửi thư mời.");
                     return;
                   }
                   setEmailRecipients(
-                    rows.map(({ slot, app }) =>
+                    rows.map(({ row, app }) =>
                       applicationToEmailRecipient(app, {
-                        interview_date: formatDate(slot.date),
-                        interview_time: slot.startTime,
-                        location: slot.locationOrLink,
-                        meeting_link: slot.locationOrLink.startsWith("http")
-                          ? slot.locationOrLink
-                          : "https://meet.google.com/iu-club",
+                        interview_date: formatDate(row.slotDate),
+                        interview_time: row.slotTime,
+                        location: row.location,
+                        meeting_link: row.location.startsWith("http")
+                          ? row.location
+                          : row.location,
                       }),
                     ),
                   );
@@ -371,27 +394,46 @@ function RecruitmentInterviewsPage() {
               className="!h-11"
               leftIcon={<Icon icon={Send} size={16} />}
               onClick={() => {
-                const rows = resultRows.filter(
-                  (r): r is { slot: InterviewSlot; app: Application } =>
-                    !!r.app && (r.app.interviewResult === "pass" || r.app.interviewResult === "fail"),
-                );
+                const rows = decidedResults
+                  .map((r) => {
+                    const app = candidates.find((c) => c.id === r.applicationId);
+                    return app ? { row: r, app } : null;
+                  })
+                  .filter((x): x is { row: InterviewResultRowUi; app: Application } => !!x);
                 if (rows.length === 0) {
                   showToast("Chưa có ứng viên đã duyệt kết quả PV để gửi email.");
                   return;
                 }
+                const passRows = rows.filter(
+                  (x) =>
+                    x.row.applicationStatus === "passed_interview" ||
+                    x.row.applicationStatus === "admitted",
+                );
+                const failRows = rows.filter(
+                  (x) =>
+                    x.row.applicationStatus === "failed_interview" ||
+                    x.row.applicationStatus === "rejected",
+                );
+                if (passRows.length > 0 && failRows.length > 0) {
+                  showToast(
+                    "Danh sách vừa Pass vừa Fail — gửi riêng từng nhóm (lọc theo kết quả).",
+                  );
+                  return;
+                }
+                const target = passRows.length > 0 ? passRows : failRows;
                 setEmailRecipients(
-                  rows.map(({ slot, app }) =>
+                  target.map(({ row, app }) =>
                     applicationToEmailRecipient(app, {
-                      interview_date: formatDate(slot.date),
-                      interview_time: slot.startTime,
-                      location: slot.locationOrLink,
-                      meeting_link: slot.locationOrLink.startsWith("http")
-                        ? slot.locationOrLink
-                        : "https://meet.google.com/iu-club",
+                      interview_date: formatDate(row.slotDate),
+                      interview_time: row.slotTime,
+                      location: row.location,
+                      meeting_link: row.location.startsWith("http")
+                        ? row.location
+                        : row.location,
                     }),
                   ),
                 );
-                setEmailTpl("tpl-passed");
+                setEmailTpl(passRows.length > 0 ? "tpl-passed" : "tpl-rejected");
                 setEmailOpen(true);
               }}
             >
@@ -401,10 +443,102 @@ function RecruitmentInterviewsPage() {
         </div>
       </section>
 
-      {toast && (
-        <p className="rounded-2xl bg-accent/10 px-4 py-3 text-sm text-accent" role="status">
-          {toast}
-        </p>
+      {tab === "schedule" && unbooked.length > 0 && (
+        <section className="neu-card !p-5 space-y-4">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h2 className="font-display text-lg font-bold">Chưa đặt lịch phỏng vấn</h2>
+              <p className="text-sm text-muted">
+                {unbooked.length} ứng viên đã Pass vòng đơn — BCN có thể gán ca hoặc đánh dấu vắng
+                không đặt lịch.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Select
+                value={assignAppId}
+                options={[
+                  { value: "", label: "Chọn ứng viên" },
+                  ...unbooked.map((a) => ({
+                    value: a._id,
+                    label: `${a.fullName} (${a.applicationCode ?? a.email})`,
+                  })),
+                ]}
+                onChange={setAssignAppId}
+                className="min-w-[200px]"
+                placeholder="Ứng viên"
+              />
+              <Select
+                value={assignSlotId}
+                options={[
+                  { value: "", label: "Chọn ca còn chỗ" },
+                  ...slots
+                    .filter((s) => (s.bookedCount ?? 0) < (s.capacity ?? 1))
+                    .map((s) => ({
+                      value: s.id,
+                      label: `${s.date} ${s.startTime} · ${s.bookedCount ?? 0}/${s.capacity ?? 1} · ${s.locationOrLink}`,
+                    })),
+                ]}
+                onChange={setAssignSlotId}
+                className="min-w-[220px]"
+                placeholder="Ca"
+              />
+              <Button
+                variant="primary"
+                size="sm"
+                disabled={!assignAppId || !assignSlotId || unbookedBusy}
+                onClick={async () => {
+                  setUnbookedBusy(true);
+                  try {
+                    await assignInterviewSlot(assignAppId, assignSlotId);
+                    showToast("Đã gán ca phỏng vấn.");
+                    setAssignAppId("");
+                    setAssignSlotId("");
+                    await reloadSlots(campaignId);
+                  } catch {
+                    showToast("Gán ca thất bại — ca có thể đã hết chỗ.");
+                  } finally {
+                    setUnbookedBusy(false);
+                  }
+                }}
+              >
+                Gán ca
+              </Button>
+            </div>
+          </div>
+          <ul className="divide-y divide-black/5">
+            {unbooked.map((a) => (
+              <li key={a._id} className="flex flex-wrap items-center justify-between gap-3 py-3">
+                <div>
+                  <p className="font-semibold text-foreground">{a.fullName}</p>
+                  <p className="text-xs text-muted">
+                    {a.email}
+                    {a.bookingReminderSentAt ? " · đã nhắc email" : ""}
+                  </p>
+                </div>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  disabled={unbookedBusy}
+                  onClick={async () => {
+                    if (!window.confirm(`Đánh dấu ${a.fullName} vắng không đặt lịch (Fail PV)?`)) return;
+                    setUnbookedBusy(true);
+                    try {
+                      await markUnbookedNoShow(a._id);
+                      showToast(`Đã Fail PV: ${a.fullName}`);
+                      await reloadSlots(campaignId);
+                    } catch {
+                      showToast("Thao tác thất bại.");
+                    } finally {
+                      setUnbookedBusy(false);
+                    }
+                  }}
+                >
+                  Vắng không đặt lịch
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
 
       {tab === "schedule" && (
@@ -461,7 +595,7 @@ function RecruitmentInterviewsPage() {
                     onReschedule={setRescheduleSlot}
                     onDelete={setDeleteSlotTarget}
                     onOpenCandidates={(s) =>
-                      navigate(ROUTES.admin.recruitment.interviewSlot(s.id.split("::")[0]))
+                      navigate(ROUTES.admin.recruitment.interviewSlot(s.id))
                     }
                   />
                 ))}
@@ -474,12 +608,13 @@ function RecruitmentInterviewsPage() {
       {tab === "results" && (
         <div className="neu-card overflow-hidden !p-0">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[720px] text-left">
+            <table className="w-full min-w-[900px] text-left">
               <thead>
                 <tr className="bg-accent/15 text-sm text-accent">
                   <th className="px-4 py-3.5 font-semibold">Ứng viên</th>
                   <th className="px-3 py-3.5 font-semibold">Ngày / Giờ</th>
-                  <th className="px-3 py-3.5 font-semibold">Người PV</th>
+                  <th className="px-3 py-3.5 font-semibold">Ai chấm / điểm</th>
+                  <th className="px-3 py-3.5 font-semibold text-center">TB</th>
                   <th className="px-3 py-3.5 font-semibold text-center">Kết quả PV</th>
                   <th className="px-3 py-3.5 font-semibold text-center">Thao tác</th>
                 </tr>
@@ -487,47 +622,56 @@ function RecruitmentInterviewsPage() {
               <tbody>
                 {resultRows.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-4 py-16 text-center text-muted">
+                    <td colSpan={6} className="px-4 py-16 text-center text-muted">
                       Chưa có lịch phỏng vấn cho đợt {campaignName}.
                     </td>
                   </tr>
                 ) : (
-                  resultRows.map(({ slot, app }) => (
-                    <tr key={slot.id} className="hover:bg-accent/[0.04]">
-                      <td className="px-4 py-4">
-                        <p className="font-semibold">{slot.candidateName}</p>
-                        <p className="text-xs text-muted">{slot.candidateDepartment}</p>
-                      </td>
-                      <td className="px-3 py-4 text-sm text-muted">
-                        {formatDate(slot.date)} · {slot.startTime}
-                      </td>
-                      <td className="px-3 py-4 text-sm">
-                        {slot.interviewers.map((i) => i.name).join(", ") || "—"}
-                      </td>
-                      <td className="px-3 py-4 text-center text-sm">
-                        {app?.interviewResult === "pass"
-                          ? "Đạt"
-                          : app?.interviewResult === "fail"
-                            ? "Không đạt"
-                            : "Chờ"}
-                      </td>
-                      <td className="px-3 py-4 text-center">
-                        <button
-                          type="button"
-                          title="Phỏng vấn & chấm điểm"
-                          aria-label="Phỏng vấn & chấm điểm"
-                          disabled={!slot.bookingId}
-                          className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-muted shadow-extruded-sm transition-all duration-300 ease-out hover:text-accent active:shadow-inset-sm disabled:opacity-40 focus-visible:ring-2 ring-accent ring-offset-2 ring-offset-background"
-                          onClick={() =>
-                            slot.bookingId &&
-                            navigate(ROUTES.admin.recruitment.interviewNote(slot.bookingId))
-                          }
-                        >
-                          <Icon icon={ClipboardCheck} size={15} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))
+                  resultRows.map((row) => {
+                    const decided =
+                      row.applicationStatus === "passed_interview" ||
+                      row.applicationStatus === "admitted"
+                        ? "Đạt"
+                        : row.applicationStatus === "failed_interview" ||
+                            row.applicationStatus === "rejected"
+                          ? "Không đạt"
+                          : "Chờ duyệt";
+                    return (
+                      <tr key={`${row.applicationId}-${row.slotDate}-${row.slotTime}`} className="hover:bg-accent/[0.04]">
+                        <td className="px-4 py-4">
+                          <p className="font-semibold">{row.fullName}</p>
+                          <p className="text-xs text-muted">
+                            {row.applicationCode} · {row.department}
+                          </p>
+                        </td>
+                        <td className="px-3 py-4 text-sm text-muted">
+                          {formatDate(row.slotDate)} · {row.slotTime}
+                        </td>
+                        <td className="px-3 py-4 text-sm text-muted max-w-xs">
+                          {row.reviewerNotes || "—"}
+                        </td>
+                        <td className="px-3 py-4 text-center text-sm font-bold">
+                          {row.averageScore != null ? row.averageScore.toFixed(1) : "—"}
+                        </td>
+                        <td className="px-3 py-4 text-center text-sm">{decided}</td>
+                        <td className="px-3 py-4 text-center">
+                          <button
+                            type="button"
+                            title="Sửa / duyệt kết quả"
+                            aria-label="Sửa / duyệt kết quả"
+                            disabled={!row.bookingId}
+                            className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-muted shadow-extruded-sm transition-all duration-300 ease-out hover:text-accent active:shadow-inset-sm disabled:opacity-40 focus-visible:ring-2 ring-accent ring-offset-2 ring-offset-background"
+                            onClick={() =>
+                              row.bookingId &&
+                              navigate(ROUTES.admin.recruitment.interviewNote(row.bookingId))
+                            }
+                          >
+                            <Icon icon={ClipboardCheck} size={15} />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
@@ -539,11 +683,17 @@ function RecruitmentInterviewsPage() {
         open={batchOpen}
         onClose={() => setBatchOpen(false)}
         defaultDate={selectedDate}
+        interviewers={interviewers}
         onSubmit={async (payload) => {
           const created = await createBatchInterviewSlots({ campaignId, ...payload });
           await reloadSlots(campaignId);
           setSelectedDate(payload.date);
-          showToast(`Đã tạo ${created.length} ca phỏng vấn — ứng viên có thể vào đặt lịch.`);
+          toastApi.created(
+            `${created.length} ca phỏng vấn` +
+              (payload.interviewerIds.length
+                ? ` · ${payload.interviewerIds.length} người PV`
+                : ""),
+          );
         }}
       />
 
@@ -555,7 +705,7 @@ function RecruitmentInterviewsPage() {
         onSubmit={async (slotId, list) => {
           await assignInterviewersToSlot(slotId, list);
           await reloadSlots(campaignId);
-          showToast("Đã phân công người phỏng vấn.");
+          toastApi.updated("phân công người phỏng vấn");
         }}
       />
 
@@ -567,7 +717,7 @@ function RecruitmentInterviewsPage() {
           await rescheduleInterviewSlot(slotId, patch);
           await reloadSlots(campaignId);
           setSelectedDate(patch.date);
-          showToast("Đã cập nhật ca phỏng vấn.");
+          toastApi.updated("ca phỏng vấn");
         }}
       />
 
@@ -598,10 +748,10 @@ function RecruitmentInterviewsPage() {
           try {
             await deleteInterviewSlot(deleteSlotTarget.id);
             await reloadSlots(campaignId);
-            showToast("Đã xoá ca phỏng vấn.");
+            toastApi.deleted("ca phỏng vấn");
             setDeleteSlotTarget(null);
           } catch (err) {
-            showToast(err instanceof Error ? err.message : "Xoá ca thất bại.");
+            toastApi.error(err instanceof Error ? err.message : "Xoá ca thất bại.");
           } finally {
             setDeletingSlot(false);
           }
@@ -618,8 +768,27 @@ function RecruitmentInterviewsPage() {
         preferredTemplateId={emailTpl}
         title="Gửi email phỏng vấn"
         onSent={async (sent) => {
-          await notifyInterviewResults(emailRecipients.map((r) => r.id));
-          showToast(`Đã gửi email tới ${sent} ứng viên.`);
+          if (sent <= 0) return;
+          // Thư mời PV — không stamp kết quả
+          if (emailTpl === "tpl-interview") {
+            showToast(`Đã gửi thư mời tới ${sent} ứng viên.`);
+            return;
+          }
+          // Kết quả Pass / Fail đều stamp đã gửi email kết quả
+          if (emailTpl !== "tpl-passed" && emailTpl !== "tpl-rejected") {
+            showToast(`Đã gửi ${sent} email.`);
+            return;
+          }
+          try {
+            await notifyInterviewResults(emailRecipients.map((r) => r.id));
+            showToast(`Đã gửi email kết quả tới ${sent} ứng viên.`);
+          } catch (err) {
+            showToast(
+              err instanceof Error
+                ? `Email đã gửi nhưng cập nhật trạng thái thất bại: ${err.message}`
+                : `Đã gửi ${sent} email nhưng cập nhật trạng thái thất bại.`,
+            );
+          }
         }}
       />
     </>

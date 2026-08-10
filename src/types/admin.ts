@@ -6,9 +6,19 @@ export type StatCard = {
   id: string;
   label: string;
   value: number;
+  suffix?: string; // hậu tố sau số (vd "%")
+  decimals?: number; // số chữ số thập phân (vd điểm 8.8)
   badge: string; // text trong pill góc phải (vd "+12%", "Đang diễn ra")
   badgeTone: Tone;
-  icon: "file" | "chat" | "graduation" | "members";
+  icon:
+    | "file"
+    | "chat"
+    | "graduation"
+    | "members"
+    | "percent"
+    | "calendar"
+    | "star"
+    | "mentor";
 };
 
 export type FunnelStage = {

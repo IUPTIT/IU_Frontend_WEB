@@ -8,7 +8,7 @@ import {
   type AuthUser,
 } from "../services/authService";
 
-import { AuthContext, type ProfilePatch } from "./auth-context";
+import { AuthContext } from "./auth-context";
 
 const STORAGE_KEY = "iuclub_auth_user";
 
@@ -58,15 +58,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }, []);
 
-  const updateProfile = useCallback((patch: ProfilePatch) => {
-    setUser((prev) => {
-      if (!prev) return prev;
-      const next = { ...prev, ...patch };
-      persist(next);
-      return next;
-    });
-  }, []);
-
   const replaceUser = useCallback((next: AuthUser) => {
     persist(next);
     setUser(next);
@@ -78,10 +69,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAuthenticated: user !== null,
       login,
       logout,
-      updateProfile,
       replaceUser,
     }),
-    [user, login, logout, updateProfile, replaceUser],
+    [user, login, logout, replaceUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

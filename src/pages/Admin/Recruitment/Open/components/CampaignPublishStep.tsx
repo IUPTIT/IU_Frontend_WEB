@@ -19,13 +19,22 @@ const typeLabel: Record<CampaignDraft["questions"][number]["type"], string> = {
 function CampaignPublishStep({ draft, onChange, onBack, onSaveDraft, onPublish }: Props) {
   const totalQuota = draft.quotas.reduce((s, q) => s + q.quota, 0);
   const requiredCount = draft.questions.filter((q) => q.required).length;
-  const canPublish = draft.name.trim().length > 0 && draft.openAt && draft.closeAt && draft.questions.length > 0;
+  const canSave =
+    draft.name.trim().length > 0 &&
+    Boolean(draft.openAt && draft.closeAt) &&
+    totalQuota > 0;
+  const canPublish = canSave && draft.questions.length > 0;
 
   const checks = [
     { ok: Boolean(draft.name.trim()), label: "Đã đặt tên đợt tuyển" },
     { ok: Boolean(draft.openAt && draft.closeAt), label: "Đã chọn thời gian mở / đóng đơn" },
     { ok: draft.questions.length > 0, label: `Form có ${draft.questions.length} câu hỏi` },
-    { ok: totalQuota > 0, label: totalQuota > 0 ? `Chỉ tiêu tổng ${totalQuota} suất` : "Chưa nhập chỉ tiêu (có thể bỏ trống)" },
+    {
+      ok: totalQuota > 0,
+      label: totalQuota > 0
+        ? `Chỉ tiêu tổng ${totalQuota} suất`
+        : "Cần ít nhất 1 ban có chỉ tiêu ≥ 1",
+    },
   ];
 
   return (
@@ -135,7 +144,7 @@ function CampaignPublishStep({ draft, onChange, onBack, onSaveDraft, onPublish }
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-sm font-medium">Kích hoạt ngay</p>
-                  <p className="text-xs text-muted">Đợt tuyển chuyển sang Đang diễn ra</p>
+                  <p className="text-xs text-muted">Đợt tuyển chuyển sang Đang mở</p>
                 </div>
                 <Toggle
                   checked={draft.activateOnPublish}
@@ -146,12 +155,13 @@ function CampaignPublishStep({ draft, onChange, onBack, onSaveDraft, onPublish }
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-sm font-medium">Gửi thông báo</p>
-                  <p className="text-xs text-muted">In-app cho BCN / Leader</p>
+                  <p className="text-xs text-muted">Chưa hỗ trợ — sẽ gửi in-app cho BCN / Leader sau</p>
                 </div>
                 <Toggle
-                  checked={draft.notifyOnPublish}
-                  onChange={(v) => onChange({ notifyOnPublish: v })}
-                  aria-label="Gửi thông báo khi xuất bản"
+                  checked={false}
+                  onChange={() => {}}
+                  disabled
+                  aria-label="Gửi thông báo khi xuất bản (chưa hỗ trợ)"
                 />
               </div>
             </div>
@@ -172,12 +182,29 @@ function CampaignPublishStep({ draft, onChange, onBack, onSaveDraft, onPublish }
           ← Quay lại Form Builder
         </button>
         <div className="flex flex-wrap gap-3">
-          <button type="button" className="neu-btn text-accent" onClick={onSaveDraft}>
+          <button
+            type="button"
+            className="neu-btn text-accent disabled:opacity-50 disabled:pointer-events-none"
+            disabled={!canSave}
+            title={
+              canSave
+                ? "Lưu nháp"
+                : "Cần tên, thời gian mở/đóng và ít nhất 1 chỉ tiêu ≥ 1"
+            }
+            onClick={onSaveDraft}
+          >
             Lưu nháp
           </button>
           <button
             type="button"
-            disabled={!canPublish}
+            disabled={!canPublish || !draft.activateOnPublish}
+            title={
+              !canPublish
+                ? "Thiếu thông tin bắt buộc để xuất bản"
+                : !draft.activateOnPublish
+                  ? "Bật \"Kích hoạt ngay\" để xuất bản, hoặc dùng Lưu nháp"
+                  : "Xuất bản đợt tuyển"
+            }
             onClick={onPublish}
             className="inline-flex h-12 items-center gap-2 rounded-2xl px-8 font-semibold text-white
               bg-accent shadow-extruded-sm

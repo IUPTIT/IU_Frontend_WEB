@@ -36,12 +36,37 @@ export type CampaignDraft = {
   notifyOnPublish: boolean;
 };
 
-export const DEFAULT_QUOTAS: QuotaDraft[] = [
-  { departmentId: "dept-pro", departmentName: "Chuyên Môn", icon: "code", tone: "blue", quota: 0 },
-  { departmentId: "dept-event", departmentName: "Sự Kiện", icon: "event", tone: "purple", quota: 0 },
-  { departmentId: "dept-media", departmentName: "Truyền Thông", icon: "media", tone: "green", quota: 0 },
-  { departmentId: "dept-ext", departmentName: "Đối Ngoại", icon: "external", tone: "red", quota: 0 },
+const QUOTA_STYLES: Pick<QuotaDraft, "icon" | "tone">[] = [
+  { icon: "code", tone: "blue" },
+  { icon: "event", tone: "purple" },
+  { icon: "media", tone: "green" },
+  { icon: "external", tone: "red" },
 ];
+
+/**
+ * Chỉ tiêu dự kiến = đúng danh sách Ban CLB đang active.
+ * Giữ số chỉ tiêu đã nhập nếu trùng tên ban (khi sửa đợt).
+ */
+export function quotasFromDepartments(
+  departments: { id: string; name: string; headcountTarget?: number | null }[],
+  existing?: { departmentName: string; quota: number }[],
+): QuotaDraft[] {
+  return departments.map((d, i) => {
+    const style = QUOTA_STYLES[i % QUOTA_STYLES.length];
+    const found = existing?.find((q) => q.departmentName === d.name);
+    const fromTarget =
+      d.headcountTarget != null && d.headcountTarget > 0
+        ? Number(d.headcountTarget)
+        : 0;
+    return {
+      departmentId: d.id,
+      departmentName: d.name,
+      icon: style.icon,
+      tone: style.tone,
+      quota: found?.quota ?? fromTarget,
+    };
+  });
+}
 
 /**
  * Trường CỐ ĐỊNH theo tài liệu nghiệp vụ (mục 0.2) — luôn có trong mọi đợt
@@ -55,21 +80,20 @@ export const FIXED_FIELDS: { label: string; hint: string }[] = [
   { label: "Khoa/Ngành", hint: "Văn bản ngắn" },
   { label: "Email", hint: "Email — dùng đăng nhập tài khoản Ứng viên" },
   { label: "Số điện thoại", hint: "10 chữ số" },
-  { label: "Số CCCD", hint: "12 chữ số" },
   { label: "Ngày sinh", hint: "Bắt buộc tuyệt đối — dùng sinh mật khẩu tài khoản Ứng viên" },
   { label: "Ảnh đại diện", hint: "JPG/PNG, tối đa 2MB" },
   { label: "CV", hint: "PDF/DOCX, tối đa 5MB" },
   { label: "Ban nguyện vọng", hint: "Chọn tối đa 3 ban theo thứ tự ưu tiên" },
 ];
 
-export function createEmptyDraft(): CampaignDraft {
+export function createEmptyDraft(quotas: QuotaDraft[] = []): CampaignDraft {
   return {
     name: "",
     dateRangeLabel: "",
     openAt: "",
     closeAt: "",
     description: "",
-    quotas: DEFAULT_QUOTAS.map((q) => ({ ...q })),
+    quotas: quotas.map((q) => ({ ...q })),
     // Chỉ chứa câu hỏi BCN tự thêm — trường cố định nằm ở FIXED_FIELDS
     questions: [],
     activateOnPublish: true,
