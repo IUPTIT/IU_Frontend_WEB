@@ -1,0 +1,12 @@
+services:
+  web:
+    build:
+      context: .
+      target: dev
+    environment:
+      NODE_ENV: development
+    ports:
+      - "${DEV_PORT:-5173}:5173"
+    volumes:
+      - .:/app
+    command: npm run dev -- --host 0.0.0.0
