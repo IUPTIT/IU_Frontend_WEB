@@ -1,0 +1,13 @@
+services:
+  web:
+    build:
+      context: .
+      target: runner
+      args:
+        # URL backend nhung vao bundle luc build (Vite build-time).
+        # Doi qua .env hoac bien moi truong khi build cho moi truong that.
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:3456/api/v1}
+    container_name: iu_club_web
+    restart: unless-stopped
+    ports:
+      - "${WEB_PORT:-6666}:6666"

@@ -26,3 +26,8 @@ dist-ssr
 
 # tai lieu noi bo, khong push
 docs/
+
+# Environment
+.env
+.env.local
+.env.*.local
