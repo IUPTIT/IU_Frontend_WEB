@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 import LandingNavBar from "../../components/LandingNavBar";
 import BackgroundVideo from "../../components/LandingBackgroundVideo";
 import LandingFooter from "../../components/LandingFooter";
+import ErrorBoundary from "../../components/ErrorBoundary";
 import CampaignHeader from "./components/CampaignHeader";
+import StepRail from "./components/StepRail";
 import ApplicationFormStep from "./components/ApplicationFormStep";
 import ReviewConfirmStep from "./components/ReviewConfirmStep";
 import SuccessScreen from "./components/SuccessScreen";
@@ -149,7 +151,7 @@ function RecruitmentPage() {
               Đang tải đợt tuyển...
             </p>
           ) : !campaign ? (
-            <div className="liquid-glass landing-card-solid mx-auto max-w-xl rounded-3xl p-10 text-center">
+            <div className="liquid-glass landing-card-glass mx-auto max-w-xl rounded-3xl p-10 text-center">
               <h1 className="landing-headline text-3xl font-semibold text-[hsl(var(--landing-foreground))]">
                 Chưa có đợt tuyển nào đang mở
               </h1>
@@ -158,12 +160,13 @@ function RecruitmentPage() {
               </p>
             </div>
           ) : (
-            <>
+            <ErrorBoundary>
               {step !== "done" && <CampaignHeader campaign={campaign} />}
+              <StepRail current={step} />
 
               {draftNotice && step === "form" && (
                 <p
-                  className="liquid-glass landing-card-solid mt-6 rounded-2xl p-4 text-center text-sm text-[hsl(var(--landing-foreground)/0.85)]"
+                  className="liquid-glass landing-card-glass mt-6 rounded-2xl p-4 text-center text-sm text-[hsl(var(--landing-foreground)/0.85)]"
                   role="status"
                 >
                   {draftNotice}
@@ -172,7 +175,7 @@ function RecruitmentPage() {
 
               <div className="mt-10">
                 {step === "form" && pageLoadedAt < new Date(campaign.openAt).getTime() ? (
-                  <div className="liquid-glass landing-card-solid mx-auto max-w-xl rounded-3xl p-8 text-center">
+                  <div className="liquid-glass landing-card-glass mx-auto max-w-xl rounded-3xl p-8 text-center">
                     <p className="text-[hsl(var(--landing-foreground)/0.75)]">
                       Đợt tuyển chưa mở đơn — quay lại khi đến thời gian mở đơn nhé!
                     </p>
@@ -197,7 +200,7 @@ function RecruitmentPage() {
                 )}
                 {step === "done" && <SuccessScreen applicationCode={applicationCode} email={form.email} />}
               </div>
-            </>
+            </ErrorBoundary>
           )}
         </main>
 

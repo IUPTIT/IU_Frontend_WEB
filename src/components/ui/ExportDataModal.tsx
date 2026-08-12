@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Download, GripVertical, X } from "lucide-react";
+import { Download, GripVertical, Loader2, X } from "lucide-react";
 import Button from "./Button";
 import Icon from "./Icon";
 import { downloadCsv, stampFilename } from "../../utils/csvExport";
@@ -19,6 +19,10 @@ export type ExportColumnDef<T> = {
   /** Key để đối chiếu filter (mặc định = getValue) */
   getFilterKey?: (row: T) => string;
   defaultSelected?: boolean;
+  /** Nhóm hiển thị trong danh sách khả dụng (vd "Câu trả lời form") */
+  group?: string;
+  /** Định danh gửi backend khi dùng exporter */
+  serverKey?: { type: "profile" | "question"; key: string };
 };
 
 export type ExportDataModalProps<T> = {
@@ -31,6 +35,8 @@ export type ExportDataModalProps<T> = {
   rows: T[];
   filenameBase: string;
   onExported?: (count: number) => void;
+  /** Có exporter → xuất qua backend thay vì CSV client-side */
+  exporter?: (args: { columns: ExportColumnDef<T>[]; rows: T[] }) => Promise<void>;
 };
 
 /**
@@ -46,16 +52,36 @@ function ExportDataModal<T>({
   rows,
   filenameBase,
   onExported,
+  exporter,
 }: ExportDataModalProps<T>) {
   const defaultIds = useMemo(
     () => columns.filter((c) => c.defaultSelected !== false).map((c) => c.id),
     [columns],
   );
 
+  /** Nhóm cột theo `col.group`; nhóm mặc định ("") luôn đứng đầu */
+  const groups = useMemo(() => {
+    const map = new Map<string, ExportColumnDef<T>[]>();
+    for (const col of columns) {
+      const g = col.group ?? "";
+      if (!map.has(g)) map.set(g, []);
+      map.get(g)!.push(col);
+    }
+    // Nhóm mặc định ("") luôn hiển thị đầu tiên, bất kể thứ tự cột truyền vào
+    return [...map.entries()].sort(([a], [b]) => {
+      if (a === b) return 0;
+      if (a === "") return -1;
+      if (b === "") return 1;
+      return 0;
+    });
+  }, [columns]);
+
   const [orderedIds, setOrderedIds] = useState<string[]>(defaultIds);
   /** columnId → danh sách value được giữ; [] hoặc thiếu = tất cả */
   const [valueFilters, setValueFilters] = useState<Record<string, string[]>>({});
   const [dragId, setDragId] = useState<string | null>(null);
+  /** Đang gọi exporter (backend sinh file) — khoá nút, hiện spinner */
+  const [exporting, setExporting] = useState(false);
 
   // Reset lựa chọn mỗi lần mở modal (adjust state during render)
   const [prevOpen, setPrevOpen] = useState(open);
@@ -63,6 +89,7 @@ function ExportDataModal<T>({
     setPrevOpen(open);
     if (open) {
       setOrderedIds(defaultIds);
+      setExporting(false);
       const init: Record<string, string[]> = {};
       for (const c of columns) {
         if (c.filterOptions?.length) {
@@ -76,7 +103,7 @@ function ExportDataModal<T>({
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape" && !exporting) onClose();
     };
     document.addEventListener("keydown", onKey);
     const prev = document.body.style.overflow;
@@ -85,12 +112,11 @@ function ExportDataModal<T>({
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = prev;
     };
-  }, [open, onClose]);
+  }, [open, onClose, exporting]);
 
   if (!open) return null;
 
   const selectedSet = new Set(orderedIds);
-  const available = columns;
   const selectedOrdered = orderedIds
     .map((id) => columns.find((c) => c.id === id))
     .filter(Boolean) as ExportColumnDef<T>[];
@@ -104,6 +130,16 @@ function ExportDataModal<T>({
 
   const selectAll = () => setOrderedIds(columns.map((c) => c.id));
   const deselectAll = () => setOrderedIds([]);
+
+  // Chọn/bỏ nhanh toàn bộ cột trong một nhóm (vd tất cả câu hỏi form)
+  const toggleGroup = (groupCols: ExportColumnDef<T>[], checked: boolean) => {
+    const ids = groupCols.map((c) => c.id);
+    setOrderedIds((prev) => {
+      if (checked) return [...prev, ...ids.filter((id) => !prev.includes(id))];
+      const rm = new Set(ids);
+      return prev.filter((id) => !rm.has(id));
+    });
+  };
 
   const toggleFilterValue = (colId: string, value: string, checked: boolean) => {
     setValueFilters((prev) => {
@@ -125,7 +161,7 @@ function ExportDataModal<T>({
     });
   };
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (selectedOrdered.length === 0) return;
 
     const filterCols = selectedOrdered.filter((c) => c.filterOptions?.length);
@@ -138,6 +174,18 @@ function ExportDataModal<T>({
         return allowed.includes(key);
       }),
     );
+
+    if (exporter) {
+      setExporting(true);
+      try {
+        await exporter({ columns: selectedOrdered, rows: filteredRows });
+      } finally {
+        setExporting(false);
+      }
+      onExported?.(filteredRows.length);
+      onClose();
+      return;
+    }
 
     const headers = selectedOrdered.map((c) => c.label);
     const data = filteredRows.map((row) => selectedOrdered.map((c) => c.getValue(row)));
@@ -152,7 +200,10 @@ function ExportDataModal<T>({
         type="button"
         className="absolute inset-0 bg-foreground/35 backdrop-blur-[2px]"
         aria-label="Đóng"
-        onClick={onClose}
+        disabled={exporting}
+        onClick={() => {
+          if (!exporting) onClose();
+        }}
       />
 
       <div
@@ -168,12 +219,12 @@ function ExportDataModal<T>({
             </h2>
             <p className="mt-1 text-sm text-muted">{description}</p>
           </div>
-          <Button variant="icon" size="sm" aria-label="Đóng" onClick={onClose}>
+          <Button variant="icon" size="sm" aria-label="Đóng" disabled={exporting} onClick={onClose}>
             <Icon icon={X} size={16} />
           </Button>
         </header>
 
-        <div className="grid min-h-0 flex-1 gap-4 overflow-hidden p-5 sm:grid-cols-2 sm:p-6">
+        <div className="grid min-h-0 flex-1 gap-5 overflow-hidden p-5 sm:grid-cols-2 sm:gap-8 sm:p-6">
           {/* Left — available fields */}
           <section className="flex min-h-0 flex-col gap-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -188,63 +239,87 @@ function ExportDataModal<T>({
               </div>
             </div>
 
-            <ul className="neu-card !p-3 flex-1 space-y-1 overflow-y-auto shadow-inset-sm !rounded-2xl">
-              {available.map((col) => {
-                const checked = selectedSet.has(col.id);
-                return (
-                  <li key={col.id} className="rounded-xl px-2 py-2 hover:bg-accent/[0.06]">
-                    <label className="flex cursor-pointer items-start gap-3">
-                      <input
-                        type="checkbox"
-                        className="mt-0.5 h-4 w-4 rounded border-accent/40 accent-accent"
-                        checked={checked}
-                        onChange={(e) => toggleColumn(col.id, e.target.checked)}
-                      />
-                      <span className="min-w-0 flex-1">
-                        <span className="block text-sm font-medium text-foreground">{col.label}</span>
-                        {checked && col.filterOptions && col.filterOptions.length > 0 && (
-                          <fieldset className="mt-2 space-y-1.5 rounded-xl bg-background/80 p-2 shadow-inset-sm">
-                            <legend className="px-1 text-[11px] font-semibold uppercase tracking-wide text-muted">
-                              Lọc giá trị xuất
-                            </legend>
-                            <div className="flex flex-wrap gap-1.5">
-                              {col.filterOptions.map((opt) => {
-                                const on = (valueFilters[col.id] ?? []).includes(opt.value);
-                                return (
-                                  <label
-                                    key={opt.value}
-                                    className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
-                                      on
-                                        ? "bg-accent/15 text-accent shadow-inset-sm"
-                                        : "bg-background text-muted shadow-extruded-sm"
-                                    }`}
-                                  >
-                                    <input
-                                      type="checkbox"
-                                      className="sr-only"
-                                      checked={on}
-                                      onChange={(e) =>
-                                        toggleFilterValue(col.id, opt.value, e.target.checked)
-                                      }
-                                    />
-                                    {opt.label}
-                                  </label>
-                                );
-                              })}
-                            </div>
-                          </fieldset>
-                        )}
-                      </span>
-                    </label>
-                  </li>
-                );
-              })}
+            <ul className="neu-card !p-4 flex-1 space-y-2 overflow-y-auto shadow-inset-sm !rounded-2xl">
+              {groups.map(([groupName, groupCols]) => (
+                <li key={groupName || "__default__"} className="list-none">
+                  {groupName !== "" && (
+                    <div className="mb-1 mt-2 flex items-center justify-between gap-2 px-2 first:mt-0">
+                      <p className="text-xs font-semibold uppercase text-muted">
+                        {groupName} ({groupCols.length})
+                      </p>
+                      <button
+                        type="button"
+                        className="shrink-0 text-xs font-semibold text-accent hover:underline"
+                        onClick={() =>
+                          toggleGroup(groupCols, !groupCols.every((c) => selectedSet.has(c.id)))
+                        }
+                      >
+                        {groupCols.every((c) => selectedSet.has(c.id)) ? "Bỏ chọn nhóm" : "Chọn tất cả"}
+                      </button>
+                    </div>
+                  )}
+                  <ul className="space-y-1">
+                    {groupCols.map((col) => {
+                      const checked = selectedSet.has(col.id);
+                      return (
+                        <li key={col.id} className="rounded-xl px-2.5 py-2.5 hover:bg-accent/[0.06]">
+                          <label className="flex cursor-pointer items-start gap-3">
+                            <input
+                              type="checkbox"
+                              className="mt-0.5 h-4 w-4 rounded border-accent/40 accent-accent"
+                              checked={checked}
+                              onChange={(e) => toggleColumn(col.id, e.target.checked)}
+                            />
+                            <span className="min-w-0 flex-1">
+                              <span className="block text-sm font-medium text-foreground">{col.label}</span>
+                              {checked && col.filterOptions && col.filterOptions.length > 0 && (
+                                <fieldset className="mt-2 space-y-1.5 rounded-xl bg-background/80 p-2 shadow-inset-sm">
+                                  <legend className="px-1 text-xs font-semibold uppercase tracking-wide text-muted">
+                                    Lọc giá trị xuất
+                                  </legend>
+                                  <div className="flex flex-wrap gap-2">
+                                    {col.filterOptions.map((opt) => {
+                                      const on = (valueFilters[col.id] ?? []).includes(opt.value);
+                                      return (
+                                        <label
+                                          key={opt.value}
+                                          className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                                            on
+                                              ? "bg-accent/15 text-accent shadow-inset-sm"
+                                              : "bg-background text-muted shadow-extruded-sm"
+                                          }`}
+                                        >
+                                          <input
+                                            type="checkbox"
+                                            className="sr-only"
+                                            checked={on}
+                                            onChange={(e) =>
+                                              toggleFilterValue(col.id, opt.value, e.target.checked)
+                                            }
+                                          />
+                                          {opt.label}
+                                        </label>
+                                      );
+                                    })}
+                                  </div>
+                                </fieldset>
+                              )}
+                            </span>
+                          </label>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </li>
+              ))}
             </ul>
           </section>
 
           {/* Right — extract order */}
           <section className="flex min-h-0 flex-col gap-3">
-            <h3 className="text-sm font-bold text-foreground">Các trường để trích xuất</h3>
+            <h3 className="text-sm font-bold text-foreground">
+              Các trường để trích xuất ({selectedOrdered.length})
+            </h3>
             <div className="neu-card !p-0 flex-1 overflow-hidden !rounded-2xl shadow-inset-sm">
               <div className="grid grid-cols-[40px_1fr] gap-2 bg-accent/15 px-3 py-2.5 text-xs font-semibold text-accent">
                 <span>TT</span>
@@ -293,17 +368,19 @@ function ExportDataModal<T>({
         </div>
 
         <footer className="flex flex-wrap items-center justify-end gap-3 border-t border-black/5 px-5 py-4 sm:px-6">
-          <Button variant="secondary" size="md" onClick={onClose}>
+          <Button variant="secondary" size="md" disabled={exporting} onClick={onClose}>
             HỦY
           </Button>
           <Button
             variant="primary"
             size="md"
-            disabled={selectedOrdered.length === 0}
+            disabled={selectedOrdered.length === 0 || exporting}
             onClick={handleDownload}
-            leftIcon={<Icon icon={Download} size={16} />}
+            leftIcon={
+              <Icon icon={exporting ? Loader2 : Download} size={16} className={exporting ? "animate-spin" : ""} />
+            }
           >
-            TẢI XUỐNG DỮ LIỆU
+            {exporting ? "ĐANG XUẤT..." : "TẢI XUỐNG DỮ LIỆU"}
           </Button>
         </footer>
       </div>

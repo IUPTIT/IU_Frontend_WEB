@@ -1,3 +1,4 @@
+import { ArrowLeft, Send } from "lucide-react";
 import type { ApplicationForm } from "../types";
 import type { PublicCampaign } from "../../../services/publicRecruitmentService";
 
@@ -23,7 +24,8 @@ function ReviewConfirmStep({ form, campaign, submitting, error, onBack, onConfir
   const questions = [...campaign.customQuestions].sort((a, b) => a.order - b.order);
 
   return (
-    <div className="liquid-glass landing-card-solid rounded-3xl p-6 md:p-8">
+    <div className="reg-rise liquid-glass landing-card-glass glass-shine rounded-3xl p-6 md:p-8" style={{ animationDelay: "0.1s" }}>
+      <p className="reg-eyebrow">Bước cuối</p>
       <h2 className="landing-headline text-xl font-semibold text-[hsl(var(--landing-foreground))]">
         Xác nhận thông tin trước khi gửi
       </h2>
@@ -56,11 +58,17 @@ function ReviewConfirmStep({ form, campaign, submitting, error, onBack, onConfir
         <button
           onClick={onBack}
           disabled={submitting}
-          className="landing-btn-secondary liquid-glass flex-1 rounded-full py-3 disabled:opacity-50"
+          className="landing-btn-secondary liquid-glass inline-flex flex-1 items-center justify-center gap-2 rounded-full py-3 disabled:opacity-50"
         >
-          ← Quay lại sửa
+          <ArrowLeft size={17} />
+          Quay lại sửa
         </button>
-        <button onClick={onConfirm} disabled={submitting} className="landing-btn-primary flex-1 py-3 disabled:opacity-60">
+        <button
+          onClick={onConfirm}
+          disabled={submitting}
+          className="landing-btn-primary inline-flex flex-1 items-center justify-center gap-2 py-3 disabled:opacity-60"
+        >
+          <Send size={17} />
           {submitting ? "Đang gửi..." : "Gửi đơn chính thức"}
         </button>
       </div>

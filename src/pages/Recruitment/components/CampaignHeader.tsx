@@ -72,7 +72,7 @@ function CampaignHeader({ campaign }: { campaign: PublicCampaign }) {
             { value: left.minutes, unit: "phút" },
             { value: left.seconds, unit: "giây" },
           ].map(({ value, unit }) => (
-            <div key={unit} className="liquid-glass landing-card-solid rounded-2xl px-4 py-3 text-center">
+            <div key={unit} className="liquid-glass landing-card-glass rounded-2xl px-4 py-3 text-center">
               <p className="landing-headline text-2xl font-semibold text-[hsl(var(--landing-foreground))]">
                 {String(value).padStart(2, "0")}
               </p>

@@ -96,6 +96,8 @@ export type Application = {
   reviewerNames?: string[];
   /** Trạng thái xử lý sau kết quả cuối: chờ / đã gửi email / đã chuyển Member */
   resultNotifyStatus?: "pending" | "email_sent" | "converted";
+  /** Câu trả lời câu hỏi custom: key = fieldId */
+  answers: Record<string, string | string[]>;
 };
 
 export type ApplicationAttachment = {
