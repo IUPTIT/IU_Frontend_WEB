@@ -256,10 +256,12 @@ export async function getCampaignById(id: string): Promise<RecruitmentCampaign |
 export async function setCampaignActive(
   id: string,
   isActive: boolean,
+  opts?: { notify?: boolean },
 ): Promise<RecruitmentCampaign | undefined> {
   const action = isActive ? "publish" : "close";
   const { campaign } = await api.post<{ campaign: BackendCampaign }>(
     `/recruitment/campaigns/${id}/${action}`,
+    action === "publish" ? { notify: opts?.notify !== false } : {},
   );
   return toCampaign(campaign);
 }
@@ -285,6 +287,8 @@ export type CreateCampaignInput = {
   customQuestions?: CreateCampaignQuestion[];
   status: "draft" | "published";
   isActive: boolean;
+  /** Gửi in-app cho BCN/Leader khi publish (mặc định true) */
+  notifyOnPublish?: boolean;
 };
 
 function toQuotasBody(quotas: CreateCampaignInput["quotas"]) {
@@ -332,6 +336,7 @@ export async function createCampaign(input: CreateCampaignInput): Promise<Recrui
   if (input.status === "published" || input.isActive) {
     const { campaign: published } = await api.post<{ campaign: BackendCampaign }>(
       `/recruitment/campaigns/${campaign._id}/publish`,
+      { notify: input.notifyOnPublish !== false },
     );
     return toCampaign(published);
   }
@@ -667,10 +672,15 @@ export async function setScreeningDecision(
   return getApplicationById(applicationId);
 }
 
-export async function getInterviewers(): Promise<InterviewerRef[]> {
+export async function getInterviewers(
+  campaignId?: string,
+): Promise<InterviewerRef[]> {
+  const qs = campaignId
+    ? `?campaignId=${encodeURIComponent(campaignId)}`
+    : "";
   const { interviewers } = await api.get<{
     interviewers: { _id: string; name: string; role?: InterviewerRef["role"] }[];
-  }>("/recruitment/interviewers");
+  }>(`/recruitment/interviewers${qs}`);
   return interviewers.map((u) => ({
     id: u._id,
     name: u.name,

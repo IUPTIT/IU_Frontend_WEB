@@ -231,7 +231,9 @@ function RecruitmentOpenPage() {
           ...(editLocks.questions ? {} : { customQuestions }),
         });
         if (!published && saveMode === "publish") {
-          await setCampaignActive(editing.id, true);
+          await setCampaignActive(editing.id, true, {
+            notify: draft.notifyOnPublish,
+          });
         }
       } else {
         await createCampaign({
@@ -243,6 +245,7 @@ function RecruitmentOpenPage() {
           customQuestions,
           status: saveMode === "publish" ? "published" : "draft",
           isActive: saveMode === "publish" && draft.activateOnPublish,
+          notifyOnPublish: draft.notifyOnPublish,
         });
       }
     } catch (err) {

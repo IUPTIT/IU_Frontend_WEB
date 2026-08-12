@@ -155,13 +155,14 @@ function CampaignPublishStep({ draft, onChange, onBack, onSaveDraft, onPublish }
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-sm font-medium">Gửi thông báo</p>
-                  <p className="text-xs text-muted">Chưa hỗ trợ — sẽ gửi in-app cho BCN / Leader sau</p>
+                  <p className="text-xs text-muted">
+                    In-app cho BCN / Leader khi đợt được mở
+                  </p>
                 </div>
                 <Toggle
-                  checked={false}
-                  onChange={() => {}}
-                  disabled
-                  aria-label="Gửi thông báo khi xuất bản (chưa hỗ trợ)"
+                  checked={draft.notifyOnPublish}
+                  onChange={(v) => onChange({ notifyOnPublish: v })}
+                  aria-label="Gửi thông báo khi xuất bản"
                 />
               </div>
             </div>

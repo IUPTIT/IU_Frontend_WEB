@@ -1,10 +1,6 @@
-// SMTP/history vẫn mock cục bộ; template CRUD + gửi thật qua BE.
+// History vẫn mock cục bộ; template CRUD + gửi thật qua BE. SMTP cấu hình trên BE .env.
 import { api } from "../api/client";
-import {
-  EMAIL_PLACEHOLDERS,
-  historyStore,
-  smtpStore,
-} from "../mocks/email.mock";
+import { EMAIL_PLACEHOLDERS, historyStore } from "../mocks/email.mock";
 import type {
   EmailHistoryItem,
   EmailPlaceholder,
@@ -17,7 +13,6 @@ import type {
   SendEmailRequest,
   SendEmailResult,
   SendTestRequest,
-  SmtpConfig,
 } from "../types/email";
 import { renderPlaceholders } from "../utils/emailRender";
 
@@ -45,31 +40,6 @@ function toTemplate(t: BackendTemplate): EmailTemplate {
     createdAt: t.createdAt,
     updatedAt: t.updatedAt,
   };
-}
-
-/** GET /email/config — vẫn mock FE (SMTP thật đọc từ .env BE) */
-export async function getSmtpConfig(): Promise<SmtpConfig> {
-  await delay();
-  return { ...smtpStore };
-}
-
-/** POST /email/config */
-export async function saveSmtpConfig(config: SmtpConfig): Promise<SmtpConfig> {
-  await delay(400);
-  Object.assign(smtpStore, config);
-  return { ...smtpStore };
-}
-
-/** POST /email/test — kiểm tra kết nối SMTP (mock UI) */
-export async function testSmtpConnection(): Promise<{ ok: boolean; message: string }> {
-  await delay(700);
-  if (!smtpStore.enabled) {
-    return { ok: false, message: "SMTP đang tắt. Bật cấu hình rồi thử lại." };
-  }
-  if (!smtpStore.host || !smtpStore.senderEmail) {
-    return { ok: false, message: "Thiếu Host hoặc Sender Email." };
-  }
-  return { ok: true, message: `Kết nối tới ${smtpStore.host}:${smtpStore.port} thành công.` };
 }
 
 /** GET /admin/email-templates */

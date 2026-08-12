@@ -147,11 +147,27 @@ function RecruitmentInterviewsPage() {
         return usable.find((c) => c.isActive)?.id ?? usable[0]?.id ?? "";
       });
     });
-    void getInterviewers().then((list) => alive && setInterviewers(list));
     return () => {
       alive = false;
     };
   }, []);
+
+  // Người PV theo đợt — loại ứng viên của cùng đợt (kể cả đã thành Member)
+  useEffect(() => {
+    let alive = true;
+    if (!campaignId) {
+      setInterviewers([]);
+      return () => {
+        alive = false;
+      };
+    }
+    void getInterviewers(campaignId).then(
+      (list) => alive && setInterviewers(list),
+    );
+    return () => {
+      alive = false;
+    };
+  }, [campaignId]);
 
   // Đổi đợt tuyển → bật lại skeleton loading (adjust state during render)
   const [prevCampaignId, setPrevCampaignId] = useState(campaignId);

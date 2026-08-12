@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CheckCircle2, ChevronRight, Send } from "lucide-react";
+import { ChevronRight, Send } from "lucide-react";
 import Avatar from "../../../../components/ui/Avatar";
 import Badge from "../../../../components/ui/Badge";
 import Button from "../../../../components/ui/Button";
 import Icon from "../../../../components/ui/Icon";
 import { useToast } from "../../../../context/useToast";
 import {
-  confirmTrainingCompletion,
   getMentorTasks,
   getMyTeamTrainees,
   saveMentorTraineeReview,
@@ -234,19 +233,6 @@ function EvalDetail({
     }
   };
 
-  const handleConfirm = async () => {
-    setSaving(true);
-    try {
-      await confirmTrainingCompletion(trainee.id, note.trim());
-      toast.success(`Đã xác nhận hoàn thành training cho ${trainee.fullName}.`);
-      onChanged();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Xác nhận thất bại.");
-    } finally {
-      setSaving(false);
-    }
-  };
-
   return (
     <div className="space-y-5">
       <article className="neu-card !p-6 flex flex-wrap items-center gap-4">
@@ -256,6 +242,9 @@ function EvalDetail({
             {trainee.fullName}
           </h2>
           <p className="text-sm text-muted">{trainee.email}</p>
+          <p className="text-xs text-muted">
+            Mentor gửi đánh giá lên BCN — BCN mới chốt Đạt / Trượt / chứng nhận.
+          </p>
           <div className="flex flex-wrap gap-2 pt-1">
             <Badge tone="violet">Tân binh</Badge>
             <Badge tone={submitted ? "success" : "muted"}>
@@ -274,19 +263,18 @@ function EvalDetail({
             variant="secondary"
             size="sm"
             disabled={saving}
-            onClick={() => void handleSave(true)}
-            leftIcon={<Icon icon={Send} size={14} />}
+            onClick={() => void handleSave(false)}
           >
-            Gửi đánh giá
+            Lưu nháp
           </Button>
           <Button
             variant="primary"
             size="sm"
             disabled={saving}
-            onClick={() => void handleConfirm()}
-            leftIcon={<Icon icon={CheckCircle2} size={14} />}
+            onClick={() => void handleSave(true)}
+            leftIcon={<Icon icon={Send} size={14} />}
           >
-            Xác nhận hoàn thành
+            Gửi đánh giá lên BCN
           </Button>
         </div>
       </article>

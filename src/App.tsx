@@ -6,6 +6,7 @@ import LandingPage from "./pages/Landing";
 import RecruitmentPage from "./pages/Recruitment";
 import LookupPage from "./pages/Lookup";
 import { getDefaultPath } from "./constants/navigation";
+import { ROUTES } from "./constants/routes";
 import { renderPortalPage } from "./routes/portalRoutes";
 import { useAuth } from "./context/useAuth";
 import ChangePasswordGate from "./components/ChangePasswordGate";
@@ -51,6 +52,11 @@ function AdminPortal() {
     return <Navigate to={defaultPath} replace />;
   }
 
+  // Mentor-only: Leader/Member không có isMentor không được vào URL mentor bằng tay
+  if (isMentorOnlyPath(activePath) && user.isMentor !== true) {
+    return <Navigate to={defaultPath} replace />;
+  }
+
   return (
     <AdminLayout
       role={user.role}
@@ -59,6 +65,21 @@ function AdminPortal() {
     >
       {renderPortalPage(activePath)}
     </AdminLayout>
+  );
+}
+
+/** Các route chỉ dành cho user.isMentor (nav đã ẩn; chặn deep-link) */
+function isMentorOnlyPath(path: string): boolean {
+  const mentorPaths = [
+    ROUTES.leader.training.programs,
+    ROUTES.leader.training.groups,
+    ROUTES.leader.training.tasks,
+    ROUTES.leader.training.evaluation,
+    ROUTES.member.mentorRoadmap,
+    ROUTES.member.mentorTasks,
+  ];
+  return mentorPaths.some(
+    (p) => path === p || path.startsWith(`${p}/`),
   );
 }
 

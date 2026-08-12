@@ -96,7 +96,7 @@ function ApplicationDetailPage({ applicationId }: Props) {
         getApplicationAnswers(applicationId).catch(() => [] as ApplicationAnswer[]),
         getScreeningCriteria().catch(() => [] as ScreeningCriterion[]),
         getApplicationScore(applicationId).catch(() => undefined),
-        getInterviewers().catch(() => [] as InterviewerRef[]),
+        getInterviewers(detail.campaignId).catch(() => [] as InterviewerRef[]),
       ]);
       setAnswers(ans);
       setCriteria(crit);

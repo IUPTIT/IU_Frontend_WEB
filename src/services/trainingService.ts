@@ -493,16 +493,6 @@ export async function setMentorFlag(
   await api.patch(`/training/mentors/${userId}`, { isMentor });
 }
 
-/** Tự động chia nhóm — BE chưa có; báo rõ thay vì gọi 404 */
-export async function autoAssignTeams(
-  _fallbackProgramId?: string,
-  _campaignId?: string,
-): Promise<{ assigned: number; mentors: number; groups: unknown[] }> {
-  throw new Error(
-    "Chức năng tự động chia nhóm chưa được bật — hãy tạo nhóm thủ công tại Quản lý nhóm.",
-  );
-}
-
 // ---- Programs ----
 
 export async function getTrainingPrograms(): Promise<TrainingProgram[]> {
@@ -512,7 +502,7 @@ export async function getTrainingPrograms(): Promise<TrainingProgram[]> {
   return programs.map(toProgram);
 }
 
-/** Xóa lộ trình (mentor xóa của mình, BCN/Leader xóa tất cả) — team đang dùng được gỡ về null */
+/** Xóa lộ trình — chỉ mentor (owner). Team đang dùng được gỡ programId về null */
 export async function deleteTrainingProgram(id: string): Promise<void> {
   await api.delete(`/training/programs/${id}`);
 }
@@ -695,15 +685,6 @@ export async function saveMentorTraineeReview(
   input: { score?: number | null; note?: string; submit?: boolean },
 ): Promise<void> {
   await api.patch(`/training/trainees/${traineeId}/mentor-review`, input);
-}
-
-export async function confirmTrainingCompletion(
-  traineeId: string,
-  note?: string,
-): Promise<void> {
-  await api.post(`/training/trainees/${traineeId}/confirm-completion`, {
-    note: note ?? "",
-  });
 }
 
 export async function setTraineeEvalStatus(
