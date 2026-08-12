@@ -235,6 +235,7 @@ function toApplication(a: BackendApplication): Application {
       .map((r) => (typeof r === "string" ? "" : r.name))
       .filter(Boolean),
     resultNotifyStatus: a.resultNotifyStatus ?? "pending",
+    answers: Object.fromEntries((a.answers ?? []).map((ans) => [ans.fieldId, ans.value])),
   };
 }
 
