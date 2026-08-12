@@ -341,7 +341,7 @@ function ApplicationDetailPage({ applicationId }: Props) {
                       <AttachmentIcon kind={att.kind} />
                       {att.label}
                     </p>
-                    <AttachmentPreview attachment={att} />
+                    <AttachmentPreview attachment={att} ownerName={app.fullName} />
                   </li>
                 ))}
               </ul>
