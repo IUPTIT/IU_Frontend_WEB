@@ -1,7 +1,7 @@
 // Recruitment (Admin) — campaigns/hồ sơ/câu hỏi/thống kê gọi API thật.
 // Phần chấm điểm vòng đơn & phỏng vấn backend CHƯA có endpoint — các hàm giữ
 // nguyên chữ ký, lưu in-memory (khởi đầu rỗng) để UI hoạt động, sẽ nối API sau.
-import { api, ApiRequestError } from "../api/client";
+import { api, ApiRequestError, getAccessToken } from "../api/client";
 import type {
   Application,
   ApplicationAnswer,
@@ -17,6 +17,8 @@ import type {
   RecruitmentStats,
   ScreeningCriterion,
 } from "../types/recruitment";
+
+const EXPORT_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3456/api/v1";
 
 // ---- Kiểu dữ liệu backend trả về (model mới: RecruitmentCampaign + ApplicationForm) ----
 
@@ -1367,4 +1369,36 @@ export async function getCampaignResultSummary(campaignId: string): Promise<Camp
     interviewed: apps.filter((a) => a.interviewResult !== "pending").length,
     accepted: apps.filter((a) => a.finalResult === "pass" || a.status === "accepted").length,
   };
+}
+
+export async function exportApplications(
+  campaignId: string,
+  body: { applicationIds: string[]; columns: string[]; questionFieldIds: string[] },
+): Promise<void> {
+  const token = getAccessToken();
+  const res = await fetch(
+    `${EXPORT_BASE}/recruitment/campaigns/${campaignId}/applications/export`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      credentials: "include",
+      body: JSON.stringify(body),
+    },
+  );
+  if (!res.ok) throw new Error("Xuất file thất bại — thử lại sau");
+  const blob = await res.blob();
+  const disposition = res.headers.get("Content-Disposition") ?? "";
+  const match = /filename="?([^"]+)"?/.exec(disposition);
+  const filename = match?.[1] ?? `ho_so_${campaignId}.xlsx`;
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
 }
