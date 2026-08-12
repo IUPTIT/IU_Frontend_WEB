@@ -19,6 +19,10 @@ export type ExportColumnDef<T> = {
   /** Key để đối chiếu filter (mặc định = getValue) */
   getFilterKey?: (row: T) => string;
   defaultSelected?: boolean;
+  /** Nhóm hiển thị trong danh sách khả dụng (vd "Câu trả lời form") */
+  group?: string;
+  /** Định danh gửi backend khi dùng exporter */
+  serverKey?: { type: "profile" | "question"; key: string };
 };
 
 export type ExportDataModalProps<T> = {
@@ -31,6 +35,8 @@ export type ExportDataModalProps<T> = {
   rows: T[];
   filenameBase: string;
   onExported?: (count: number) => void;
+  /** Có exporter → xuất qua backend thay vì CSV client-side */
+  exporter?: (args: { columns: ExportColumnDef<T>[]; rows: T[] }) => Promise<void>;
 };
 
 /**
@@ -46,11 +52,29 @@ function ExportDataModal<T>({
   rows,
   filenameBase,
   onExported,
+  exporter,
 }: ExportDataModalProps<T>) {
   const defaultIds = useMemo(
     () => columns.filter((c) => c.defaultSelected !== false).map((c) => c.id),
     [columns],
   );
+
+  /** Nhóm cột theo `col.group`; nhóm mặc định ("") luôn đứng đầu */
+  const groups = useMemo(() => {
+    const map = new Map<string, ExportColumnDef<T>[]>();
+    for (const col of columns) {
+      const g = col.group ?? "";
+      if (!map.has(g)) map.set(g, []);
+      map.get(g)!.push(col);
+    }
+    // Nhóm mặc định ("") luôn hiển thị đầu tiên, bất kể thứ tự cột truyền vào
+    return [...map.entries()].sort(([a], [b]) => {
+      if (a === b) return 0;
+      if (a === "") return -1;
+      if (b === "") return 1;
+      return 0;
+    });
+  }, [columns]);
 
   const [orderedIds, setOrderedIds] = useState<string[]>(defaultIds);
   /** columnId → danh sách value được giữ; [] hoặc thiếu = tất cả */
@@ -90,7 +114,6 @@ function ExportDataModal<T>({
   if (!open) return null;
 
   const selectedSet = new Set(orderedIds);
-  const available = columns;
   const selectedOrdered = orderedIds
     .map((id) => columns.find((c) => c.id === id))
     .filter(Boolean) as ExportColumnDef<T>[];
@@ -125,7 +148,7 @@ function ExportDataModal<T>({
     });
   };
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (selectedOrdered.length === 0) return;
 
     const filterCols = selectedOrdered.filter((c) => c.filterOptions?.length);
@@ -138,6 +161,13 @@ function ExportDataModal<T>({
         return allowed.includes(key);
       }),
     );
+
+    if (exporter) {
+      await exporter({ columns: selectedOrdered, rows: filteredRows });
+      onExported?.(filteredRows.length);
+      onClose();
+      return;
+    }
 
     const headers = selectedOrdered.map((c) => c.label);
     const data = filteredRows.map((row) => selectedOrdered.map((c) => c.getValue(row)));
@@ -189,56 +219,67 @@ function ExportDataModal<T>({
             </div>
 
             <ul className="neu-card !p-3 flex-1 space-y-1 overflow-y-auto shadow-inset-sm !rounded-2xl">
-              {available.map((col) => {
-                const checked = selectedSet.has(col.id);
-                return (
-                  <li key={col.id} className="rounded-xl px-2 py-2 hover:bg-accent/[0.06]">
-                    <label className="flex cursor-pointer items-start gap-3">
-                      <input
-                        type="checkbox"
-                        className="mt-0.5 h-4 w-4 rounded border-accent/40 accent-accent"
-                        checked={checked}
-                        onChange={(e) => toggleColumn(col.id, e.target.checked)}
-                      />
-                      <span className="min-w-0 flex-1">
-                        <span className="block text-sm font-medium text-foreground">{col.label}</span>
-                        {checked && col.filterOptions && col.filterOptions.length > 0 && (
-                          <fieldset className="mt-2 space-y-1.5 rounded-xl bg-background/80 p-2 shadow-inset-sm">
-                            <legend className="px-1 text-[11px] font-semibold uppercase tracking-wide text-muted">
-                              Lọc giá trị xuất
-                            </legend>
-                            <div className="flex flex-wrap gap-1.5">
-                              {col.filterOptions.map((opt) => {
-                                const on = (valueFilters[col.id] ?? []).includes(opt.value);
-                                return (
-                                  <label
-                                    key={opt.value}
-                                    className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
-                                      on
-                                        ? "bg-accent/15 text-accent shadow-inset-sm"
-                                        : "bg-background text-muted shadow-extruded-sm"
-                                    }`}
-                                  >
-                                    <input
-                                      type="checkbox"
-                                      className="sr-only"
-                                      checked={on}
-                                      onChange={(e) =>
-                                        toggleFilterValue(col.id, opt.value, e.target.checked)
-                                      }
-                                    />
-                                    {opt.label}
-                                  </label>
-                                );
-                              })}
-                            </div>
-                          </fieldset>
-                        )}
-                      </span>
-                    </label>
-                  </li>
-                );
-              })}
+              {groups.map(([groupName, groupCols]) => (
+                <li key={groupName || "__default__"} className="list-none">
+                  {groupName !== "" && (
+                    <p className="mb-1 mt-2 px-2 text-xs font-semibold uppercase text-muted first:mt-0">
+                      {groupName}
+                    </p>
+                  )}
+                  <ul className="space-y-1">
+                    {groupCols.map((col) => {
+                      const checked = selectedSet.has(col.id);
+                      return (
+                        <li key={col.id} className="rounded-xl px-2 py-2 hover:bg-accent/[0.06]">
+                          <label className="flex cursor-pointer items-start gap-3">
+                            <input
+                              type="checkbox"
+                              className="mt-0.5 h-4 w-4 rounded border-accent/40 accent-accent"
+                              checked={checked}
+                              onChange={(e) => toggleColumn(col.id, e.target.checked)}
+                            />
+                            <span className="min-w-0 flex-1">
+                              <span className="block text-sm font-medium text-foreground">{col.label}</span>
+                              {checked && col.filterOptions && col.filterOptions.length > 0 && (
+                                <fieldset className="mt-2 space-y-1.5 rounded-xl bg-background/80 p-2 shadow-inset-sm">
+                                  <legend className="px-1 text-[11px] font-semibold uppercase tracking-wide text-muted">
+                                    Lọc giá trị xuất
+                                  </legend>
+                                  <div className="flex flex-wrap gap-1.5">
+                                    {col.filterOptions.map((opt) => {
+                                      const on = (valueFilters[col.id] ?? []).includes(opt.value);
+                                      return (
+                                        <label
+                                          key={opt.value}
+                                          className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
+                                            on
+                                              ? "bg-accent/15 text-accent shadow-inset-sm"
+                                              : "bg-background text-muted shadow-extruded-sm"
+                                          }`}
+                                        >
+                                          <input
+                                            type="checkbox"
+                                            className="sr-only"
+                                            checked={on}
+                                            onChange={(e) =>
+                                              toggleFilterValue(col.id, opt.value, e.target.checked)
+                                            }
+                                          />
+                                          {opt.label}
+                                        </label>
+                                      );
+                                    })}
+                                  </div>
+                                </fieldset>
+                              )}
+                            </span>
+                          </label>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </li>
+              ))}
             </ul>
           </section>
 
