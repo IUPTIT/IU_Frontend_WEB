@@ -237,6 +237,7 @@ function SendEmailModal({
     }
     setBusy(true);
     setError(null);
+    setToast(null);
     try {
       const res = await sendEmails({
         recipients,
@@ -245,20 +246,47 @@ function SendEmailModal({
         body,
         module,
       });
-      if (res.sent > 0) {
-        onSent?.(res.sent);
-        toastApi.sent(res.sent);
-      } else if (res.failed > 0) {
-        toastApi.error(`Gửi thất bại ${res.failed} email.`);
+
+      const failLines =
+        res.errors.length > 0
+          ? res.errors
+              .slice(0, 8)
+              .map((e) => `• ${e.to}: ${e.message}`)
+              .join("\n") +
+            (res.errors.length > 8
+              ? `\n• … và ${res.errors.length - 8} lỗi khác`
+              : "")
+          : "";
+
+      if (res.failed > 0 && res.sent === 0) {
+        const msg = `Gửi thất bại toàn bộ (${res.failed}).\n${failLines}`;
+        setError(msg);
+        toastApi.error(
+          `Gửi thất bại ${res.failed} email. Xem chi tiết trong hộp thoại.`,
+        );
+        return;
       }
-      setToast(
-        `Đã gửi ${res.sent} email${res.failed ? `, thất bại ${res.failed}` : ""}.`,
-      );
+
+      if (res.failed > 0) {
+        const msg = `Đã gửi ${res.sent}, thất bại ${res.failed}.\n${failLines}`;
+        setError(msg);
+        toastApi.error(
+          `Gửi ${res.sent} OK, thất bại ${res.failed}. Kiểm tra danh sách lỗi.`,
+        );
+        // Vẫn báo số đã gửi thật để caller stamp trạng thái (nếu cần)
+        if (res.sent > 0) onSent?.(res.sent);
+        return;
+      }
+
+      onSent?.(res.sent);
+      toastApi.sent(res.sent);
+      setToast(`Đã gửi thành công ${res.sent} email.`);
       window.setTimeout(() => {
         onClose();
       }, 900);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Gửi thất bại");
+      toastApi.error(e instanceof Error ? e.message : "Gửi thất bại");
     } finally {
       setBusy(false);
     }
@@ -392,7 +420,11 @@ function SendEmailModal({
               </div>
             )}
 
-            {error && <p className="text-sm text-rose-500">{error}</p>}
+            {error && (
+              <pre className="whitespace-pre-wrap break-words rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:bg-rose-950/40 dark:text-rose-300">
+                {error}
+              </pre>
+            )}
             {toast && (
               <p className="text-sm text-accent" role="status">
                 {toast}

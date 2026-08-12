@@ -138,6 +138,9 @@ export async function sendTestEmail(req: SendTestRequest): Promise<{ ok: boolean
   if (!req.to.trim()) {
     return { ok: false, message: "Nhập email nhận thử." };
   }
+  if (!EMAIL_RE.test(req.to.trim())) {
+    return { ok: false, message: `Email không hợp lệ: ${req.to.trim()}` };
+  }
   const data = {
     ...DEFAULT_SAMPLE,
     ...req.sampleData,
@@ -147,25 +150,35 @@ export async function sendTestEmail(req: SendTestRequest): Promise<{ ok: boolean
   const subject = renderPlaceholders(req.subject, data);
   const body = renderPlaceholders(req.body, data);
   try {
-    const result = await api.post<{ sent: number; failed: number; logged?: number }>(
-      "/admin/emails/send",
-      {
-        messages: [
-          {
-            to: req.to.trim(),
-            subject,
-            html: body.includes("<")
-              ? `<div style="margin:0;padding:16px 4px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.6;color:#1a1a1a;background:#ffffff">${body}</div>`
-              : `<div style="margin:0;padding:16px 4px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.6;color:#1a1a1a;background:#ffffff;white-space:pre-wrap">${body}</div>`,
-            text: body.replace(/<[^>]+>/g, " "),
-          },
-        ],
-      },
-    );
+    const result = await api.post<{
+      sent: number;
+      failed: number;
+      logged?: number;
+      errors?: { to: string; message: string }[];
+    }>("/admin/emails/send", {
+      messages: [
+        {
+          to: req.to.trim(),
+          subject,
+          html: body.includes("<")
+            ? `<div style="margin:0;padding:16px 4px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.6;color:#1a1a1a;background:#ffffff">${body}</div>`
+            : `<div style="margin:0;padding:16px 4px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.6;color:#1a1a1a;background:#ffffff;white-space:pre-wrap">${body}</div>`,
+          text: body.replace(/<[^>]+>/g, " "),
+        },
+      ],
+    });
     if ((result.logged ?? 0) > 0 && result.sent === 0) {
       return {
-        ok: true,
-        message: `SMTP tắt — đã ghi log thử tới ${req.to} (chưa gửi thật).`,
+        ok: false,
+        message: `SMTP/SendGrid tắt — chưa gửi thật tới ${req.to}.`,
+      };
+    }
+    if (result.failed > 0 || result.sent === 0) {
+      return {
+        ok: false,
+        message:
+          result.errors?.[0]?.message ??
+          `Gửi thử thất bại tới ${req.to}.`,
       };
     }
     return { ok: true, message: `Đã gửi thử tới ${req.to}.` };
@@ -176,6 +189,8 @@ export async function sendTestEmail(req: SendTestRequest): Promise<{ ok: boolean
     };
   }
 }
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /**
  * POST /admin/emails/send — render placeholder phía FE, gửi SMTP phía BE.
@@ -189,8 +204,21 @@ export async function sendEmails(req: SendEmailRequest): Promise<SendEmailResult
   }
 
   const tpl = req.templateId ? await getEmailTemplate(req.templateId) : null;
+  const skipped: { to: string; message: string }[] = [];
+  for (const r of req.recipients) {
+    const raw = String(r.email || "").trim();
+    if (!raw) {
+      skipped.push({
+        to: r.name || "(không email)",
+        message: "Thiếu địa chỉ email",
+      });
+    } else if (!EMAIL_RE.test(raw)) {
+      skipped.push({ to: raw, message: "Email không đúng định dạng" });
+    }
+  }
+
   const messages = req.recipients
-    .filter((r) => r.email)
+    .filter((r) => r.email && EMAIL_RE.test(String(r.email).trim()))
     .map((r) => {
       const data = {
         ...DEFAULT_SAMPLE,
@@ -202,7 +230,7 @@ export async function sendEmails(req: SendEmailRequest): Promise<SendEmailResult
       const subject = renderPlaceholders(req.subject, data);
       const body = renderPlaceholders(req.body, data);
       return {
-        to: r.email,
+        to: String(r.email).trim(),
         subject,
         html: body.includes("<")
           ? `<div style="margin:0;padding:16px 4px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.6;color:#1a1a1a;background:#ffffff">${body}</div>`
@@ -213,7 +241,12 @@ export async function sendEmails(req: SendEmailRequest): Promise<SendEmailResult
     });
 
   if (messages.length === 0) {
-    throw new Error("Không có địa chỉ email hợp lệ để gửi.");
+    const detail = skipped.map((s) => `${s.to}: ${s.message}`).join("; ");
+    throw new Error(
+      detail
+        ? `Không có địa chỉ email hợp lệ để gửi. ${detail}`
+        : "Không có địa chỉ email hợp lệ để gửi.",
+    );
   }
 
   const result = await api.post<{
@@ -231,9 +264,12 @@ export async function sendEmails(req: SendEmailRequest): Promise<SendEmailResult
   });
 
   const logged = result.logged ?? 0;
+  const apiErrors = result.errors ?? [];
   const historyIds: string[] = [];
   for (const msg of messages) {
-    const failedErr = result.errors?.find((e) => e.to === msg.to);
+    const failedErr = apiErrors.find(
+      (e) => e.to?.toLowerCase() === msg.to.toLowerCase(),
+    );
     const item: EmailHistoryItem = {
       id: uid("hist"),
       recipientId: msg._meta.r.id,
@@ -244,7 +280,7 @@ export async function sendEmails(req: SendEmailRequest): Promise<SendEmailResult
       templateId: req.templateId,
       templateName: tpl?.name ?? null,
       module: req.module,
-      status: failedErr ? "failed" : result.sent > 0 ? "sent" : "queued",
+      status: failedErr ? "failed" : result.sent > 0 && !failedErr ? "sent" : "queued",
       error: failedErr?.message,
       sentAt: new Date().toISOString(),
       sentBy: "Admin",
@@ -253,23 +289,25 @@ export async function sendEmails(req: SendEmailRequest): Promise<SendEmailResult
     historyIds.push(item.id);
   }
 
-  if (result.sent === 0 && result.failed > 0 && logged === 0) {
-    throw new Error(
-      result.errors?.[0]?.message ?? `Gửi thất bại toàn bộ (${result.failed} email).`,
-    );
-  }
+  const errors = [
+    ...apiErrors,
+    ...skipped,
+  ];
+  const failed = (result.failed ?? 0) + skipped.length;
 
-  if (result.sent === 0 && logged > 0) {
+  if (result.sent === 0 && logged > 0 && failed === 0) {
     throw new Error(
-      `SMTP đang tắt — đã ghi log ${logged} email, chưa gửi thật. Bật SMTP trong .env rồi thử lại.`,
+      `SMTP/SendGrid đang tắt — đã ghi log ${logged} email, chưa gửi thật.`,
     );
   }
 
   return {
     sent: result.sent,
-    failed: result.failed,
+    failed,
     logged,
     historyIds,
+    errors,
+    skipped,
   };
 }
 

@@ -13,6 +13,7 @@ type Props = {
 /** Sửa ca phỏng vấn: ngày, giờ, thời lượng, địa điểm, sức chứa */
 function RescheduleModal({ open, slot, onClose, onSubmit }: Props) {
   const [date, setDate] = useState("");
+  const [name, setName] = useState("");
   const [time, setTime] = useState("");
   const [duration, setDuration] = useState(45);
   const [location, setLocation] = useState("");
@@ -27,6 +28,7 @@ function RescheduleModal({ open, slot, onClose, onSubmit }: Props) {
     setPrevKey(resetKey);
     if (resetKey && slot) {
       setDate(slot.date);
+      setName(slot.name || "");
       setTime(slot.startTime);
       setDuration(slot.durationMinutes || 45);
       setLocation(slot.locationOrLink);
@@ -38,6 +40,10 @@ function RescheduleModal({ open, slot, onClose, onSubmit }: Props) {
   if (!open || !slot) return null;
 
   const handleSave = async () => {
+    if (!name.trim()) {
+      setError("Tên ca phỏng vấn là bắt buộc.");
+      return;
+    }
     if (!date || !time) {
       setError("Ngày và giờ là bắt buộc.");
       return;
@@ -54,6 +60,7 @@ function RescheduleModal({ open, slot, onClose, onSubmit }: Props) {
     setError(null);
     try {
       await onSubmit(slot.id, {
+        name: name.trim(),
         date,
         startTime: time,
         durationMinutes: safeDuration,
@@ -83,6 +90,17 @@ function RescheduleModal({ open, slot, onClose, onSubmit }: Props) {
           </p>
         </header>
         <div className="space-y-4 p-5">
+          <label className="block space-y-1.5">
+            <span className="neu-field-label">Tên ca phỏng vấn *</span>
+            <input
+              type="text"
+              className="neu-input !h-11"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="VD: Ca sáng Ban Chuyên môn"
+              maxLength={200}
+            />
+          </label>
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="block space-y-1.5">
               <span className="neu-field-label">Ngày *</span>

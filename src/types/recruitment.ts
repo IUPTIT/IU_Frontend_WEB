@@ -154,6 +154,8 @@ export type InterviewSlot = {
   /** ID booking backend (chỉ khi view flatten theo ứng viên — legacy) */
   bookingId?: string;
   campaignId: string;
+  /** Tên ca phỏng vấn */
+  name: string;
   date: string; // YYYY-MM-DD
   startTime: string; // HH:mm
   durationMinutes: number;

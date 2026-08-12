@@ -11,7 +11,7 @@ import { ROUTES } from "../../../../constants/routes";
 import ExportDataModal, { type ExportColumnDef } from "../../../../components/ui/ExportDataModal";
 import {
   assignInterviewersToSlot,
-  createBatchInterviewSlots,
+  createInterviewSlot,
   getCampaigns,
   getInterviewDatesWithSlots,
   getInterviewSlots,
@@ -36,8 +36,9 @@ import type { EmailRecipient } from "../../../../types/email";
 import { applicationToEmailRecipient } from "../../../../utils/emailRecipients";
 import { formatDate } from "../../../../utils/formatDate";
 import AssignInterviewersModal from "./components/AssignInterviewersModal";
-import BatchScheduleModal from "./components/BatchScheduleModal";
+import CreateInterviewSlotModal from "./components/CreateInterviewSlotModal";
 import DaySummaryCard from "./components/DaySummaryCard";
+import InterviewOverviewCharts from "./components/InterviewOverviewCharts";
 import ConfirmDialog from "../../../../components/ui/ConfirmDialog";
 import InterviewCalendar from "../../../../components/InterviewCalendar";
 import InterviewSlotCard from "./components/InterviewSlotCard";
@@ -119,7 +120,7 @@ function RecruitmentInterviewsPage() {
   const [emailRecipients, setEmailRecipients] = useState<EmailRecipient[]>([]);
   const [emailTpl, setEmailTpl] = useState("tpl-interview");
 
-  const [batchOpen, setBatchOpen] = useState(false);
+  const [createSlotOpen, setCreateSlotOpen] = useState(false);
   const [assignSlot, setAssignSlot] = useState<InterviewSlot | null>(null);
   const [rescheduleSlot, setRescheduleSlot] = useState<InterviewSlot | null>(null);
   const [deleteSlotTarget, setDeleteSlotTarget] = useState<InterviewSlot | null>(null);
@@ -128,8 +129,7 @@ function RecruitmentInterviewsPage() {
   const [exportRows, setExportRows] = useState<InterviewResultRowUi[]>([]);
   const [resultRows, setResultRows] = useState<InterviewResultRowUi[]>([]);
   const [unbooked, setUnbooked] = useState<UnbookedApplication[]>([]);
-  const [assignAppId, setAssignAppId] = useState("");
-  const [assignSlotId, setAssignSlotId] = useState("");
+  const [rowSlotPick, setRowSlotPick] = useState<Record<string, string>>({});
   const [unbookedBusy, setUnbookedBusy] = useState(false);
 
   const showToast = (msg: string) => {
@@ -220,6 +220,7 @@ function RecruitmentInterviewsPage() {
         if (statusFilter && s.status !== statusFilter) return false;
         if (!q) return true;
         return (
+          s.name.toLowerCase().includes(q) ||
           s.locationOrLink.toLowerCase().includes(q) ||
           s.interviewers.some((i) => i.name.toLowerCase().includes(q)) ||
           s.startTime.includes(q)
@@ -234,6 +235,87 @@ function RecruitmentInterviewsPage() {
     const scheduled = daySlots.filter((s) => s.status === "scheduled" || s.status === "done").length;
     return { total, missing, scheduled };
   }, [daySlots]);
+
+  const availableSlots = useMemo(
+    () => slots.filter((s) => (s.bookedCount ?? 0) < (s.capacity ?? 1)),
+    [slots],
+  );
+
+  /** Toàn bộ ứng viên Pass CV + trạng thái đã ĐK ca */
+  const candidateRows = useMemo(() => {
+    const byApp = new Map(
+      resultRows.map((r) => [r.applicationId, r] as const),
+    );
+    const unbookedById = new Map(unbooked.map((u) => [u._id, u] as const));
+    const fromPassed = candidates.map((c) => {
+      const row = byApp.get(c.id);
+      const waiting = unbookedById.get(c.id);
+      return {
+        id: c.id,
+        fullName: c.fullName,
+        email: c.email,
+        code:
+          row?.applicationCode ||
+          waiting?.applicationCode ||
+          "—",
+        booked: !!row,
+        bookingId: row?.bookingId,
+        slotLabel: row
+          ? `${formatDate(row.slotDate)} · ${row.slotTime}`
+          : null,
+        bookingStatus: row?.bookingStatus ?? null,
+      };
+    });
+    for (const r of resultRows) {
+      if (fromPassed.some((x) => x.id === r.applicationId)) continue;
+      fromPassed.push({
+        id: r.applicationId,
+        fullName: r.fullName,
+        email: r.email,
+        code: r.applicationCode || "—",
+        booked: true,
+        bookingId: r.bookingId,
+        slotLabel: `${formatDate(r.slotDate)} · ${r.slotTime}`,
+        bookingStatus: r.bookingStatus,
+      });
+    }
+    for (const u of unbooked) {
+      if (fromPassed.some((x) => x.id === u._id)) continue;
+      fromPassed.push({
+        id: u._id,
+        fullName: u.fullName,
+        email: u.email,
+        code: u.applicationCode || "—",
+        booked: false,
+        bookingId: undefined,
+        slotLabel: null,
+        bookingStatus: null,
+      });
+    }
+    return fromPassed.sort((a, b) => {
+      if (a.booked !== b.booked) return a.booked ? 1 : -1;
+      return a.fullName.localeCompare(b.fullName, "vi");
+    });
+  }, [candidates, resultRows, unbooked]);
+
+  const campaignStats = useMemo(() => {
+    const bookedCandidates = candidateRows.filter((c) => c.booked).length;
+    const capacityTotal = slots.reduce((s, x) => s + (x.capacity ?? 0), 0);
+    const bookedSeats = slots.reduce((s, x) => s + (x.bookedCount ?? 0), 0);
+    const slotsMissingInterviewers = slots.filter(
+      (x) => x.status === "missing_interviewers",
+    ).length;
+    return {
+      totalCandidates: candidateRows.length,
+      bookedCandidates,
+      unbookedCandidates: candidateRows.length - bookedCandidates,
+      totalSlots: slots.length,
+      slotsWithInterviewers: slots.length - slotsMissingInterviewers,
+      slotsMissingInterviewers,
+      capacityTotal,
+      bookedSeats,
+    };
+  }, [candidateRows, slots]);
 
   const decidedResults = useMemo(
     () =>
@@ -335,10 +417,10 @@ function RecruitmentInterviewsPage() {
                 variant="primary"
                 size="sm"
                 className="!h-11"
-                onClick={() => setBatchOpen(true)}
+                onClick={() => setCreateSlotOpen(true)}
                 leftIcon={<Icon icon={Plus} size={16} />}
               >
-                Xếp lịch hàng loạt
+                Thêm ca phỏng vấn
               </Button>
               <Button
                 variant="soft"
@@ -459,165 +541,316 @@ function RecruitmentInterviewsPage() {
         </div>
       </section>
 
-      {tab === "schedule" && unbooked.length > 0 && (
-        <section className="neu-card !p-5 space-y-4">
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <h2 className="font-display text-lg font-bold">Chưa đặt lịch phỏng vấn</h2>
-              <p className="text-sm text-muted">
-                {unbooked.length} ứng viên đã Pass vòng đơn — BCN có thể gán ca hoặc đánh dấu vắng
-                không đặt lịch.
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <Select
-                value={assignAppId}
-                options={[
-                  { value: "", label: "Chọn ứng viên" },
-                  ...unbooked.map((a) => ({
-                    value: a._id,
-                    label: `${a.fullName} (${a.applicationCode ?? a.email})`,
-                  })),
-                ]}
-                onChange={setAssignAppId}
-                className="min-w-[200px]"
-                placeholder="Ứng viên"
-              />
-              <Select
-                value={assignSlotId}
-                options={[
-                  { value: "", label: "Chọn ca còn chỗ" },
-                  ...slots
-                    .filter((s) => (s.bookedCount ?? 0) < (s.capacity ?? 1))
-                    .map((s) => ({
-                      value: s.id,
-                      label: `${s.date} ${s.startTime} · ${s.bookedCount ?? 0}/${s.capacity ?? 1} · ${s.locationOrLink}`,
-                    })),
-                ]}
-                onChange={setAssignSlotId}
-                className="min-w-[220px]"
-                placeholder="Ca"
-              />
-              <Button
-                variant="primary"
-                size="sm"
-                disabled={!assignAppId || !assignSlotId || unbookedBusy}
-                onClick={async () => {
-                  setUnbookedBusy(true);
-                  try {
-                    await assignInterviewSlot(assignAppId, assignSlotId);
-                    showToast("Đã gán ca phỏng vấn.");
-                    setAssignAppId("");
-                    setAssignSlotId("");
-                    await reloadSlots(campaignId);
-                  } catch {
-                    showToast("Gán ca thất bại — ca có thể đã hết chỗ.");
-                  } finally {
-                    setUnbookedBusy(false);
-                  }
+      {tab === "schedule" && (
+        <div className="space-y-6">
+          <InterviewOverviewCharts {...campaignStats} />
+
+          <div className="grid gap-5 lg:grid-cols-[260px_minmax(0,1fr)]">
+            <aside className="space-y-4">
+              <InterviewCalendar
+                year={calYear}
+                month={calMonth}
+                selectedDate={selectedDate}
+                markedDates={markedDates}
+                onSelectDate={setSelectedDate}
+                onMonthChange={(y, m) => {
+                  setCalYear(y);
+                  setCalMonth(m);
                 }}
-              >
-                Gán ca
-              </Button>
-            </div>
-          </div>
-          <ul className="divide-y divide-black/5">
-            {unbooked.map((a) => (
-              <li key={a._id} className="flex flex-wrap items-center justify-between gap-3 py-3">
+              />
+              <DaySummaryCard
+                dateLabel={dateLabel}
+                total={dayStats.total}
+                scheduled={dayStats.scheduled}
+                missing={dayStats.missing}
+              />
+            </aside>
+
+            <section className="min-w-0 space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <p className="font-semibold text-foreground">{a.fullName}</p>
-                  <p className="text-xs text-muted">
-                    {a.email}
-                    {a.bookingReminderSentAt ? " · đã nhắc email" : ""}
+                  <h2 className="font-grotesk text-lg font-bold text-[#191A2C]">
+                    Danh sách ca · {formatDate(selectedDate)}
+                  </h2>
+                  <p className="text-sm text-[#6B7086]">
+                    Tạo ca, gán người PV, theo dõi chỗ trống.
                   </p>
                 </div>
                 <Button
-                  variant="secondary"
+                  variant="primary"
                   size="sm"
-                  disabled={unbookedBusy}
-                  onClick={async () => {
-                    if (!window.confirm(`Đánh dấu ${a.fullName} vắng không đặt lịch (Fail PV)?`)) return;
-                    setUnbookedBusy(true);
-                    try {
-                      await markUnbookedNoShow(a._id);
-                      showToast(`Đã Fail PV: ${a.fullName}`);
-                      await reloadSlots(campaignId);
-                    } catch {
-                      showToast("Thao tác thất bại.");
-                    } finally {
-                      setUnbookedBusy(false);
-                    }
-                  }}
+                  className="!h-10"
+                  onClick={() => setCreateSlotOpen(true)}
+                  leftIcon={<Icon icon={Plus} size={14} />}
                 >
-                  Vắng không đặt lịch
+                  Thêm ca
                 </Button>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {tab === "schedule" && (
-        <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
-          <aside className="space-y-5">
-            <InterviewCalendar
-              year={calYear}
-              month={calMonth}
-              selectedDate={selectedDate}
-              markedDates={markedDates}
-              onSelectDate={setSelectedDate}
-              onMonthChange={(y, m) => {
-                setCalYear(y);
-                setCalMonth(m);
-              }}
-            />
-            <DaySummaryCard
-              dateLabel={dateLabel}
-              total={dayStats.total}
-              scheduled={dayStats.scheduled}
-              missing={dayStats.missing}
-            />
-          </aside>
-
-          <div className="space-y-4 min-w-0">
-            <label className="relative block">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-placeholder" aria-hidden>
-                <svg className="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="9" cy="9" r="6" />
-                  <path d="m14 14 4 4" strokeLinecap="round" />
-                </svg>
-              </span>
-              <input
-                className="neu-input pl-12"
-                placeholder="Tìm kiếm ứng viên, người phỏng vấn..."
-                value={localSearch}
-                onChange={(e) => setLocalSearch(e.target.value)}
-              />
-            </label>
-
-            {loading ? (
-              <div className="neu-card h-48 animate-pulse" aria-busy="true" />
-            ) : filteredDaySlots.length === 0 ? (
-              <div className="neu-card py-16 text-center text-muted">
-                Không có ca phỏng vấn ngày {formatDate(selectedDate)}.
               </div>
+
+              <label className="relative block">
+                <span
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-placeholder"
+                  aria-hidden
+                >
+                  <svg
+                    className="h-5 w-5"
+                    viewBox="0 0 20 20"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <circle cx="9" cy="9" r="6" />
+                    <path d="m14 14 4 4" strokeLinecap="round" />
+                  </svg>
+                </span>
+                <input
+                  className="neu-input pl-12"
+                  placeholder="Tìm tên ca, địa điểm, người PV..."
+                  value={localSearch}
+                  onChange={(e) => setLocalSearch(e.target.value)}
+                />
+              </label>
+
+              {loading ? (
+                <div className="neu-card h-48 animate-pulse" aria-busy="true" />
+              ) : filteredDaySlots.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-[#D4D8E8] bg-white py-14 text-center text-[#6B7086]">
+                  Chưa có ca ngày {formatDate(selectedDate)}. Bấm &quot;Thêm
+                  ca&quot; để tạo.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {filteredDaySlots.map((slot) => (
+                    <InterviewSlotCard
+                      key={slot.id}
+                      slot={slot}
+                      onAssign={setAssignSlot}
+                      onReschedule={setRescheduleSlot}
+                      onDelete={setDeleteSlotTarget}
+                      onOpenCandidates={(s) =>
+                        navigate(ROUTES.admin.recruitment.interviewSlot(s.id))
+                      }
+                    />
+                  ))}
+                </div>
+              )}
+            </section>
+          </div>
+
+          {/* Danh sách ứng viên — click tên → đánh giá; trạng thái ĐK ca; gán ca */}
+          <section className="overflow-hidden rounded-2xl border border-[#E8EAF2] bg-white shadow-[0_16px_48px_rgba(88,28,135,0.1)]">
+            <div
+              className="flex flex-wrap items-end justify-between gap-3 px-5 py-4"
+              style={{
+                backgroundImage:
+                  "linear-gradient(120deg, rgba(110,44,230,0.08), rgba(224,52,140,0.06))",
+              }}
+            >
+              <div>
+                <h2 className="font-grotesk text-lg font-bold text-[#191A2C]">
+                  Danh sách ứng viên
+                </h2>
+                <p className="mt-0.5 text-sm text-[#6B7086]">
+                  {campaignStats.totalCandidates} Pass vòng đơn ·{" "}
+                  {campaignStats.bookedCandidates} đã ĐK ca ·{" "}
+                  {campaignStats.unbookedCandidates} chưa ĐK — bấm tên để mở
+                  đánh giá.
+                </p>
+              </div>
+            </div>
+
+            {candidateRows.length === 0 ? (
+              <p className="px-5 py-12 text-center text-sm text-[#6B7086]">
+                Chưa có ứng viên Pass vòng đơn trong đợt này.
+              </p>
             ) : (
-              <div className="space-y-3">
-                {filteredDaySlots.map((slot) => (
-                  <InterviewSlotCard
-                    key={slot.id}
-                    slot={slot}
-                    onAssign={setAssignSlot}
-                    onReschedule={setRescheduleSlot}
-                    onDelete={setDeleteSlotTarget}
-                    onOpenCandidates={(s) =>
-                      navigate(ROUTES.admin.recruitment.interviewSlot(s.id))
-                    }
-                  />
-                ))}
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[860px] text-left">
+                  <thead>
+                    <tr className="border-b border-[#EDE9FE] bg-[#FAF8FF] text-[11px] font-bold uppercase tracking-wide text-[#7C3AED]">
+                      <th className="px-4 py-3 w-12">#</th>
+                      <th className="px-3 py-3">Ứng viên</th>
+                      <th className="px-3 py-3">Mã HS</th>
+                      <th className="px-3 py-3">Trạng thái ĐK ca</th>
+                      <th className="px-3 py-3 min-w-[200px]">Gán ca</th>
+                      <th className="px-3 py-3 text-right">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {candidateRows.map((a, idx) => {
+                      const pick = rowSlotPick[a.id] ?? "";
+                      return (
+                        <tr
+                          key={a.id}
+                          className="border-t border-[#F0F1F6] transition-colors hover:bg-[#FBF9FF]"
+                        >
+                          <td className="px-4 py-3.5 text-sm text-[#9AA0B4]">
+                            {idx + 1}
+                          </td>
+                          <td className="px-3 py-3.5">
+                            <button
+                              type="button"
+                              className="group text-left"
+                              onClick={() => {
+                                if (a.bookingId) {
+                                  navigate(
+                                    ROUTES.admin.recruitment.interviewNote(
+                                      a.bookingId,
+                                    ),
+                                  );
+                                } else {
+                                  navigate(
+                                    ROUTES.admin.recruitment.applicationDetail(
+                                      a.id,
+                                    ),
+                                  );
+                                }
+                              }}
+                            >
+                              <p className="font-semibold text-[#191A2C] underline-offset-2 group-hover:text-[#7C3AED] group-hover:underline">
+                                {a.fullName}
+                              </p>
+                              <p className="text-xs text-[#9AA0B4]">{a.email}</p>
+                            </button>
+                          </td>
+                          <td className="px-3 py-3.5 text-sm text-[#6B7086]">
+                            {a.code}
+                          </td>
+                          <td className="px-3 py-3.5">
+                            {a.booked ? (
+                              <div>
+                                <span className="inline-flex rounded-full bg-emerald-500/15 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                                  Đã đăng ký ca
+                                </span>
+                                {a.slotLabel && (
+                                  <p className="mt-1 text-xs text-[#6B7086]">
+                                    {a.slotLabel}
+                                    {a.bookingStatus
+                                      ? ` · ${BOOKING_STATUS_LABEL[a.bookingStatus] ?? a.bookingStatus}`
+                                      : ""}
+                                  </p>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="inline-flex rounded-full bg-amber-500/15 px-2.5 py-1 text-xs font-semibold text-amber-700">
+                                Chưa đăng ký ca
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-3 py-3.5">
+                            {a.booked ? (
+                              <span className="text-xs text-[#9AA0B4]">—</span>
+                            ) : (
+                              <Select
+                                value={pick}
+                                options={[
+                                  { value: "", label: "Chọn ca còn chỗ" },
+                                  ...availableSlots.map((s) => ({
+                                    value: s.id,
+                                    label: `${s.name} · ${s.date} ${s.startTime} (${s.bookedCount ?? 0}/${s.capacity ?? 1})`,
+                                  })),
+                                ]}
+                                onChange={(v) =>
+                                  setRowSlotPick((prev) => ({
+                                    ...prev,
+                                    [a.id]: v,
+                                  }))
+                                }
+                                width="full"
+                                placeholder="Ca"
+                              />
+                            )}
+                          </td>
+                          <td className="px-3 py-3.5">
+                            <div className="flex flex-wrap items-center justify-end gap-2">
+                              {!a.booked && (
+                                <>
+                                  <Button
+                                    variant="primary"
+                                    size="sm"
+                                    className="!h-9"
+                                    disabled={!pick || unbookedBusy}
+                                    onClick={async () => {
+                                      setUnbookedBusy(true);
+                                      try {
+                                        await assignInterviewSlot(a.id, pick);
+                                        showToast(
+                                          `Đã gán ca cho ${a.fullName}.`,
+                                        );
+                                        setRowSlotPick((prev) => {
+                                          const next = { ...prev };
+                                          delete next[a.id];
+                                          return next;
+                                        });
+                                        await reloadSlots(campaignId);
+                                      } catch {
+                                        showToast(
+                                          "Gán ca thất bại — ca có thể đã hết chỗ.",
+                                        );
+                                      } finally {
+                                        setUnbookedBusy(false);
+                                      }
+                                    }}
+                                  >
+                                    Gán ca
+                                  </Button>
+                                  <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    className="!h-9"
+                                    disabled={unbookedBusy}
+                                    onClick={async () => {
+                                      if (
+                                        !window.confirm(
+                                          `Đánh dấu ${a.fullName} vắng không đặt lịch (Fail PV)?`,
+                                        )
+                                      )
+                                        return;
+                                      setUnbookedBusy(true);
+                                      try {
+                                        await markUnbookedNoShow(a.id);
+                                        showToast(`Đã Fail PV: ${a.fullName}`);
+                                        await reloadSlots(campaignId);
+                                      } catch {
+                                        showToast("Thao tác thất bại.");
+                                      } finally {
+                                        setUnbookedBusy(false);
+                                      }
+                                    }}
+                                  >
+                                    Vắng
+                                  </Button>
+                                </>
+                              )}
+                              {a.booked && a.bookingId && (
+                                <Button
+                                  variant="soft"
+                                  size="sm"
+                                  className="!h-9"
+                                  leftIcon={
+                                    <Icon icon={ClipboardCheck} size={14} />
+                                  }
+                                  onClick={() =>
+                                    navigate(
+                                      ROUTES.admin.recruitment.interviewNote(
+                                        a.bookingId!,
+                                      ),
+                                    )
+                                  }
+                                >
+                                  Đánh giá
+                                </Button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             )}
-          </div>
+          </section>
         </div>
       )}
 
@@ -695,17 +928,17 @@ function RecruitmentInterviewsPage() {
         </div>
       )}
 
-      <BatchScheduleModal
-        open={batchOpen}
-        onClose={() => setBatchOpen(false)}
+      <CreateInterviewSlotModal
+        open={createSlotOpen}
+        onClose={() => setCreateSlotOpen(false)}
         defaultDate={selectedDate}
         interviewers={interviewers}
         onSubmit={async (payload) => {
-          const created = await createBatchInterviewSlots({ campaignId, ...payload });
+          await createInterviewSlot({ campaignId, ...payload });
           await reloadSlots(campaignId);
           setSelectedDate(payload.date);
           toastApi.created(
-            `${created.length} ca phỏng vấn` +
+            "ca phỏng vấn" +
               (payload.interviewerIds.length
                 ? ` · ${payload.interviewerIds.length} người PV`
                 : ""),
