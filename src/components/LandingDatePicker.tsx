@@ -29,13 +29,20 @@ const MONTHS = [
 
 const CURRENT_YEAR = new Date().getFullYear();
 const YEARS = Array.from({ length: 60 }, (_, i) => String(CURRENT_YEAR - i));
+// Lịch mở sẵn ở mốc ~18 tuổi cho đỡ phải cuộn xa khi chọn ngày sinh
+const DEFAULT_VIEW = new Date(CURRENT_YEAR - 18, 0, 1);
 
+// Chỉ trả Date khi iso hợp lệ — KHÔNG bao giờ đẩy Invalid Date vào `selected`
+// (react-datepicker gọi date-fns/format trên đó sẽ throw "Invalid time value").
 function toDate(iso: string): Date | null {
-  return iso ? new Date(`${iso}T00:00:00`) : null;
+  if (!iso) return null;
+  const d = new Date(`${iso}T00:00:00`);
+  return Number.isNaN(d.getTime()) ? null : d;
 }
 
+// Chỉ sinh ISO khi date hợp lệ — chặn "NaN-NaN-NaN" làm hỏng state vòng sau.
 function toIso(date: Date | null): string {
-  if (!date) return "";
+  if (!date || Number.isNaN(date.getTime())) return "";
   const m = String(date.getMonth() + 1).padStart(2, "0");
   const d = String(date.getDate()).padStart(2, "0");
   return `${date.getFullYear()}-${m}-${d}`;
@@ -50,11 +57,15 @@ function LandingDatePicker({ value, onChange, placeholder, maxDate }: Props) {
       dateFormat="dd/MM/yyyy"
       placeholderText={placeholder ?? "dd/mm/yyyy"}
       maxDate={maxDate}
+      // Gõ tay sai/khuyết → null thay vì Date rác (tránh 13/10 hiểu nhầm)
+      strictParsing
+      openToDate={toDate(value) ?? DEFAULT_VIEW}
       className="landing-input"
       calendarClassName="landing-datepicker"
       wrapperClassName="w-full"
       portalId="landing-datepicker-portal"
-      // Header tự dựng: chọn tháng/năm bằng LandingSelect thay cho <select> gốc của browser
+      // Header tự dựng: chọn NĂM trước rồi THÁNG (đặt năm sinh trước, tránh
+      // trạng thái tháng-đổi-trước-năm rơi ra ngoài maxDate) rồi bấm ngày ở lưới.
       renderCustomHeader={({ date, changeYear, changeMonth, decreaseMonth, increaseMonth }) => (
         <div className="flex items-center gap-1.5 px-2 pb-1 pt-2">
           <button
@@ -65,14 +76,6 @@ function LandingDatePicker({ value, onChange, placeholder, maxDate }: Props) {
           >
             ‹
           </button>
-          <div className="w-[104px]">
-            <LandingSelect
-              compact
-              options={MONTHS}
-              value={MONTHS[date.getMonth()]}
-              onChange={(m) => changeMonth(MONTHS.indexOf(m))}
-            />
-          </div>
           <div className="w-[96px]">
             <LandingSelect
               compact
@@ -80,6 +83,14 @@ function LandingDatePicker({ value, onChange, placeholder, maxDate }: Props) {
               options={YEARS}
               value={String(date.getFullYear())}
               onChange={(y) => y && changeYear(Number(y))}
+            />
+          </div>
+          <div className="w-[104px]">
+            <LandingSelect
+              compact
+              options={MONTHS}
+              value={MONTHS[date.getMonth()]}
+              onChange={(m) => changeMonth(MONTHS.indexOf(m))}
             />
           </div>
           <button

@@ -560,6 +560,173 @@
   pointer-events: none;
 }
 
+/* =====================================================================
+   ĐĂNG KÝ ỨNG TUYỂN — step rail, section card đánh số, dropzone (vibe landing)
+   ===================================================================== */
+
+/* Entrance: từng khối trồi lên so le lúc vào trang */
+@keyframes reg-rise {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.reg-rise {
+  opacity: 0;
+  animation: reg-rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Thanh tiến trình 3 bước — vạch nối + phần gradient đã hoàn thành */
+.reg-rail-track {
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.reg-rail-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #6366f1, #a855f7, #e0348c);
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.55);
+  transition: width 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.reg-dot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: "Space Grotesk", "DM Sans", sans-serif;
+  background: hsl(258 45% 11%);
+  border: 1.5px solid rgba(255, 255, 255, 0.18);
+  color: hsl(var(--landing-foreground) / 0.5);
+  transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.reg-dot.is-active {
+  background: linear-gradient(135deg, #6e2ce6 0%, #e0348c 100%);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 0 0 4px rgba(168, 85, 247, 0.18), 0 6px 16px rgba(168, 85, 247, 0.4);
+}
+
+.reg-dot.is-done {
+  background: rgba(168, 85, 247, 0.18);
+  border-color: rgba(168, 85, 247, 0.55);
+  color: hsl(var(--landing-foreground));
+}
+
+/* Chip số thứ tự section — gradient, glow nhẹ */
+.reg-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 13px;
+  font-family: "Space Grotesk", "DM Sans", sans-serif;
+  font-weight: 700;
+  font-size: 17px;
+  color: #fff;
+  background: linear-gradient(135deg, #6e2ce6 0%, #e0348c 100%);
+  box-shadow: 0 8px 20px rgba(168, 85, 247, 0.35);
+}
+
+.reg-eyebrow {
+  font-family: "Plus Jakarta Sans", "DM Sans", sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: hsl(var(--landing-foreground) / 0.45);
+}
+
+/* Dropzone kính cho ảnh / CV */
+.reg-drop {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 22px 16px;
+  border-radius: 16px;
+  text-align: center;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1.5px dashed rgba(255, 255, 255, 0.18);
+  color: hsl(var(--landing-foreground) / 0.7);
+  transition: border-color 0.25s ease, background 0.25s ease, transform 0.25s ease;
+}
+
+.reg-drop:hover,
+.reg-drop.is-drag {
+  border-color: rgba(168, 85, 247, 0.7);
+  background: rgba(168, 85, 247, 0.09);
+}
+
+.reg-drop.has-file {
+  border-style: solid;
+  border-color: rgba(168, 85, 247, 0.5);
+  background: rgba(168, 85, 247, 0.07);
+}
+
+.reg-drop:focus-within {
+  border-color: rgba(168, 85, 247, 0.7);
+  box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.22);
+}
+
+/* Badge NV1/2/3 cho nguyện vọng */
+.reg-wish-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 24px;
+  padding: 0 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: #fff;
+  background: linear-gradient(135deg, #6366f1, #a855f7);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+}
+
+/* Menu dropdown (react-select) bung ra mềm khi mở */
+@keyframes reg-menu-in {
+  from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Dấu tích thành công — bung nhẹ */
+@keyframes reg-check-pop {
+  0% { transform: scale(0.3); opacity: 0; }
+  60% { transform: scale(1.12); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.reg-check {
+  animation: reg-check-pop 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reg-rise,
+  .reg-check {
+    animation: none !important;
+    opacity: 1;
+    transform: none;
+  }
+  .reg-rail-fill,
+  .reg-dot {
+    transition: none;
+  }
+}
+
 /* ---- react-datepicker: dark theme khớp landing ---- */
 .landing-datepicker.react-datepicker {
   background: linear-gradient(160deg, hsl(258 45% 11%) 0%, hsl(260 55% 7%) 100%);

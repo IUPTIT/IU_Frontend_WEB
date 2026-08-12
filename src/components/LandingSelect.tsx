@@ -13,6 +13,10 @@ type Props = {
   isSearchable?: boolean;
 };
 
+const prefersReducedMotion = () =>
+  typeof window !== "undefined" &&
+  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
 // Style react-select theo dark theme landing
 const buildStyles = (compact: boolean): StylesConfig<Option, false> => ({
   control: (base, state) => ({
@@ -44,12 +48,21 @@ const buildStyles = (compact: boolean): StylesConfig<Option, false> => ({
     // Menu nở theo option dài nhất — tránh chữ bị xuống dòng khi control hẹp
     width: "max-content",
     minWidth: "100%",
-    backgroundColor: "hsl(258 45% 11%)",
+    // Kính tối frosted — làm mờ nền phía sau, đồng bộ card landing
+    background: "rgba(24, 16, 43, 0.72)",
+    backdropFilter: "blur(18px) saturate(1.3)",
+    WebkitBackdropFilter: "blur(18px) saturate(1.3)",
     borderRadius: 16,
-    border: "1px solid rgba(255, 255, 255, 0.12)",
-    boxShadow: "0 12px 40px rgba(0, 0, 0, 0.5)",
+    border: "1px solid rgba(255, 255, 255, 0.14)",
+    boxShadow:
+      "0 16px 48px rgba(0, 0, 0, 0.55), inset 0 1px 1px rgba(255, 255, 255, 0.14)",
     overflow: "hidden",
     zIndex: 30,
+    // Bung ra mềm khi mở (tôn trọng prefers-reduced-motion)
+    transformOrigin: "top center",
+    animation: prefersReducedMotion()
+      ? undefined
+      : "reg-menu-in 0.18s cubic-bezier(0.22, 1, 0.36, 1)",
   }),
   menuList: (base) => ({ ...base, padding: 6, maxHeight: compact ? 220 : 300 }),
   option: (base, state) => ({
