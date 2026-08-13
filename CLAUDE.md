@@ -12,15 +12,18 @@ Quy tắc bắt buộc khi code trong dự án này. Đọc kỹ trước khi vi
 
 ```bash
 npm run dev      # dev server (http://localhost:5173)
-npm run build    # tsc type-check + vite build → dist/
+npm run build    # tsc -b (type-check) + vite build → dist/  — phải pass trước khi push
 npm run lint     # eslint
+npm start        # vite preview (build production)
 ```
+
+Chưa có test runner. `playwright` đã cài trong devDependencies nhưng KHÔNG có script test hay suite nào — đừng giả định `npm test` chạy được. Cổng cấu hình qua `.env` (`VITE_API_URL`, `DEV_PORT`, `WEB_PORT`) — copy từ `.env.example`.
 
 ## Cấu trúc thư mục
 
 ```
 src/
-├── api/          # axios instance, endpoint constants
+├── api/          # client.ts: fetch wrapper dùng chung (KHÔNG phải axios)
 ├── assets/       # ảnh, icon tĩnh
 ├── components/   # component dùng chung ≥2 trang
 │   └── ui/       # nguyên tử theo theme: Button, Card, Input, Modal, Tabs...
@@ -29,7 +32,7 @@ src/
 ├── hooks/        # custom hooks dùng chung
 ├── layouts/      # MainLayout, AdminLayout (header/sidebar bọc page)
 ├── pages/        # mỗi trang một thư mục (xem quy tắc dưới)
-├── redux/        # store, slices
+├── redux/        # placeholder rỗng (chỉ README) — state hiện dùng Context, chưa cài Redux
 ├── services/     # gọi API theo domain (userService, clubService...)
 ├── types/        # types/interfaces dùng chung
 ├── utils/        # hàm thuần (formatDate, validate...)
@@ -37,6 +40,31 @@ src/
 ├── App.tsx       # root, khai báo routes
 └── main.tsx      # entry
 ```
+
+## Kiến trúc runtime (BẮT BUỘC đọc — không suy ra được từ đọc lướt)
+
+### Điều hướng portal — KHÔNG dùng route lồng của React Router
+`App.tsx` chỉ khai báo vài route công khai (`/`, `/tuyen-thanh-vien`, `/tra-cuu`, `/login`, `/reset-password`) và **4 route wildcard** `/admin/*` · `/leader/*` · `/member/*` · `/candidate/*` — cả 4 đều render CÙNG một `AdminPortal`. Trang con thật do `renderPortalPage(path)` trong `src/routes/portalRoutes.tsx` quyết định: tra `PAGE_MAP[path]` (map path → component), riêng trang chi tiết (application/department/slot/note/task) match bằng regex để rút id. **URL là nguồn điều hướng duy nhất** — không giữ activePage trong state.
+
+Thêm một trang mới = 3 bước, thiếu bước nào trang cũng không hiện:
+1. Khai path trong `src/constants/routes.ts` (`ROUTES`).
+2. Thêm mục vào `src/constants/navigation.ts` (`SIDEBAR_CONFIG`) để hiện trên sidebar.
+3. Map path → component trong `PAGE_MAP` (hoặc thêm regex nếu là trang chi tiết có id).
+
+`getDefaultPath(role)` và `findNavIdByPath(role, path)` (trong `navigation.ts`) lo trang mặc định + highlight sidebar theo prefix dài nhất.
+
+### Xác thực & phân quyền (`src/api/client.ts` + `src/context/AuthContext.tsx` + `src/services/authService.ts`)
+- Mọi API đi qua object `api` trong `client.ts` — fetch wrapper tự gắn `Bearer` access token, backend trả envelope `{ success, message, data }`, wrapper bóc sẵn `data`. Lỗi ném `ApiRequestError` kèm `status`.
+- Access token giữ trong `sessionStorage`; refresh token là **cookie httpOnly** (`credentials: "include"`). Gặp 401 (trừ path `/auth/*`) → tự gọi `/auth/refresh` **đúng 1 lần** rồi retry.
+- `AuthContext` là nguồn user duy nhất, persist ở `sessionStorage`; mở lại tab thì `restoreSession()` xác thực lại.
+- Backend dùng role `bcn` cho Ban Chủ nhiệm — frontend map thành `admin` (`mapRole` trong `authService.ts`). Roles là **cộng dồn** (`roles[]`, VD dual `["member","leader"]`); cờ phụ: `isMentor`, `memberStatus`, `requirePasswordChange`.
+- Guard trong `AdminPortal` (`App.tsx`): chưa auth → `/login`; `requirePasswordChange` → `ChangePasswordGate`; sai prefix portal → về `getDefaultPath`; path mentor-only mà `isMentor !== true` → chặn deep-link.
+
+### Tầng service — component KHÔNG tự fetch
+Mỗi domain một file trong `src/services/` (auth, members, recruitment, training, departments, dashboard, email, permissions, notification, candidate, publicRecruitment). Quy ước: khai `BackendXxx` DTO nội bộ, viết `toXxx()` map sang type frontend ở `src/types/` (gồm cả `bcn`→`admin`), rồi gọi qua `api`. Trang lấy data qua service, giữ state cấp trang ở `index.tsx`.
+
+### State toàn cục = React Context (không Redux)
+`AuthContext` (user/đăng nhập), `PortalUiContext` (UI shell), `PreferencesContext`, `ToastContext`. Mỗi context tách file provider `XxxContext.tsx` + hook `useXxx.ts`. `src/redux/` chỉ là placeholder cho tương lai — đừng import.
 
 ## Quy tắc chia file trong `pages/` (BẮT BUỘC)
 

@@ -19,6 +19,16 @@ cd frontend
 npm install
 ```
 
+Script `prepare` tự trỏ git hooks về `.githooks/` sau bước này (xem mục 5).
+
+### Cấu hình môi trường
+
+```bash
+cp .env.example .env
+```
+
+Sửa `.env` cho đúng backend: `VITE_API_URL` (mặc định `http://localhost:3456/api/v1`), `DEV_PORT`, `WEB_PORT`. Chưa có `.env` thì frontend không gọi được API.
+
 ### Chạy web (dev)
 
 ```bash
@@ -41,16 +51,16 @@ Mở địa chỉ Vite in ra (mặc định `http://localhost:5173`). Tailwind c
 
 ```
 src/
-├── api/          # Cấu hình gọi API (axios instance, endpoint constants)
+├── api/          # client.ts — fetch wrapper dùng chung (KHÔNG phải axios)
 ├── assets/       # Ảnh, icon, static files
 ├── components/   # Component DÙNG CHUNG toàn app
 │   └── ui/       # Component nguyên tử theo theme: Button, Card, Input, Modal, Tabs...
-├── constants/    # Hằng số dùng chung (routes, enums, config)
-├── context/      # React Context (AuthContext, ThemeContext...)
-├── hooks/        # Custom hooks dùng chung (useDebounce, useClickOutside...)
-├── layouts/      # Layout bọc page: MainLayout, AdminLayout (sidebar/header)
+├── constants/    # Hằng số dùng chung (routes, navigation, enums, config)
+├── context/      # React Context (AuthContext, PortalUiContext, PreferencesContext, ToastContext)
+├── hooks/        # Custom hooks dùng chung (useCountUp...)
+├── layouts/      # Layout bọc page: AdminLayout (sidebar/header cho cả 4 role)
 ├── pages/        # Mỗi TRANG là một thư mục — xem quy tắc bên dưới
-├── redux/        # Store, slices
+├── redux/        # Placeholder rỗng — state hiện dùng Context, chưa cài Redux
 ├── services/     # Logic gọi API theo domain (userService, clubService...)
 ├── types/        # TypeScript types/interfaces dùng chung
 ├── utils/        # Hàm tiện ích thuần (formatDate, validate...)
@@ -58,6 +68,13 @@ src/
 ├── App.tsx       # Root component, khai báo routes
 └── main.tsx      # Entry point
 ```
+
+### Kiến trúc tổng quan (đọc trước khi thêm trang/gọi API)
+
+- **Điều hướng portal** — `App.tsx` chỉ có vài route công khai + **4 route wildcard** `/admin/*` · `/leader/*` · `/member/*` · `/candidate/*`, cả 4 dùng chung một `AdminPortal` + `AdminLayout`. Trang con thật do `renderPortalPage(path)` (`src/routes/portalRoutes.tsx`) tra từ `PAGE_MAP`, riêng trang chi tiết match bằng regex. **URL là nguồn điều hướng duy nhất.** Thêm trang mới = khai `ROUTES` (`constants/routes.ts`) → thêm mục `SIDEBAR_CONFIG` (`constants/navigation.ts`) → map vào `PAGE_MAP`.
+- **Xác thực** — mọi request đi qua object `api` trong `src/api/client.ts` (fetch wrapper, envelope `{ success, message, data }`). Access token ở `sessionStorage`, refresh token là cookie httpOnly; 401 sẽ tự refresh 1 lần rồi retry. `AuthContext` giữ user; role backend `bcn` map thành `admin`; cờ `roles[]`/`isMentor`/`requirePasswordChange` chi phối guard trong `AdminPortal`.
+- **Gọi API** — mỗi domain một file trong `src/services/`, map `BackendXxx` DTO → type frontend rồi gọi qua `api`. **Component không tự fetch.**
+- **State toàn cục** — React Context (`Auth`, `PortalUi`, `Preferences`, `Toast`), chưa dùng Redux.
 
 ## 3. Quy tắc chia file trong `pages/` (BẮT BUỘC)
 
