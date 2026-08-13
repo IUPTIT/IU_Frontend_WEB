@@ -58,7 +58,7 @@ function FilterMenu({
         aria-expanded={open}
         aria-controls={panelId}
         onClick={() => setOpen((v) => !v)}
-        className={`!h-11 !rounded-2xl ${open ? "!shadow-inset-sm" : ""}`}
+        className={`!h-11 !rounded-2xl ${open ? "!shadow-hairline" : ""}`}
         leftIcon={<Icon icon={ListFilter} size={16} />}
       >
         {label}
@@ -74,7 +74,7 @@ function FilterMenu({
           id={panelId}
           role="dialog"
           aria-label="Điều kiện lọc"
-          className="absolute right-0 z-30 mt-2 w-[min(100vw-2rem,320px)] max-h-[min(70vh,480px)] overflow-y-auto rounded-2xl bg-background p-4 shadow-extruded ring-1 ring-black/5 space-y-4"
+          className="absolute right-0 z-30 mt-2 w-[min(100vw-2rem,320px)] max-h-[min(70vh,480px)] overflow-y-auto rounded-2xl bg-background p-4 shadow-soft ring-1 ring-black/5 space-y-4"
         >
           <div className="space-y-3">{children}</div>
 

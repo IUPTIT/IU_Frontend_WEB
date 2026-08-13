@@ -38,7 +38,7 @@ function Modal({ open, onClose, title, description, children, footer, size = "md
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
-        className={`relative z-10 flex max-h-[min(90vh,720px)] w-full ${sizeClass[size]} flex-col overflow-hidden rounded-card bg-background shadow-extruded animate-fade-in`}
+        className={`relative z-10 flex max-h-[min(90vh,720px)] w-full ${sizeClass[size]} flex-col overflow-hidden rounded-card bg-background shadow-soft animate-fade-in`}
       >
         <header className="shrink-0 border-b border-black/5 px-6 py-5">
           <h2 id="modal-title" className="font-display text-xl font-bold tracking-tight">

@@ -122,7 +122,7 @@ export default function AdminTrainingTraineesPage() {
         </div>
       </header>
 
-      <div className="neu-card !p-0 overflow-hidden">
+      <div className="ui-card !p-0 overflow-hidden">
         {loading ? (
           <div className="h-48 animate-pulse" />
         ) : (

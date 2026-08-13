@@ -385,7 +385,7 @@ function RecruitmentApplicationsPage() {
               placeholder="Chọn đợt tuyển"
               ariaLabel="Bộ lọc theo đợt tuyển"
               className="min-w-[220px]"
-              triggerClassName="!shadow-extruded-sm !h-10 text-accent !font-semibold"
+              triggerClassName="!shadow-soft-sm !h-10 text-accent !font-semibold"
             />
           </div>
         </div>
@@ -397,7 +397,7 @@ function RecruitmentApplicationsPage() {
               min={0}
               max={10}
               step={0.5}
-              className="neu-input !h-11 !w-20 text-sm"
+              className="ui-input !h-11 !w-20 text-sm"
               value={bulkThreshold}
               onChange={(e) => setBulkThreshold(e.target.value)}
               aria-label="Ngưỡng điểm Pass"
@@ -458,7 +458,7 @@ function RecruitmentApplicationsPage() {
       </section>
 
       {loading ? (
-        <div className="neu-card h-64 animate-pulse" aria-busy="true" aria-label="Đang tải" />
+        <div className="ui-card h-64 animate-pulse" aria-busy="true" aria-label="Đang tải" />
       ) : (
         <>
           <ApplicationTable

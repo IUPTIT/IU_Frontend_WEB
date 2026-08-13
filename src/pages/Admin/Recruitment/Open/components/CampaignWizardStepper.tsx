@@ -27,10 +27,10 @@ function CampaignWizardStepper({ current, onChange }: Props) {
               <span
                 className={`flex h-11 w-11 items-center justify-center rounded-full text-sm font-bold transition-all duration-300 ${
                   active
-                    ? "bg-gradient-to-br from-[#F5B4C8] to-[#8BB7F0] text-white shadow-extruded-sm"
+                    ? "bg-gradient-to-br from-[#F5B4C8] to-[#8BB7F0] text-white shadow-soft-sm"
                     : done
-                      ? "bg-accent/20 text-accent shadow-inset-sm"
-                      : "bg-background text-muted shadow-extruded-sm"
+                      ? "bg-accent/20 text-accent shadow-hairline"
+                      : "bg-background text-muted shadow-soft-sm"
                 }`}
               >
                 {done && !active ? (

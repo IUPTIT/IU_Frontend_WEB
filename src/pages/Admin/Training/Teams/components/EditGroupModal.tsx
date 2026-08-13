@@ -102,7 +102,7 @@ export default function EditGroupModal({
       <div
         role="dialog"
         aria-modal="true"
-        className="relative z-10 flex max-h-[min(90vh,720px)] w-full max-w-2xl flex-col overflow-hidden rounded-card bg-background shadow-extruded"
+        className="relative z-10 flex max-h-[min(90vh,720px)] w-full max-w-2xl flex-col overflow-hidden rounded-card bg-background shadow-soft"
       >
         <header className="flex items-start justify-between gap-3 border-b border-black/5 px-5 py-4 sm:px-6">
           <div>
@@ -130,9 +130,9 @@ export default function EditGroupModal({
 
         <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-5 sm:px-6">
           <label className="block space-y-1.5">
-            <span className="neu-field-label">Tên nhóm *</span>
+            <span className="ui-field-label">Tên nhóm *</span>
             <input
-              className="neu-input w-full text-sm"
+              className="ui-input w-full text-sm"
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
@@ -140,7 +140,7 @@ export default function EditGroupModal({
 
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <span className="neu-field-label">Mentor training (Member CLB)</span>
+              <span className="ui-field-label">Mentor training (Member CLB)</span>
               <Select
                 width="full"
                 value={mentorId}
@@ -156,7 +156,7 @@ export default function EditGroupModal({
               />
             </div>
             <div className="space-y-1.5">
-              <span className="neu-field-label">Lộ trình</span>
+              <span className="ui-field-label">Lộ trình</span>
               <Select
                 width="full"
                 value={programId}
@@ -175,12 +175,12 @@ export default function EditGroupModal({
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="neu-field-label !mb-0">Thành viên trong nhóm</span>
+              <span className="ui-field-label !mb-0">Thành viên trong nhóm</span>
               <span className="text-xs text-muted">
                 {memberIds.length} đã chọn · {inThisGroup.length} hiện tại
               </span>
             </div>
-            <ul className="max-h-56 space-y-1 overflow-y-auto rounded-2xl bg-background p-2 shadow-inset-sm">
+            <ul className="max-h-56 space-y-1 overflow-y-auto rounded-2xl bg-background p-2 shadow-hairline">
               {available.map((t) => {
                 const checked = memberIds.includes(t.id);
                 return (

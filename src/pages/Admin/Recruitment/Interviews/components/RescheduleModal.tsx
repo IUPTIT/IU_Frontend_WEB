@@ -71,7 +71,7 @@ function RescheduleModal({ open, slot, onClose, onSubmit }: Props) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="presentation">
       <button type="button" className="absolute inset-0 bg-foreground/35 backdrop-blur-[2px]" aria-label="Đóng" onClick={onClose} />
-      <div role="dialog" aria-modal="true" className="relative z-10 w-full max-w-md rounded-card bg-background shadow-extruded">
+      <div role="dialog" aria-modal="true" className="relative z-10 w-full max-w-md rounded-card bg-background shadow-soft">
         <header className="border-b border-black/5 px-5 py-4">
           <h2 className="font-display text-xl font-extrabold">Sửa ca phỏng vấn</h2>
           {slot.candidateName && (
@@ -85,21 +85,21 @@ function RescheduleModal({ open, slot, onClose, onSubmit }: Props) {
         <div className="space-y-4 p-5">
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="block space-y-1.5">
-              <span className="neu-field-label">Ngày *</span>
-              <input type="date" className="neu-input !h-11" value={date} onChange={(e) => setDate(e.target.value)} />
+              <span className="ui-field-label">Ngày *</span>
+              <input type="date" className="ui-input !h-11" value={date} onChange={(e) => setDate(e.target.value)} />
             </label>
             <label className="block space-y-1.5">
-              <span className="neu-field-label">Giờ bắt đầu *</span>
-              <input type="time" className="neu-input !h-11" value={time} onChange={(e) => setTime(e.target.value)} />
+              <span className="ui-field-label">Giờ bắt đầu *</span>
+              <input type="time" className="ui-input !h-11" value={time} onChange={(e) => setTime(e.target.value)} />
             </label>
             <label className="block space-y-1.5">
-              <span className="neu-field-label">Thời lượng (phút) *</span>
+              <span className="ui-field-label">Thời lượng (phút) *</span>
               <input
                 type="number"
                 min={15}
                 max={120}
                 inputMode="numeric"
-                className="neu-input !h-11"
+                className="ui-input !h-11"
                 value={Number.isFinite(duration) && duration > 0 ? duration : ""}
                 onChange={(e) => {
                   const raw = e.target.value;
@@ -116,13 +116,13 @@ function RescheduleModal({ open, slot, onClose, onSubmit }: Props) {
               />
             </label>
             <label className="block space-y-1.5">
-              <span className="neu-field-label">Ứng viên tối đa / ca *</span>
+              <span className="ui-field-label">Ứng viên tối đa / ca *</span>
               <input
                 type="number"
                 min={1}
                 max={20}
                 inputMode="numeric"
-                className="neu-input !h-11"
+                className="ui-input !h-11"
                 value={Number.isFinite(capacity) && capacity > 0 ? capacity : ""}
                 onChange={(e) => {
                   const raw = e.target.value;
@@ -140,9 +140,9 @@ function RescheduleModal({ open, slot, onClose, onSubmit }: Props) {
             </label>
           </div>
           <label className="block space-y-1.5">
-            <span className="neu-field-label">Địa điểm / Link *</span>
+            <span className="ui-field-label">Địa điểm / Link *</span>
             <input
-              className="neu-input !h-11"
+              className="ui-input !h-11"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
               placeholder="Phòng 302 hoặc link Meet"

@@ -57,7 +57,7 @@ export default function MentorTaskKpis({
   return (
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
       {cards.map((c) => (
-        <article key={c.label} className="neu-card !p-5 space-y-3">
+        <article key={c.label} className="ui-card !p-5 space-y-3">
           <div className="flex items-start justify-between gap-3">
             <p className="text-[10px] font-bold uppercase tracking-wide text-muted">
               {c.label}

@@ -66,7 +66,7 @@ function ColumnSettings({ columns, visibleIds, onApply, className = "" }: Props)
         aria-expanded={open}
         aria-controls={panelId}
         onClick={() => setOpen((v) => !v)}
-        className={`!h-11 !w-11 !rounded-2xl !px-0 ${open ? "!shadow-inset-sm" : ""}`}
+        className={`!h-11 !w-11 !rounded-2xl !px-0 ${open ? "!shadow-hairline" : ""}`}
       >
         <Icon icon={Settings} size={16} />
       </Button>
@@ -76,7 +76,7 @@ function ColumnSettings({ columns, visibleIds, onApply, className = "" }: Props)
           id={panelId}
           role="dialog"
           aria-label="Cấu hình cột"
-          className="absolute left-0 z-30 mt-2 w-[min(100vw-2rem,280px)] rounded-2xl bg-background p-4 shadow-extruded ring-1 ring-black/5"
+          className="absolute left-0 z-30 mt-2 w-[min(100vw-2rem,280px)] rounded-2xl bg-background p-4 shadow-soft ring-1 ring-black/5"
         >
           <div className="mb-3 flex items-center justify-between gap-2">
             <h3 className="text-sm font-bold">Cấu hình cột</h3>

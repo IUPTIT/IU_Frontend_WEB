@@ -110,12 +110,12 @@ export default function MemberTrainingRoadmapPage() {
   );
 
   if (loading) {
-    return <div className="neu-card h-64 animate-pulse" aria-busy="true" />;
+    return <div className="ui-card h-64 animate-pulse" aria-busy="true" />;
   }
 
   if (!training) {
     return (
-      <section className="neu-card !p-10 text-center space-y-2">
+      <section className="ui-card !p-10 text-center space-y-2">
         <h1 className="font-display text-2xl font-extrabold">
           Lộ trình phát triển
         </h1>
@@ -155,7 +155,7 @@ export default function MemberTrainingRoadmapPage() {
             {trainee.cohortLabel ?? "Tân binh"} · Ban {trainee.departmentName}
           </p>
         </div>
-        <div className="neu-card !p-4 text-center min-w-[120px]">
+        <div className="ui-card !p-4 text-center min-w-[120px]">
           <p className="text-[10px] font-bold uppercase tracking-wide text-muted">
             Tiến độ tổng thể
           </p>
@@ -170,7 +170,7 @@ export default function MemberTrainingRoadmapPage() {
       <div className="grid gap-5 lg:grid-cols-[1.4fr_1fr]">
         <article
           ref={lessonsRef}
-          className="neu-card !p-5 space-y-4"
+          className="ui-card !p-5 space-y-4"
           id="roadmap-current-stage"
         >
           <div className="flex flex-wrap items-start justify-between gap-3">
@@ -203,7 +203,7 @@ export default function MemberTrainingRoadmapPage() {
               {activeLessons.map((l) => (
                 <li
                   key={l.id}
-                  className="rounded-2xl bg-background px-3 py-2.5 shadow-inset-sm"
+                  className="rounded-2xl bg-background px-3 py-2.5 shadow-hairline"
                 >
                   {l.attachmentUrl ? (
                     <a
@@ -226,7 +226,7 @@ export default function MemberTrainingRoadmapPage() {
           )}
         </article>
 
-        <article className="neu-card !p-5 space-y-4">
+        <article className="ui-card !p-5 space-y-4">
           <h2 className="font-display text-lg font-bold">Thống kê</h2>
           <div className="space-y-3">
             <div className="flex justify-between gap-2 text-sm">
@@ -250,7 +250,7 @@ export default function MemberTrainingRoadmapPage() {
       </div>
 
       <div className="grid gap-5 lg:grid-cols-2">
-        <article className="neu-card !p-5 space-y-3">
+        <article className="ui-card !p-5 space-y-3">
           <h2 className="font-display text-lg font-bold">Kỹ năng / bài học</h2>
           <p className="text-xs text-muted">
             Tiêu đề bài học từ các giai đoạn đã hoàn thành (dữ liệu lộ trình thật)
@@ -271,11 +271,11 @@ export default function MemberTrainingRoadmapPage() {
           )}
         </article>
 
-        <article className="neu-card !p-5 space-y-4">
+        <article className="ui-card !p-5 space-y-4">
           <h2 className="font-display text-lg font-bold">Đồng hành</h2>
           {group ? (
             <>
-              <div className="rounded-2xl bg-background px-3 py-3 shadow-inset-sm flex items-center gap-3">
+              <div className="rounded-2xl bg-background px-3 py-3 shadow-hairline flex items-center gap-3">
                 <Avatar name={group.mentorName ?? "?"} size="md" />
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">

@@ -150,7 +150,7 @@ function ApplicationTable({
               <DataTableCell align="left">
                 <div className="flex items-center gap-3 min-w-0">
                   <span
-                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent/15 text-xs font-bold text-accent shadow-inset-sm"
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent/15 text-xs font-bold text-accent shadow-hairline"
                     aria-hidden
                   >
                     {initials(app.fullName)}

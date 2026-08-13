@@ -58,7 +58,7 @@ function ToastViewport({ items, onDismiss }: Props) {
         <div
           key={t.id}
           role="status"
-          className={`neu-card pointer-events-auto mb-3 flex w-full items-center gap-3 !rounded-2xl !px-4 !py-3 ${
+          className={`ui-card pointer-events-auto mb-3 flex w-full items-center gap-3 !rounded-2xl !px-4 !py-3 ${
             t.leaving ? "overflow-hidden animate-toast-out" : "animate-toast-in"
           }`}
         >

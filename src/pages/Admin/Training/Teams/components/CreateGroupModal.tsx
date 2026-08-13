@@ -148,7 +148,7 @@ export default function CreateGroupModal({
       <div
         role="dialog"
         aria-modal="true"
-        className="relative z-10 flex max-h-[min(92vh,760px)] w-full max-w-4xl flex-col overflow-hidden rounded-card bg-background shadow-extruded"
+        className="relative z-10 flex max-h-[min(92vh,760px)] w-full max-w-4xl flex-col overflow-hidden rounded-card bg-background shadow-soft"
       >
         <header className="flex items-start justify-between gap-3 border-b border-black/5 px-5 py-4 sm:px-6">
           <div>
@@ -173,9 +173,9 @@ export default function CreateGroupModal({
             </div>
 
             <label className="block space-y-1.5">
-              <span className="neu-field-label">TÊN NHÓM</span>
+              <span className="ui-field-label">TÊN NHÓM</span>
               <input
-                className="neu-input !h-11 w-full text-sm"
+                className="ui-input !h-11 w-full text-sm"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="VD: Team Alpha, Nhóm Code Mới..."
@@ -183,7 +183,7 @@ export default function CreateGroupModal({
             </label>
 
             <div className="space-y-1.5">
-              <span className="neu-field-label">BAN ÁP DỤNG</span>
+              <span className="ui-field-label">BAN ÁP DỤNG</span>
               {departments.length === 0 ? (
                 <p className="rounded-2xl bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-300">
                   Chưa có Ban — tạo Ban ở Quản lý Ban trước.
@@ -199,8 +199,8 @@ export default function CreateGroupModal({
                         onClick={() => setDepartmentName(d.name)}
                         className={`flex items-center gap-2 rounded-2xl px-3 py-2.5 text-sm font-semibold transition-all ${
                           activeBan
-                            ? "bg-accent/15 text-accent shadow-inset-sm ring-1 ring-accent/40"
-                            : "shadow-extruded-sm text-muted hover:text-foreground"
+                            ? "bg-accent/15 text-accent shadow-hairline ring-1 ring-accent/40"
+                            : "shadow-soft-sm text-muted hover:text-foreground"
                         }`}
                       >
                         <Icon icon={Building2} size={16} />
@@ -213,7 +213,7 @@ export default function CreateGroupModal({
             </div>
 
             <div className="space-y-1.5">
-              <span className="neu-field-label">MENTOR TRAINING PHỤ TRÁCH</span>
+              <span className="ui-field-label">MENTOR TRAINING PHỤ TRÁCH</span>
               <Select
                 width="full"
                 value={mentorId}
@@ -230,7 +230,7 @@ export default function CreateGroupModal({
             </div>
 
             <div className="space-y-2">
-              <span className="neu-field-label">THÀNH VIÊN (TÂN BINH)</span>
+              <span className="ui-field-label">THÀNH VIÊN (TÂN BINH)</span>
               {selected.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {selected.map((t) => (
@@ -256,13 +256,13 @@ export default function CreateGroupModal({
                   <Icon icon={Search} size={16} />
                 </span>
                 <input
-                  className="neu-input !h-11 w-full pl-9 text-sm"
+                  className="ui-input !h-11 w-full pl-9 text-sm"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Tìm kiếm và chọn tân binh..."
                 />
               </div>
-              <ul className="max-h-52 space-y-1 overflow-y-auto rounded-2xl bg-background p-2 shadow-inset-sm">
+              <ul className="max-h-52 space-y-1 overflow-y-auto rounded-2xl bg-background p-2 shadow-hairline">
                 {filteredAvailable.map((t) => {
                   const checked = memberIds.includes(t.id);
                   return (
@@ -311,7 +311,7 @@ export default function CreateGroupModal({
               </span>
             </div>
 
-            <div className="neu-card !p-4 space-y-4">
+            <div className="ui-card !p-4 space-y-4">
               <div>
                 <p className="font-display text-xl font-extrabold text-accent">
                   {name.trim() || "Tên nhóm..."}

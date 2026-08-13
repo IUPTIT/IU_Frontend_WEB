@@ -67,7 +67,7 @@ export default function MemberTrainingTasksPage() {
   );
 
   if (loading) {
-    return <div className="neu-card h-64 animate-pulse" aria-busy="true" />;
+    return <div className="ui-card h-64 animate-pulse" aria-busy="true" />;
   }
 
   return (
@@ -94,11 +94,11 @@ export default function MemberTrainingTasksPage() {
       </header>
 
       {!me ? (
-        <div className="neu-card !p-10 text-center text-muted text-sm">
+        <div className="ui-card !p-10 text-center text-muted text-sm">
           Bạn chưa ở vòng đào tạo thành viên mới.
         </div>
       ) : tasks.length === 0 ? (
-        <div className="neu-card !p-10 text-center text-muted text-sm">
+        <div className="ui-card !p-10 text-center text-muted text-sm">
           Chưa có task nào. Mentor sẽ giao bài tập khi bắt đầu training.
         </div>
       ) : (

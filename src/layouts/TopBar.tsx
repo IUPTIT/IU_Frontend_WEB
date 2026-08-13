@@ -140,10 +140,10 @@ function TopBar({
 
   return (
     <header>
-      <div className="flex items-center gap-3 sm:gap-4 rounded-card bg-background px-4 sm:px-6 py-3 shadow-extruded">
+      <div className="flex items-center gap-3 sm:gap-4 rounded-card bg-background px-4 sm:px-6 py-3 shadow-soft">
         <button
           type="button"
-          className="neu-btn h-12 w-12 !px-0 rounded-full shrink-0 md:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          className="ui-btn h-12 w-12 !px-0 rounded-full shrink-0 md:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           aria-label="Mở menu"
           aria-controls="sidebar-nav"
           onClick={onOpenMobileNav}
@@ -159,7 +159,7 @@ function TopBar({
             <Icon icon={Search} size={18} />
           </span>
           <input
-            className="h-11 w-full rounded-full border-0 bg-background pl-11 pr-4 text-sm text-foreground shadow-extruded-sm outline-none transition placeholder:text-placeholder focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            className="h-11 w-full rounded-full border-0 bg-background pl-11 pr-4 text-sm text-foreground shadow-soft-sm outline-none transition placeholder:text-placeholder focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             placeholder={searchPlaceholder}
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
@@ -169,7 +169,7 @@ function TopBar({
         <div className="ml-auto flex items-center gap-2.5 sm:gap-3">
           <button
             type="button"
-            className="neu-btn h-12 w-12 !px-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            className="ui-btn h-12 w-12 !px-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             aria-label={
               theme === "dark"
                 ? "Chuyển sang giao diện sáng"
@@ -183,7 +183,7 @@ function TopBar({
           <div className="relative" ref={panelRef}>
             <button
               type="button"
-              className="neu-btn relative h-12 w-12 !px-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              className="ui-btn relative h-12 w-12 !px-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               aria-label="Thông báo"
               aria-expanded={openNotif}
               onClick={() => {
@@ -199,7 +199,7 @@ function TopBar({
               )}
             </button>
             {openNotif && (
-              <div className="absolute right-0 top-14 z-30 w-80 max-w-[calc(100vw-2rem)] rounded-2xl bg-background p-3 shadow-extruded ring-1 ring-black/5">
+              <div className="absolute right-0 top-14 z-30 w-80 max-w-[calc(100vw-2rem)] rounded-2xl bg-background p-3 shadow-soft ring-1 ring-black/5">
                 <div className="mb-2 flex items-center justify-between gap-2 px-1">
                   <p className="text-sm font-semibold">
                     Thông báo{unread > 0 ? ` (${unread})` : ""}
@@ -260,7 +260,7 @@ function TopBar({
           </div>
           <button
             type="button"
-            className="group flex items-center rounded-full bg-background p-1 shadow-extruded-sm transition-shadow duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:shadow-extruded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            className="group flex items-center rounded-full bg-background p-1 shadow-soft-sm transition-shadow duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:shadow-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             aria-label="Mở cài đặt tài khoản"
             onClick={() => navigate(settingsPath(role))}
           >

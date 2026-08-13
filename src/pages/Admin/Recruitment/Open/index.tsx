@@ -231,7 +231,9 @@ function RecruitmentOpenPage() {
           ...(editLocks.questions ? {} : { customQuestions }),
         });
         if (!published && saveMode === "publish") {
-          await setCampaignActive(editing.id, true);
+          await setCampaignActive(editing.id, true, {
+            notify: draft.notifyOnPublish,
+          });
         }
       } else {
         await createCampaign({
@@ -243,6 +245,7 @@ function RecruitmentOpenPage() {
           customQuestions,
           status: saveMode === "publish" ? "published" : "draft",
           isActive: saveMode === "publish" && draft.activateOnPublish,
+          notifyOnPublish: draft.notifyOnPublish,
         });
       }
     } catch (err) {
@@ -302,7 +305,7 @@ function RecruitmentOpenPage() {
       </section>
 
       {loading ? (
-        <div className="neu-card h-64 animate-pulse" aria-busy="true" aria-label="Đang tải" />
+        <div className="ui-card h-64 animate-pulse" aria-busy="true" aria-label="Đang tải" />
       ) : (
         <>
           <CampaignTable

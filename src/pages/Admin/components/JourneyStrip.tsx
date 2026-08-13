@@ -33,7 +33,7 @@ function JourneyStrip({
   ];
 
   return (
-    <article className="neu-card !p-6">
+    <article className="ui-card !p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h3 className="text-lg">Hành trình thành viên</h3>
@@ -41,7 +41,7 @@ function JourneyStrip({
             Phễu tuyển dụng &amp; đào tạo — {periodLabel}
           </p>
         </div>
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-background px-3 py-1.5 text-xs font-semibold text-muted shadow-inset-sm">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-background px-3 py-1.5 text-xs font-semibold text-muted shadow-hairline">
           <Icon icon={GitBranch} size={14} />
           {cells.length} giai đoạn
         </span>

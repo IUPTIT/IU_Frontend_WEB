@@ -110,7 +110,7 @@ function EmailConfigurationPage() {
 
       {/* Soft pill tabs — centered */}
       <nav className="flex justify-center" aria-label="Email sections">
-        <div className="inline-flex max-w-full flex-wrap justify-center gap-1.5 rounded-[1.75rem] bg-background/90 p-2 shadow-inset-sm ring-1 ring-black/5">
+        <div className="inline-flex max-w-full flex-wrap justify-center gap-1.5 rounded-[1.75rem] bg-background/90 p-2 shadow-hairline ring-1 ring-black/5">
           {TABS.map((t) => {
             const active = tab === t.id;
             return (
@@ -120,7 +120,7 @@ function EmailConfigurationPage() {
                 onClick={() => setTab(t.id)}
                 className={`group inline-flex min-w-[7.5rem] flex-col items-center gap-0.5 rounded-2xl px-4 py-2.5 transition-all duration-200 ease-in-out ${
                   active
-                    ? "bg-accent text-white shadow-extruded-sm scale-[1.02]"
+                    ? "bg-accent text-white shadow-soft-sm scale-[1.02]"
                     : "text-muted hover:bg-accent/10 hover:text-accent"
                 }`}
               >
@@ -274,7 +274,7 @@ function AutomationPanel({
 
   if (loading) {
     return (
-      <div className="h-64 animate-pulse rounded-card bg-accent/10 shadow-inset-sm" aria-busy />
+      <div className="h-64 animate-pulse rounded-card bg-accent/10 shadow-hairline" aria-busy />
     );
   }
 
@@ -315,7 +315,7 @@ function AutomationPanel({
           </Button>
         </div>
 
-        <div className="overflow-x-auto rounded-card shadow-extruded ring-1 ring-black/5">
+        <div className="overflow-x-auto rounded-card shadow-soft ring-1 ring-black/5">
           <table className="w-full min-w-[720px] text-sm">
             <thead className="bg-black/[0.03] text-left text-xs uppercase tracking-wide text-muted">
               <tr>
@@ -497,7 +497,7 @@ function AutomationPanel({
 
 function SmtpInfoPanel() {
   return (
-    <section className="neu-card !p-6 space-y-4 max-w-2xl">
+    <section className="ui-card !p-6 space-y-4 max-w-2xl">
       <h2 className="font-display text-lg font-bold">Cấu hình SMTP (server)</h2>
       <p className="text-sm text-muted">
         Gửi email thật dùng SMTP/SendGrid cấu hình trên Backend (
@@ -629,10 +629,10 @@ function TemplatesPanel({
           {list.map((t) => (
             <article
               key={t.id}
-              className="group flex flex-col rounded-card bg-gradient-to-br from-background to-accent/[0.07] p-5 shadow-extruded ring-1 ring-accent/10 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-extruded-hover"
+              className="group flex flex-col rounded-card bg-gradient-to-br from-background to-accent/[0.07] p-5 shadow-soft ring-1 ring-accent/10 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-soft-lg"
             >
               <div className="flex items-start justify-between gap-2">
-                <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-accent/15 text-accent shadow-inset-sm">
+                <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-accent/15 text-accent shadow-hairline">
                   <Icon icon={Mail} size={20} />
                 </span>
                 <div className="flex flex-wrap gap-1.5 justify-end">
@@ -716,15 +716,15 @@ function TemplatesPanel({
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_200px]">
             <div className="space-y-4">
               <label className="block space-y-1.5">
-                <span className="neu-field-label">Tên Template</span>
+                <span className="ui-field-label">Tên Template</span>
                 <input
-                  className="neu-input !h-11"
+                  className="ui-input !h-11"
                   value={editor.draft.name}
                   onChange={(e) => setEditor({ ...editor, draft: { ...editor.draft, name: e.target.value } })}
                 />
               </label>
               <div>
-                <span className="neu-field-label">Loại</span>
+                <span className="ui-field-label">Loại</span>
                 <Select
                   width="full"
                   value={editor.draft.category}
@@ -738,17 +738,17 @@ function TemplatesPanel({
                 />
               </div>
               <label className="block space-y-1.5">
-                <span className="neu-field-label">Subject</span>
+                <span className="ui-field-label">Subject</span>
                 <input
-                  className="neu-input !h-11"
+                  className="ui-input !h-11"
                   value={editor.draft.subject}
                   onChange={(e) => setEditor({ ...editor, draft: { ...editor.draft, subject: e.target.value } })}
                 />
               </label>
               <label className="block space-y-1.5">
-                <span className="neu-field-label">Nội dung</span>
+                <span className="ui-field-label">Nội dung</span>
                 <textarea
-                  className="neu-input !h-auto min-h-[200px] py-3 font-mono text-sm"
+                  className="ui-input !h-auto min-h-[200px] py-3 font-mono text-sm"
                   value={editor.draft.body}
                   onChange={(e) => setEditor({ ...editor, draft: { ...editor.draft, body: e.target.value } })}
                 />
@@ -772,7 +772,7 @@ function TemplatesPanel({
           <div className="space-y-3">
             <p className="font-semibold">{preview.subject}</p>
             <div
-              className="rounded-2xl bg-background p-4 shadow-inset-sm text-sm"
+              className="rounded-2xl bg-background p-4 shadow-hairline text-sm"
               dangerouslySetInnerHTML={{ __html: preview.bodyHtml }}
             />
           </div>
@@ -795,8 +795,8 @@ function PlaceholderInsertList({
   }, [category]);
   return (
     <aside className="space-y-2">
-      <p className="neu-field-label">Placeholder</p>
-      <ul className="max-h-80 space-y-1 overflow-y-auto rounded-2xl bg-background p-2 shadow-inset-sm">
+      <p className="ui-field-label">Placeholder</p>
+      <ul className="max-h-80 space-y-1 overflow-y-auto rounded-2xl bg-background p-2 shadow-hairline">
         {items.map((p) => (
           <li key={p.key}>
             <button
@@ -839,7 +839,7 @@ function PlaceholdersPanel() {
       {[...grouped.entries()].map(([cat, list]) => (
         <div
           key={cat}
-          className="rounded-card bg-gradient-to-br from-background to-violet-500/[0.07] p-5 sm:p-6 shadow-extruded ring-1 ring-violet-500/15 space-y-4"
+          className="rounded-card bg-gradient-to-br from-background to-violet-500/[0.07] p-5 sm:p-6 shadow-soft ring-1 ring-violet-500/15 space-y-4"
         >
           <h3 className="font-display text-lg font-bold capitalize flex items-center gap-2">
             <Badge tone={CAT_TONE[cat] ?? "accent"}>{cat}</Badge>
@@ -848,7 +848,7 @@ function PlaceholdersPanel() {
             {list.map((p) => (
               <div
                 key={`${cat}-${p.key}`}
-                className="rounded-2xl bg-background/90 px-4 py-3.5 shadow-extruded-sm ring-1 ring-black/5 transition-transform hover:-translate-y-0.5"
+                className="rounded-2xl bg-background/90 px-4 py-3.5 shadow-soft-sm ring-1 ring-black/5 transition-transform hover:-translate-y-0.5"
               >
                 <p className="font-mono text-sm font-semibold text-accent">{`{{${p.key}}}`}</p>
                 <p className="text-sm font-medium mt-1">{p.label}</p>

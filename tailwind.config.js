@@ -5,12 +5,19 @@ export default {
   theme: {
     extend: {
       colors: {
-        background: "#E0E5EC",
-        foreground: "#3D4852",
-        muted: "#6B7280",
+        // Airy Card SaaS — nền trang (canvas) tách khỏi bề mặt card (surface)
+        canvas: "#F4F4FB",
+        background: "#FFFFFF", // = surface: card / topbar / sidebar / modal
+        surface: "#FFFFFF",
+        "surface-2": "#F5F6FB", // chip, header bảng, hover nhẹ
+        line: "#EBEBF3", // hairline mảnh
+        "line-strong": "#E2E3EF", // divider đậm
+        foreground: "#191A2C", // ink chính
+        muted: "#6B7086", // chữ phụ
+        faint: "#9AA0B4", // caption / chữ mờ
         placeholder: "#A0AEC0",
         accent: {
-          DEFAULT: "#6C63FF",
+          DEFAULT: "#7C3AED", // nhấn tím — khớp logo-v2
           light: "#8B84FF",
           secondary: "#38B2AC",
         },
@@ -33,22 +40,14 @@ export default {
         mono: ['"Geist Mono"', "ui-monospace", "SFMono-Regular", "monospace"],
       },
       borderRadius: {
-        card: "32px",
+        card: "16px",
       },
       boxShadow: {
-        // Neumorphism: dual opposing shadows (light top-left, dark bottom-right)
-        extruded:
-          "9px 9px 16px rgba(163,177,198,0.6), -9px -9px 16px rgba(255,255,255,0.5)",
-        "extruded-hover":
-          "12px 12px 20px rgba(163,177,198,0.7), -12px -12px 20px rgba(255,255,255,0.6)",
-        "extruded-sm":
-          "5px 5px 10px rgba(163,177,198,0.6), -5px -5px 10px rgba(255,255,255,0.5)",
-        inset:
-          "inset 6px 6px 10px rgba(163,177,198,0.6), inset -6px -6px 10px rgba(255,255,255,0.5)",
-        "inset-deep":
-          "inset 10px 10px 20px rgba(163,177,198,0.7), inset -10px -10px 20px rgba(255,255,255,0.6)",
-        "inset-sm":
-          "inset 3px 3px 6px rgba(163,177,198,0.6), inset -3px -3px 6px rgba(255,255,255,0.5)",
+        // Airy Card SaaS — bóng mềm một chiều, không neumorphism
+        soft: "0 2px 8px rgba(26,26,80,0.06), 0 12px 28px -10px rgba(26,26,80,0.10)",
+        "soft-sm": "0 1px 2px rgba(26,26,80,0.06), 0 2px 4px rgba(26,26,80,0.04)",
+        "soft-lg": "0 8px 20px rgba(26,26,80,0.10), 0 22px 44px -12px rgba(26,26,80,0.16)",
+        hairline: "inset 0 0 0 1px #EBEBF3",
       },
       keyframes: {
         float: {
