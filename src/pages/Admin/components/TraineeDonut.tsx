@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { TraineeDepartment, Tone } from "../../../types/admin";
 
 const toneColor: Record<Tone, string> = {
-  accent: "#6C63FF",
+  accent: "#7C3AED",
   purple: "#8B84FF",
   green: "#38B2AC",
   muted: "#6B7280",

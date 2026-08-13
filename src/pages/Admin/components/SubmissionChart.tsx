@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { WeeklySubmission } from "../../../types/admin";
 
 const SERIES = [
-  { key: "received" as const, label: "Hồ sơ nhận", color: "#6C63FF" },
+  { key: "received" as const, label: "Hồ sơ nhận", color: "#7C3AED" },
   { key: "passed" as const, label: "Đạt vòng đơn", color: "#38B2AC" },
 ];
 

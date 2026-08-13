@@ -43,7 +43,7 @@ function ChangePasswordGate() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+    <div className="flex min-h-screen items-center justify-center bg-canvas p-4">
       <form onSubmit={handleSubmit} className="ui-card w-full max-w-md space-y-5 !p-8">
         <div className="space-y-2 text-center">
           <h1 className="font-display text-2xl font-extrabold text-foreground">

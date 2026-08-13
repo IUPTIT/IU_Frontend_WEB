@@ -53,7 +53,7 @@ function LayoutInner({ role, children }: { role: Role; children: ReactNode }) {
   }, [activePath, setSearch]);
 
   return (
-    <div className="portal-shell flex min-h-screen bg-background">
+    <div className="portal-shell flex min-h-screen bg-canvas">
       {/* Desktop / Tablet rail — ≥768px, full màn, sát mép trái */}
       <div className="sticky top-0 z-20 hidden h-screen shrink-0 self-start md:block">
         <SideNavBar role={role} variant="rail" />
