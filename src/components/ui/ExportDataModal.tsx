@@ -83,13 +83,16 @@ function ExportDataModal<T>({
   /** Đang gọi exporter (backend sinh file) — khoá nút, hiện spinner */
   const [exporting, setExporting] = useState(false);
 
-  // Reset lựa chọn mỗi lần mở modal (adjust state during render)
+  // Reset lựa chọn mỗi lần mở modal; đồng bộ thêm khi cột câu hỏi load xong lúc đang mở
   const [prevOpen, setPrevOpen] = useState(open);
+  const [prevDefaultKey, setPrevDefaultKey] = useState(defaultIds.join("|"));
+  const defaultKey = defaultIds.join("|");
   if (open !== prevOpen) {
     setPrevOpen(open);
     if (open) {
       setOrderedIds(defaultIds);
       setExporting(false);
+      setPrevDefaultKey(defaultKey);
       const init: Record<string, string[]> = {};
       for (const c of columns) {
         if (c.filterOptions?.length) {
@@ -98,6 +101,9 @@ function ExportDataModal<T>({
       }
       setValueFilters(init);
     }
+  } else if (open && defaultKey !== prevDefaultKey) {
+    setPrevDefaultKey(defaultKey);
+    setOrderedIds(defaultIds);
   }
 
   useEffect(() => {

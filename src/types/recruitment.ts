@@ -68,6 +68,9 @@ export type Application = {
   id: string;
   campaignId: string;
   fullName: string;
+  studentId?: string;
+  className?: string;
+  faculty?: string;
   email: string;
   phone?: string;
   /** ISO date — dùng tạo MK mặc định DDMMYYYY khi gửi email Pass */

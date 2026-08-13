@@ -211,6 +211,9 @@ function toApplication(a: BackendApplication): Application {
     id: a._id,
     campaignId: campaignIdOf(a),
     fullName: a.fullName,
+    studentId: a.studentId ?? "",
+    className: a.className ?? "",
+    faculty: a.faculty ?? "",
     email: a.email,
     phone: a.phone,
     dateOfBirth: a.dateOfBirth
@@ -330,17 +333,43 @@ export async function createCampaign(input: CreateCampaignInput): Promise<Recrui
     closeAt: input.closeAt,
     quotas: toQuotasBody(input.quotas),
   });
-  if (input.customQuestions?.length) {
-    await saveCustomQuestions(campaign._id, input.customQuestions);
+
+  const shouldPublish = input.status === "published" || input.isActive;
+
+  const rollback = async () => {
+    try {
+      await api.delete(`/recruitment/campaigns/${campaign._id}`);
+    } catch {
+      /* ignore — vẫn ném lỗi gốc cho user */
+    }
+  };
+
+  try {
+    if (input.customQuestions?.length) {
+      await saveCustomQuestions(campaign._id, input.customQuestions);
+    }
+  } catch (err) {
+    await rollback();
+    throw err;
   }
-  if (input.status === "published" || input.isActive) {
+
+  if (!shouldPublish) {
+    return toCampaign(campaign);
+  }
+
+  try {
     const { campaign: published } = await api.post<{ campaign: BackendCampaign }>(
       `/recruitment/campaigns/${campaign._id}/publish`,
       { notify: input.notifyOnPublish !== false },
     );
     return toCampaign(published);
+  } catch (err) {
+    // Xuất bản/kích hoạt fail → hủy toàn bộ, không để lại nháp
+    await rollback();
+    const base =
+      err instanceof Error ? err.message : "Không kích hoạt được đợt tuyển";
+    throw new Error(`${base} Đợt tuyển chưa được tạo.`);
   }
-  return toCampaign(campaign);
 }
 
 export type UpdateCampaignInput = {

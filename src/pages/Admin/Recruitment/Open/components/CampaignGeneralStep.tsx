@@ -7,6 +7,10 @@ type Props = {
   onNext: () => void;
   /** Đợt đã publish: tên + thời gian mở đơn không được sửa (nghiệp vụ 0.3) */
   lockNameAndOpen?: boolean;
+  /** Lỗi trùng tên — hiện ngay dưới ô tên */
+  nameError?: string | null;
+  /** Lỗi trùng thời gian với đợt đang mở — hiện dưới ô thời gian */
+  timeError?: string | null;
 };
 
 const toneIconBg: Record<QuotaDraft["tone"], string> = {
@@ -47,7 +51,15 @@ function QuotaIcon({ icon }: { icon: QuotaDraft["icon"] }) {
   );
 }
 
-function CampaignGeneralStep({ draft, onChange, onCancel, onNext, lockNameAndOpen }: Props) {
+function CampaignGeneralStep({
+  draft,
+  onChange,
+  onCancel,
+  onNext,
+  lockNameAndOpen,
+  nameError = null,
+  timeError = null,
+}: Props) {
   const setQuota = (departmentId: string, quota: number) => {
     onChange({
       quotas: draft.quotas.map((q) => (q.departmentId === departmentId ? { ...q, quota } : q)),
@@ -74,7 +86,9 @@ function CampaignGeneralStep({ draft, onChange, onCancel, onNext, lockNameAndOpe
                 </svg>
               </span>
               <input
-                className="neu-input pl-11 disabled:opacity-50 disabled:cursor-not-allowed"
+                className={`neu-input pl-11 disabled:opacity-50 disabled:cursor-not-allowed ${
+                  nameError ? "ring-2 ring-red-500/50" : ""
+                }`}
                 placeholder="VD: Tuyển Gen 4 - Fall 2024"
                 value={draft.name}
                 disabled={lockNameAndOpen}
@@ -84,8 +98,14 @@ function CampaignGeneralStep({ draft, onChange, onCancel, onNext, lockNameAndOpe
                     : undefined
                 }
                 onChange={(e) => onChange({ name: e.target.value })}
+                aria-invalid={Boolean(nameError)}
               />
             </div>
+            {nameError && (
+              <p className="text-sm text-red-600" role="alert">
+                {nameError}
+              </p>
+            )}
           </label>
 
           <div className="block space-y-2">
@@ -97,7 +117,9 @@ function CampaignGeneralStep({ draft, onChange, onCancel, onNext, lockNameAndOpe
                 <span className="text-xs text-muted">Mở đơn (ngày + giờ)</span>
                 <input
                   type="datetime-local"
-                  className="neu-input disabled:opacity-50 disabled:cursor-not-allowed"
+                  className={`neu-input disabled:opacity-50 disabled:cursor-not-allowed ${
+                    timeError ? "ring-2 ring-red-500/50" : ""
+                  }`}
                   value={draft.openAt}
                   disabled={lockNameAndOpen}
                   title={
@@ -107,13 +129,16 @@ function CampaignGeneralStep({ draft, onChange, onCancel, onNext, lockNameAndOpe
                   }
                   onChange={(e) => onChange({ openAt: e.target.value })}
                   aria-label="Thời điểm mở đơn"
+                  aria-invalid={Boolean(timeError)}
                 />
               </label>
               <label className="block space-y-1">
                 <span className="text-xs text-muted">Đóng đơn (ngày + giờ)</span>
                 <input
                   type="datetime-local"
-                  className="neu-input disabled:opacity-50 disabled:cursor-not-allowed"
+                  className={`neu-input disabled:opacity-50 disabled:cursor-not-allowed ${
+                    timeError ? "ring-2 ring-red-500/50" : ""
+                  }`}
                   value={draft.closeAt}
                   min={draft.openAt || undefined}
                   disabled={lockNameAndOpen}
@@ -124,9 +149,15 @@ function CampaignGeneralStep({ draft, onChange, onCancel, onNext, lockNameAndOpe
                   }
                   onChange={(e) => onChange({ closeAt: e.target.value })}
                   aria-label="Thời điểm đóng đơn"
+                  aria-invalid={Boolean(timeError)}
                 />
               </label>
             </div>
+            {timeError && (
+              <p className="text-sm text-red-600" role="alert">
+                {timeError}
+              </p>
+            )}
           </div>
         </div>
 
