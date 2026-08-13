@@ -16,11 +16,11 @@ function Toggle({ checked, onChange, disabled, "aria-label": ariaLabel }: Props)
       disabled={disabled}
       onClick={() => onChange(!checked)}
       className={`relative inline-flex h-8 w-14 shrink-0 items-center rounded-full transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-40 disabled:pointer-events-none ${
-        checked ? "bg-accent shadow-inset-sm" : "bg-background shadow-inset"
+        checked ? "bg-accent shadow-hairline" : "bg-background shadow-hairline"
       }`}
     >
       <span
-        className={`inline-flex h-6 w-6 items-center justify-center rounded-full bg-white shadow-extruded-sm transition-transform duration-300 ease-out ${
+        className={`inline-flex h-6 w-6 items-center justify-center rounded-full bg-white shadow-soft-sm transition-transform duration-300 ease-out ${
           checked ? "translate-x-7" : "translate-x-1"
         }`}
       >

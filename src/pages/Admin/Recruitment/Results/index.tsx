@@ -455,7 +455,7 @@ function RecruitmentResultsPage() {
               placeholder="Chọn đợt tuyển"
               ariaLabel="Bộ lọc theo đợt tuyển"
               className="min-w-[220px]"
-              triggerClassName="!shadow-extruded-sm !h-10 text-accent !font-semibold"
+              triggerClassName="!shadow-soft-sm !h-10 text-accent !font-semibold"
             />
           </div>
           <p className="mt-2 text-sm text-muted max-w-xl">
@@ -510,7 +510,7 @@ function RecruitmentResultsPage() {
               }}
             >
               <div>
-                <span className="neu-field-label">Ban dự tuyển</span>
+                <span className="ui-field-label">Ban dự tuyển</span>
                 <Select
                   width="full"
                   value={draft.departmentId}
@@ -522,7 +522,7 @@ function RecruitmentResultsPage() {
                 />
               </div>
               <div>
-                <span className="neu-field-label">Trạng thái xử lý</span>
+                <span className="ui-field-label">Trạng thái xử lý</span>
                 <Select
                   width="full"
                   value={draft.notifyStatus}
@@ -538,13 +538,13 @@ function RecruitmentResultsPage() {
                 />
               </div>
               <div>
-                <span className="neu-field-label">Điểm PV tối thiểu</span>
+                <span className="ui-field-label">Điểm PV tối thiểu</span>
                 <input
                   type="number"
                   min={0}
                   max={10}
                   step={0.5}
-                  className="neu-input !h-11 text-sm"
+                  className="ui-input !h-11 text-sm"
                   placeholder="VD: 8"
                   value={draft.scoreMin}
                   onChange={(e) => setDraft({ ...draft, scoreMin: e.target.value })}
@@ -574,7 +574,7 @@ function RecruitmentResultsPage() {
         </div>
       </section>
 
-      <section className="neu-card !p-0 overflow-hidden">
+      <section className="ui-card !p-0 overflow-hidden">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-black/5 px-5 py-4">
           <h2 className="font-display text-lg font-bold text-foreground">
             Ứng viên đã qua 2 vòng
@@ -650,7 +650,7 @@ function RecruitmentResultsPage() {
                         </td>
                         <td className="px-3 py-4">
                           <div className="flex items-center gap-3 min-w-0">
-                            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent/15 text-xs font-bold text-accent shadow-inset-sm">
+                            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent/15 text-xs font-bold text-accent shadow-hairline">
                               {initials(app.fullName)}
                             </span>
                             <div className="min-w-0">
@@ -663,7 +663,7 @@ function RecruitmentResultsPage() {
                           {app.status === "interview_passed" &&
                           app.departmentPreferences.length > 1 ? (
                             <select
-                              className="neu-input !h-10 !text-sm max-w-full"
+                              className="ui-input !h-10 !text-sm max-w-full"
                               value={app.preferredDepartmentName}
                               onChange={async (e) => {
                                 const dept = e.target.value;
@@ -722,7 +722,7 @@ function RecruitmentResultsPage() {
                             </svg>
                           </Button>
                           {menuId === app.id && (
-                            <div className="absolute right-4 top-12 z-20 w-52 rounded-2xl bg-background p-2 shadow-extruded ring-1 ring-black/5 text-left">
+                            <div className="absolute right-4 top-12 z-20 w-52 rounded-2xl bg-background p-2 shadow-soft ring-1 ring-black/5 text-left">
                               <button
                                 type="button"
                                 className="block w-full rounded-xl px-3 py-2 text-sm hover:bg-accent/10"

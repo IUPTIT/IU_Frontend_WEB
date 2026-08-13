@@ -16,12 +16,12 @@ function DashboardSkeleton() {
       </div>
 
       {/* Journey strip */}
-      <div className="neu-card h-40" />
+      <div className="ui-card h-40" />
 
       {/* KPI cards */}
       <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="neu-card !p-5">
+          <div key={i} className="ui-card !p-5">
             <div className="flex items-center justify-between">
               <div className="h-11 w-11 rounded-xl bg-foreground/[0.07]" />
               <div className="h-2 w-2 rounded-full bg-foreground/[0.07]" />
@@ -34,12 +34,12 @@ function DashboardSkeleton() {
 
       {/* Charts */}
       <div className="grid gap-8 lg:grid-cols-[1fr_2fr]">
-        <div className="neu-card h-72" />
-        <div className="neu-card h-72" />
+        <div className="ui-card h-72" />
+        <div className="ui-card h-72" />
       </div>
       <div className="grid gap-8 lg:grid-cols-2">
-        <div className="neu-card h-64" />
-        <div className="neu-card h-64" />
+        <div className="ui-card h-64" />
+        <div className="ui-card h-64" />
       </div>
     </div>
   );

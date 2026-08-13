@@ -97,8 +97,8 @@ function SlotList({
                   type="button"
                   disabled={disabled || blocked}
                   onClick={() => onSelect(slot)}
-                  className={`neu-btn !h-auto flex-col !items-start gap-1 !px-4 !py-3 text-left disabled:opacity-50 ${
-                    active ? "!shadow-inset-sm text-accent" : ""
+                  className={`ui-btn !h-auto flex-col !items-start gap-1 !px-4 !py-3 text-left disabled:opacity-50 ${
+                    active ? "!shadow-hairline text-accent" : ""
                   }`}
                 >
                   <span className="text-sm font-bold">

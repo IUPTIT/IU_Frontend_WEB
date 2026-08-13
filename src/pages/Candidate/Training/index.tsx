@@ -61,7 +61,7 @@ export default function CandidateTrainingPage() {
   if (loading) {
     return (
       <div
-        className="neu-card h-64 animate-pulse"
+        className="ui-card h-64 animate-pulse"
         aria-busy="true"
         aria-label="Đang tải"
       />

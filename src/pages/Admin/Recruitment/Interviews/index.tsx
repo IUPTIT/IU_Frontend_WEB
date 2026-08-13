@@ -397,7 +397,7 @@ function RecruitmentInterviewsPage() {
                 }}
               >
                 <div>
-                  <span className="neu-field-label">Trạng thái slot</span>
+                  <span className="ui-field-label">Trạng thái slot</span>
                   <Select
                     width="full"
                     value={draftStatus}
@@ -604,7 +604,7 @@ function RecruitmentInterviewsPage() {
                   </svg>
                 </span>
                 <input
-                  className="neu-input pl-12"
+                  className="ui-input pl-12"
                   placeholder="Tìm tên ca, địa điểm, người PV..."
                   value={localSearch}
                   onChange={(e) => setLocalSearch(e.target.value)}
@@ -612,7 +612,7 @@ function RecruitmentInterviewsPage() {
               </label>
 
               {loading ? (
-                <div className="neu-card h-48 animate-pulse" aria-busy="true" />
+                <div className="ui-card h-48 animate-pulse" aria-busy="true" />
               ) : filteredDaySlots.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-[#D4D8E8] bg-white py-14 text-center text-[#6B7086]">
                   Chưa có ca ngày {formatDate(selectedDate)}. Bấm &quot;Thêm
@@ -855,7 +855,7 @@ function RecruitmentInterviewsPage() {
       )}
 
       {tab === "results" && (
-        <div className="neu-card overflow-hidden !p-0">
+        <div className="ui-card overflow-hidden !p-0">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[900px] text-left">
               <thead>

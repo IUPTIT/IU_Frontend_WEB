@@ -68,14 +68,14 @@ export default function AssignTaskForm({
   };
 
   return (
-    <section className="neu-card !p-5 space-y-4 h-fit">
+    <section className="ui-card !p-5 space-y-4 h-fit">
       <h2 className="font-display text-lg font-bold">Giao task mới</h2>
 
       <div className="space-y-3">
         <label className="block space-y-1.5">
-          <span className="neu-field-label">Tiêu đề bài tập *</span>
+          <span className="ui-field-label">Tiêu đề bài tập *</span>
           <input
-            className="neu-input !h-11"
+            className="ui-input !h-11"
             placeholder="Vd: Thiết kế UI Landing Page..."
             value={title}
             onChange={(e) => setTitle(e.target.value)}
@@ -84,16 +84,16 @@ export default function AssignTaskForm({
 
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="block space-y-1.5">
-            <span className="neu-field-label">Hạn chót</span>
+            <span className="ui-field-label">Hạn chót</span>
             <input
               type="datetime-local"
-              className="neu-input !h-11"
+              className="ui-input !h-11"
               value={deadline}
               onChange={(e) => setDeadline(e.target.value)}
             />
           </label>
           <div>
-            <span className="neu-field-label">Team</span>
+            <span className="ui-field-label">Team</span>
             <Select
               width="full"
               value={groupId}
@@ -108,7 +108,7 @@ export default function AssignTaskForm({
         </div>
 
         <div>
-          <span className="neu-field-label">Người thực hiện</span>
+          <span className="ui-field-label">Người thực hiện</span>
           <Select
             width="full"
             value={assigneeId}
@@ -125,9 +125,9 @@ export default function AssignTaskForm({
         </div>
 
         <label className="block space-y-1.5">
-          <span className="neu-field-label">Mô tả</span>
+          <span className="ui-field-label">Mô tả</span>
           <textarea
-            className="neu-input !h-auto min-h-[72px] resize-y py-2 text-sm"
+            className="ui-input !h-auto min-h-[72px] resize-y py-2 text-sm"
             placeholder="Yêu cầu, tiêu chí hoàn thành..."
             value={description}
             onChange={(e) => setDescription(e.target.value)}
@@ -135,9 +135,9 @@ export default function AssignTaskForm({
         </label>
 
         <label className="block space-y-1.5">
-          <span className="neu-field-label">Link tài liệu đính kèm</span>
+          <span className="ui-field-label">Link tài liệu đính kèm</span>
           <input
-            className="neu-input !h-11"
+            className="ui-input !h-11"
             placeholder="https://..."
             value={attachmentUrl}
             onChange={(e) => setAttachmentUrl(e.target.value)}

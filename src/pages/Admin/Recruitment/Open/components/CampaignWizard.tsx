@@ -135,7 +135,8 @@ function CampaignWizard({
 
   return (
     <div className="space-y-8">
-      <div className="neu-card !py-5 !px-4 sticky top-20 z-[5] backdrop-blur bg-background/90">
+      {/* Stepper cố định */}
+      <div className="ui-card !py-5 !px-4 sticky top-20 z-[5] backdrop-blur bg-background/90">
         <CampaignWizardStepper current={step} onChange={handleStepChange} />
       </div>
 

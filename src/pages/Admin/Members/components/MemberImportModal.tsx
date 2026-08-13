@@ -473,7 +473,7 @@ function MemberImportModal({ open, onClose, onImported }: Props) {
         <div
           role="dialog"
           aria-modal="true"
-          className="relative z-10 flex max-h-[min(92vh,820px)] w-full max-w-5xl flex-col overflow-hidden rounded-card bg-background shadow-extruded"
+          className="relative z-10 flex max-h-[min(92vh,820px)] w-full max-w-5xl flex-col overflow-hidden rounded-card bg-background shadow-soft"
         >
           <header className="flex items-start justify-between gap-4 border-b border-black/5 px-5 py-4 sm:px-6">
             <h2 className="font-display text-xl font-extrabold text-accent sm:text-2xl">
@@ -661,7 +661,7 @@ function MemberImportModal({ open, onClose, onImported }: Props) {
                     khóa khi còn lỗi format.
                   </p>
                 )}
-                <div className="overflow-x-auto rounded-2xl shadow-inset-sm">
+                <div className="overflow-x-auto rounded-2xl shadow-hairline">
                   <table className="w-full min-w-[760px] text-sm">
                     <thead className="text-left text-xs uppercase text-muted">
                       <tr>

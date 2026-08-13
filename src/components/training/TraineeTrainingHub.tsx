@@ -83,7 +83,7 @@ export function TrainingTaskCard({
   };
 
   return (
-    <article className="neu-card !p-5 space-y-3">
+    <article className="ui-card !p-5 space-y-3">
       <div className="flex flex-wrap items-start justify-between gap-2">
         {onOpenDetail ? (
           <button
@@ -121,7 +121,7 @@ export function TrainingTaskCard({
         task.status === "rejected" ||
         task.status === "submitted") &&
         (task.score != null || task.feedback) && (
-          <div className="rounded-2xl bg-accent/8 p-3 text-sm shadow-inset-sm">
+          <div className="rounded-2xl bg-accent/8 p-3 text-sm shadow-hairline">
             {task.score != null && (
               <p>
                 Điểm: <b className="text-accent">{task.score}/10</b>
@@ -169,13 +169,13 @@ export function TrainingTaskCard({
       {canSubmit && open && (
         <div className="space-y-2">
           <input
-            className="neu-input !h-10 text-sm"
+            className="ui-input !h-10 text-sm"
             placeholder="Link bài nộp (Drive, GitHub...)"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
           />
           <textarea
-            className="neu-input !h-auto min-h-[70px] resize-y py-2 text-sm"
+            className="ui-input !h-auto min-h-[70px] resize-y py-2 text-sm"
             placeholder="Ghi chú thêm (không bắt buộc)"
             value={note}
             onChange={(e) => setNote(e.target.value)}
@@ -209,11 +209,11 @@ export function TrainingTaskCard({
 export function TrainingTeamPanel({ training }: { training: MyTraining }) {
   const { trainee, group } = training;
   return (
-    <section className="neu-card !p-5 space-y-4">
+    <section className="ui-card !p-5 space-y-4">
       <h2 className="font-display text-lg font-bold">Nhóm & Mentor</h2>
       {group ? (
         <>
-          <div className="rounded-2xl bg-background px-3 py-3 shadow-inset-sm flex items-center gap-3">
+          <div className="rounded-2xl bg-background px-3 py-3 shadow-hairline flex items-center gap-3">
             <Avatar name={group.mentorName ?? "?"} size="md" />
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
@@ -258,7 +258,7 @@ export function RoadmapStageStepper({
 
   if (stages.length === 0) {
     return (
-      <section className="neu-card !p-6">
+      <section className="ui-card !p-6">
         <p className="text-sm text-muted">
           Mentor chưa gán lộ trình cho team.
         </p>
@@ -276,7 +276,7 @@ export function RoadmapStageStepper({
   const icons = [Check, Code2, FileText, Rocket];
 
   return (
-    <section className="neu-card !p-6 space-y-4">
+    <section className="ui-card !p-6 space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-2">
         <h2 className="font-display text-lg font-bold">
           {program?.name ?? "Lộ trình training"}
@@ -296,10 +296,10 @@ export function RoadmapStageStepper({
               key={s.id}
               className={`flex min-w-[140px] flex-1 flex-col items-center gap-2 rounded-2xl px-3 py-4 text-center ${
                 active
-                  ? "bg-accent/15 shadow-extruded-sm"
+                  ? "bg-accent/15 shadow-soft-sm"
                   : done
                     ? "bg-emerald-500/10"
-                    : "bg-background shadow-inset-sm opacity-70"
+                    : "bg-background shadow-hairline opacity-70"
               }`}
             >
               <span
@@ -329,7 +329,7 @@ export function RoadmapStageStepper({
 export function TrainingRoadmapPanel({ training }: { training: MyTraining }) {
   const { program } = training;
   return (
-    <section className="neu-card !p-6 space-y-3">
+    <section className="ui-card !p-6 space-y-3">
       <h2 className="font-display text-lg font-bold">Lộ trình đào tạo</h2>
       {program ? (
         <>
@@ -405,7 +405,7 @@ function SubmitPanel({
       <section
         ref={panelRef}
         id="trainee-submit-panel"
-        className="neu-card !p-6 text-center text-sm text-muted"
+        className="ui-card !p-6 text-center text-sm text-muted"
       >
         Chọn một task bên trái để nộp bài.
       </section>
@@ -438,7 +438,7 @@ function SubmitPanel({
     <section
       ref={panelRef}
       id="trainee-submit-panel"
-      className="neu-card !p-6 space-y-4"
+      className="ui-card !p-6 space-y-4"
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="font-display text-lg font-bold">Nộp bài làm</h2>
@@ -455,7 +455,7 @@ function SubmitPanel({
 
       {canSubmit ? (
         <>
-          <div className="neu-well rounded-2xl px-4 py-6 text-center">
+          <div className="ui-well rounded-2xl px-4 py-6 text-center">
             <Icon icon={Upload} size={28} className="mx-auto text-muted" />
             <p className="mt-2 text-sm font-medium">Dán link bài làm</p>
             <p className="text-xs text-muted">
@@ -463,19 +463,19 @@ function SubmitPanel({
             </p>
           </div>
           <label className="block space-y-1.5">
-            <span className="neu-field-label">Link bài làm</span>
+            <span className="ui-field-label">Link bài làm</span>
             <input
               ref={urlInputRef}
-              className="neu-input !h-11"
+              className="ui-input !h-11"
               placeholder="https://github.com/..."
               value={url}
               onChange={(e) => setUrl(e.target.value)}
             />
           </label>
           <label className="block space-y-1.5">
-            <span className="neu-field-label">Ghi chú cho mentor</span>
+            <span className="ui-field-label">Ghi chú cho mentor</span>
             <textarea
-              className="neu-input !h-auto min-h-[72px] resize-y py-2 text-sm"
+              className="ui-input !h-auto min-h-[72px] resize-y py-2 text-sm"
               placeholder="Ghi chú thêm..."
               value={note}
               onChange={(e) => setNote(e.target.value)}
@@ -577,7 +577,7 @@ export function TraineeTrainingHub({
 
   if (!training) {
     return (
-      <section className="neu-card !p-8 text-center">
+      <section className="ui-card !p-8 text-center">
         <p className="text-muted">
           {emptyMessage ??
             "Bạn chưa vào chương trình đào tạo thành viên mới. Khi trúng tuyển và được bàn giao training, nội dung sẽ hiện tại đây."}
@@ -622,7 +622,7 @@ export function TraineeTrainingHub({
       />
 
       <div className="grid gap-5 lg:grid-cols-[1fr_1fr_320px]">
-        <section className="neu-card !p-5 space-y-3">
+        <section className="ui-card !p-5 space-y-3">
           <div className="flex items-center justify-between gap-2">
             <h2 className="font-display text-lg font-bold">Bài tập hiện tại</h2>
             {incomplete > 0 && (
@@ -644,8 +644,8 @@ export function TraineeTrainingHub({
                       onClick={() => setSelectedId(t.id)}
                       className={`w-full rounded-2xl px-3 py-3 text-left transition duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                         active
-                          ? "bg-accent/12 shadow-inset-sm ring-1 ring-accent/20"
-                          : "bg-background shadow-extruded-sm hover:-translate-y-px hover:shadow-extruded"
+                          ? "bg-accent/12 shadow-hairline ring-1 ring-accent/20"
+                          : "bg-background shadow-soft-sm hover:-translate-y-px hover:shadow-soft"
                       }`}
                     >
                       <div className="flex items-start justify-between gap-2">
@@ -703,7 +703,7 @@ export function TraineeTrainingHub({
         <div className="space-y-5">
           <TrainingTeamPanel training={training} />
           {group && (
-            <section className="neu-card !p-0 overflow-hidden flex flex-col min-h-[320px]">
+            <section className="ui-card !p-0 overflow-hidden flex flex-col min-h-[320px]">
               <div className="border-b border-foreground/5 px-5 py-3">
                 <h2 className="font-display text-lg font-bold">
                   Kênh trao đổi

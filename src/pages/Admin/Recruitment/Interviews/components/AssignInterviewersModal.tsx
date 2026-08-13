@@ -65,7 +65,7 @@ function AssignInterviewersModal({ open, slot, interviewers, onClose, onSubmit }
       <div
         role="dialog"
         aria-modal="true"
-        className="relative z-10 w-full max-w-md overflow-hidden rounded-card bg-background shadow-extruded"
+        className="relative z-10 w-full max-w-md overflow-hidden rounded-card bg-background shadow-soft"
       >
         <header className="border-b border-black/5 px-5 py-4">
           <h2 className="font-display text-xl font-extrabold">
@@ -82,8 +82,8 @@ function AssignInterviewersModal({ open, slot, interviewers, onClose, onSubmit }
               key={iv.id}
               className={`flex cursor-pointer items-center gap-3 rounded-2xl px-4 py-3 transition-all ${
                 selected.includes(iv.id)
-                  ? "bg-accent/15 text-accent shadow-inset-sm"
-                  : "shadow-extruded-sm text-foreground hover:bg-accent/5"
+                  ? "bg-accent/15 text-accent shadow-hairline"
+                  : "shadow-soft-sm text-foreground hover:bg-accent/5"
               }`}
             >
               <input

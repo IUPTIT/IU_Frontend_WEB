@@ -153,7 +153,7 @@ function CreateAccountDrawer({
       <div
         role="dialog"
         aria-modal="true"
-        className="relative z-10 flex max-h-[min(90vh,640px)] w-full max-w-lg flex-col overflow-hidden rounded-card bg-background shadow-extruded"
+        className="relative z-10 flex max-h-[min(90vh,640px)] w-full max-w-lg flex-col overflow-hidden rounded-card bg-background shadow-soft"
       >
         <header className="flex items-start justify-between gap-3 border-b border-black/5 px-5 py-4 sm:px-6">
           <div>
@@ -169,14 +169,14 @@ function CreateAccountDrawer({
 
         <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-5 sm:px-6">
           <label className="block space-y-1.5">
-            <span className="neu-field-label">Họ và tên *</span>
-            <input className="neu-input !h-11" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+            <span className="ui-field-label">Họ và tên *</span>
+            <input className="ui-input !h-11" value={fullName} onChange={(e) => setFullName(e.target.value)} />
           </label>
           <label className="block space-y-1.5">
-            <span className="neu-field-label">Email *</span>
+            <span className="ui-field-label">Email *</span>
             <input
               type="email"
-              className="neu-input !h-11"
+              className="ui-input !h-11"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="name@student.iu.edu.vn"
@@ -184,7 +184,7 @@ function CreateAccountDrawer({
           </label>
 
           <div>
-            <span className="neu-field-label">Role *</span>
+            <span className="ui-field-label">Role *</span>
             <div className="grid grid-cols-2 gap-2">
               {(["member", "admin"] as AccountRole[]).map((r) => (
                 <button
@@ -193,8 +193,8 @@ function CreateAccountDrawer({
                   onClick={() => setRole(r)}
                   className={`rounded-2xl px-2 py-3 text-center text-xs font-semibold transition-all ${
                     role === r
-                      ? "bg-accent/20 text-accent shadow-inset-sm"
-                      : "shadow-extruded-sm text-muted hover:text-foreground"
+                      ? "bg-accent/20 text-accent shadow-hairline"
+                      : "shadow-soft-sm text-muted hover:text-foreground"
                   }`}
                 >
                   {ROLE_LABEL[r]}
@@ -208,7 +208,7 @@ function CreateAccountDrawer({
           </div>
 
           <div>
-            <span className="neu-field-label">Ban *</span>
+            <span className="ui-field-label">Ban *</span>
             <Select
               width="full"
               value={departmentId}
@@ -219,7 +219,7 @@ function CreateAccountDrawer({
           </div>
 
           {role === "member" && (
-            <label className="flex items-center gap-3 rounded-2xl bg-background px-4 py-3 shadow-inset-sm text-sm">
+            <label className="flex items-center gap-3 rounded-2xl bg-background px-4 py-3 shadow-hairline text-sm">
               <input
                 type="checkbox"
                 className="accent-accent"
@@ -231,9 +231,9 @@ function CreateAccountDrawer({
           )}
 
           <label className="block space-y-1.5">
-            <span className="neu-field-label">Mật khẩu tạm *</span>
+            <span className="ui-field-label">Mật khẩu tạm *</span>
             <input
-              className="neu-input !h-11"
+              className="ui-input !h-11"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
@@ -372,7 +372,7 @@ function AdminPermissionsPage() {
           }}
         >
           <div>
-            <span className="neu-field-label">Lọc theo role</span>
+            <span className="ui-field-label">Lọc theo role</span>
             <Select
               width="full"
               value={draftRole}
@@ -389,7 +389,7 @@ function AdminPermissionsPage() {
       </div>
 
       {loading ? (
-        <div className="neu-card h-64 animate-pulse" aria-busy="true" />
+        <div className="ui-card h-64 animate-pulse" aria-busy="true" />
       ) : (
         <DataTableShell minWidth={760}>
           <colgroup>

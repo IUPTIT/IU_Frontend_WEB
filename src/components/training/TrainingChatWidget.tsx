@@ -61,7 +61,7 @@ export default function TrainingChatWidget({ groups }: Props) {
           <div
             role="dialog"
             aria-label="Trao đổi nhóm"
-            className="pointer-events-auto relative z-10 mb-16 flex h-[min(70vh,30rem)] w-[min(100vw-2rem,22.5rem)] flex-col overflow-hidden rounded-card bg-background shadow-extruded animate-in fade-in slide-in-from-bottom-3 duration-300"
+            className="pointer-events-auto relative z-10 mb-16 flex h-[min(70vh,30rem)] w-[min(100vw-2rem,22.5rem)] flex-col overflow-hidden rounded-card bg-background shadow-soft animate-in fade-in slide-in-from-bottom-3 duration-300"
           >
             <header className="flex items-start gap-2 border-b border-black/5 px-4 py-3">
               <div className="min-w-0 flex-1 space-y-1">
@@ -86,7 +86,7 @@ export default function TrainingChatWidget({ groups }: Props) {
               </div>
               <button
                 type="button"
-                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-background text-muted shadow-extruded-sm transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-background text-muted shadow-soft-sm transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                 aria-label="Đóng"
                 onClick={() => setOpen(false)}
               >
@@ -115,7 +115,7 @@ export default function TrainingChatWidget({ groups }: Props) {
           aria-label="Trao đổi nhóm"
           aria-expanded={open}
           onClick={() => setOpen((v) => !v)}
-          className={`pointer-events-auto inline-flex h-14 w-14 items-center justify-center rounded-full bg-accent text-white shadow-extruded transition duration-300 hover:scale-105 hover:bg-accent-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
+          className={`pointer-events-auto inline-flex h-14 w-14 items-center justify-center rounded-full bg-accent text-white shadow-soft transition duration-300 hover:scale-105 hover:bg-accent-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
             open ? "scale-95" : ""
           }`}
         >

@@ -163,7 +163,7 @@ function CampaignTable({
           <tr>
             <td colSpan={displayColumns.length}>
               <div className="flex flex-col items-center gap-3 py-14 text-center">
-                <div className="neu-well h-16 w-16 text-muted">
+                <div className="ui-well h-16 w-16 text-muted">
                   <Icon icon={FolderOpen} size={28} />
                 </div>
                 <p className="font-medium text-foreground">Chưa có đợt tuyển nào</p>

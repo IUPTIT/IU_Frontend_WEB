@@ -32,10 +32,10 @@ function InterviewSlotCard({
   const barClass = missing ? "bg-rose-400" : "bg-emerald-400";
 
   return (
-    <article className="neu-card !p-0 overflow-hidden flex">
+    <article className="ui-card !p-0 overflow-hidden flex">
       <div className={`w-1.5 shrink-0 ${barClass}`} aria-hidden />
       <div className="flex flex-1 flex-wrap items-stretch gap-4 p-4 sm:p-5">
-        <div className="flex w-[72px] shrink-0 flex-col items-center justify-center rounded-2xl bg-background px-2 py-3 shadow-inset-sm text-center">
+        <div className="flex w-[72px] shrink-0 flex-col items-center justify-center rounded-2xl bg-background px-2 py-3 shadow-hairline text-center">
           <span className="text-lg font-bold text-foreground">{slot.startTime}</span>
           <span className="text-[11px] text-muted">{slot.durationMinutes} phút</span>
         </div>
@@ -73,7 +73,7 @@ function InterviewSlotCard({
               {slot.interviewers.map((iv) => (
                 <span
                   key={iv.id}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-background px-2 py-1 text-xs shadow-extruded-sm"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-background px-2 py-1 text-xs shadow-soft-sm"
                 >
                   <span className="flex h-6 w-6 items-center justify-center rounded-full bg-accent/15 text-[10px] font-bold text-accent">
                     {initials(iv.name)}
@@ -128,7 +128,7 @@ function InterviewSlotCard({
               type="button"
               title="Danh sách ứng viên trong ca"
               aria-label="Danh sách ứng viên trong ca"
-              className="flex h-9 w-9 items-center justify-center rounded-xl text-muted shadow-extruded-sm transition-all duration-300 ease-out hover:text-accent active:shadow-inset-sm focus-visible:ring-2 ring-accent ring-offset-2 ring-offset-background"
+              className="flex h-9 w-9 items-center justify-center rounded-xl text-muted shadow-soft-sm transition-all duration-300 ease-out hover:text-accent active:shadow-hairline focus-visible:ring-2 ring-accent ring-offset-2 ring-offset-background"
               onClick={() => onOpenCandidates(slot)}
             >
               <Icon icon={Users} size={15} />
@@ -139,7 +139,7 @@ function InterviewSlotCard({
                   type="button"
                   title="Sửa ca"
                   aria-label="Sửa ca"
-                  className="flex h-9 w-9 items-center justify-center rounded-xl text-muted shadow-extruded-sm transition-all duration-300 ease-out hover:text-accent active:shadow-inset-sm focus-visible:ring-2 ring-accent ring-offset-2 ring-offset-background"
+                  className="flex h-9 w-9 items-center justify-center rounded-xl text-muted shadow-soft-sm transition-all duration-300 ease-out hover:text-accent active:shadow-hairline focus-visible:ring-2 ring-accent ring-offset-2 ring-offset-background"
                   onClick={() => onReschedule(slot)}
                 >
                   <Icon icon={Pencil} size={15} />
@@ -148,7 +148,7 @@ function InterviewSlotCard({
                   type="button"
                   title="Xoá ca"
                   aria-label="Xoá ca"
-                  className="flex h-9 w-9 items-center justify-center rounded-xl text-rose-500 shadow-extruded-sm transition-all duration-300 ease-out hover:text-rose-600 active:shadow-inset-sm focus-visible:ring-2 ring-accent ring-offset-2 ring-offset-background"
+                  className="flex h-9 w-9 items-center justify-center rounded-xl text-rose-500 shadow-soft-sm transition-all duration-300 ease-out hover:text-rose-600 active:shadow-hairline focus-visible:ring-2 ring-accent ring-offset-2 ring-offset-background"
                   onClick={() => onDelete(slot)}
                 >
                   <Icon icon={Trash2} size={15} />

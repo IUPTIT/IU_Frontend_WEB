@@ -21,7 +21,7 @@ export default function TaskTrackingBoard({ rows, onReviewed }: Props) {
   const open = rows.find((r) => r.key === openKey) ?? null;
 
   return (
-    <section className="neu-card !p-5 space-y-4 min-w-0">
+    <section className="ui-card !p-5 space-y-4 min-w-0">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="font-display text-lg font-bold">Bảng theo dõi task</h2>
         <p className="text-xs text-muted">
@@ -161,7 +161,7 @@ function ReviewDrawer({
       <div
         role="dialog"
         aria-modal="true"
-        className="relative z-10 flex max-h-[min(92vh,640px)] w-full max-w-lg flex-col overflow-hidden rounded-card bg-background shadow-extruded"
+        className="relative z-10 flex max-h-[min(92vh,640px)] w-full max-w-lg flex-col overflow-hidden rounded-card bg-background shadow-soft"
       >
         <header className="border-b border-black/5 px-5 py-4">
           <h3 className="font-display text-xl font-extrabold">{row.taskTitle}</h3>
@@ -214,13 +214,13 @@ function ReviewDrawer({
                   min={0}
                   max={10}
                   step={0.5}
-                  className="neu-input !h-10 w-24"
+                  className="ui-input !h-10 w-24"
                   placeholder="Điểm"
                   value={score}
                   onChange={(e) => setScore(e.target.value)}
                 />
                 <input
-                  className="neu-input !h-10 flex-1"
+                  className="ui-input !h-10 flex-1"
                   placeholder="Nhận xét..."
                   value={feedback}
                   onChange={(e) => setFeedback(e.target.value)}
@@ -247,7 +247,7 @@ function ReviewDrawer({
               </div>
             </div>
           ) : (
-            <p className="rounded-2xl bg-background px-3 py-2 text-xs text-muted shadow-inset-sm">
+            <p className="rounded-2xl bg-background px-3 py-2 text-xs text-muted shadow-hairline">
               Tân binh chưa nộp bài — chờ submission trước khi chấm.
             </p>
           )}

@@ -68,7 +68,7 @@ function MentorTasksPage() {
 
   if (!canManage) {
     return (
-      <section className="neu-card !p-10 text-center space-y-3">
+      <section className="ui-card !p-10 text-center space-y-3">
         <h1 className="font-display text-2xl font-extrabold">
           Quản lý Task Training
         </h1>
@@ -83,7 +83,7 @@ function MentorTasksPage() {
   if (loading) {
     return (
       <div
-        className="neu-card h-64 animate-pulse"
+        className="ui-card h-64 animate-pulse"
         aria-busy="true"
         aria-label="Đang tải"
       />
@@ -104,7 +104,7 @@ function MentorTasksPage() {
       </div>
 
       {groups.length === 0 ? (
-        <section className="neu-card !p-8 text-center">
+        <section className="ui-card !p-8 text-center">
           <p className="text-sm text-muted">
             Bạn chưa dẫn team nào — chờ Ban Chủ nhiệm chia đội.
           </p>

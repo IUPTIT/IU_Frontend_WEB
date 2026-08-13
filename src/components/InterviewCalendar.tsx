@@ -52,7 +52,7 @@ function InterviewCalendar({
       className={
         flat
           ? "space-y-4 rounded-2xl border border-[#E8EAF2] bg-white p-5"
-          : "neu-card !p-5 space-y-4"
+          : "ui-card !p-5 space-y-4"
       }
     >
       <div className="flex items-center justify-between gap-2">
@@ -152,7 +152,7 @@ function InterviewCalendar({
                 selected
                   ? flat
                     ? "bg-[#7C3AED] font-bold text-white"
-                    : "bg-accent text-white font-bold shadow-extruded-sm"
+                    : "bg-accent text-white font-bold shadow-soft-sm"
                   : flat
                     ? "text-[#191A2C] hover:bg-[#F1E9FE]"
                     : "text-foreground hover:bg-accent/10"
