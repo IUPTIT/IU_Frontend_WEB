@@ -18,7 +18,7 @@ function ScoreChart({ data }: { data: TrainingScore[] }) {
   const areaPath = `${linePath} L${x(data.length - 1)},${PAD.top + plotH} L${x(0)},${PAD.top + plotH} Z`;
 
   return (
-    <article className="neu-card">
+    <article className="ui-card">
       <h3 className="text-lg">Đánh giá Năng lực Trainee</h3>
       <p className="mt-1 text-sm text-muted">Điểm trung bình qua các buổi Training</p>
 

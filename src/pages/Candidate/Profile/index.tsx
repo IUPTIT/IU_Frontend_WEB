@@ -36,11 +36,11 @@ function CandidateProfilePage() {
   }, []);
 
   if (loading) {
-    return <div className="neu-card h-64 animate-pulse" aria-busy="true" aria-label="Đang tải" />;
+    return <div className="ui-card h-64 animate-pulse" aria-busy="true" aria-label="Đang tải" />;
   }
   if (!application) {
     return (
-      <section className="neu-card !p-8 text-center">
+      <section className="ui-card !p-8 text-center">
         <p className="text-muted">Không tìm thấy hồ sơ ứng tuyển.</p>
       </section>
     );
@@ -64,7 +64,7 @@ function CandidateProfilePage() {
         </p>
       </div>
 
-      <section className="neu-card !p-6">
+      <section className="ui-card !p-6">
         <Row label="Mã hồ sơ" value={application.applicationCode ?? "—"} />
         <Row label="Họ và tên" value={application.fullName} />
         <Row label="Email" value={application.email} />

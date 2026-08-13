@@ -52,12 +52,12 @@ type Props = {
 };
 
 /**
- * KPI / summary card — flat surface (neu-card), tonal icon chip, tonal value.
+ * KPI / summary card — flat surface (ui-card), tonal icon chip, tonal value.
  */
 function MetricCard({ label, value, hint, tone = "accent", icon, className = "" }: Props) {
   const t = toneClass[tone];
   return (
-    <article className={`neu-card neu-card-hover !p-5 ${className}`}>
+    <article className={`ui-card ui-card-hover !p-5 ${className}`}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 space-y-1.5">
           <p className="eyebrow truncate">{label}</p>

@@ -60,11 +60,11 @@ function InterviewSlotDetailPage({ slotId }: { slotId: string }) {
   }, [slotId]);
 
   if (loading) {
-    return <div className="neu-card h-64 animate-pulse" aria-busy="true" aria-label="Đang tải" />;
+    return <div className="ui-card h-64 animate-pulse" aria-busy="true" aria-label="Đang tải" />;
   }
   if (error || !slot) {
     return (
-      <section className="neu-card !p-8 text-center">
+      <section className="ui-card !p-8 text-center">
         <p className="text-muted">{error ?? "Không tìm thấy ca phỏng vấn."}</p>
       </section>
     );
@@ -93,7 +93,7 @@ function InterviewSlotDetailPage({ slotId }: { slotId: string }) {
         </p>
       </section>
 
-      <section className="neu-card !p-0 overflow-hidden">
+      <section className="ui-card !p-0 overflow-hidden">
         <div className="flex items-center justify-between border-b border-black/5 px-5 py-4">
           <h2 className="font-display text-lg font-bold">Ứng viên trong ca</h2>
           <p className="text-sm text-muted">
@@ -157,7 +157,7 @@ function InterviewSlotDetailPage({ slotId }: { slotId: string }) {
                       <span
                         title="Phỏng vấn & chấm điểm"
                         aria-label="Phỏng vấn & chấm điểm"
-                        className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-accent shadow-extruded-sm"
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-accent shadow-soft-sm"
                       >
                         <Icon icon={ClipboardCheck} size={15} />
                       </span>

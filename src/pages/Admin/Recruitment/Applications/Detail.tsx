@@ -197,12 +197,12 @@ function ApplicationDetailPage({ applicationId }: Props) {
   }, [criteria, scores]);
 
   if (loading) {
-    return <div className="neu-card h-96 animate-pulse" aria-busy="true" aria-label="Đang tải" />;
+    return <div className="ui-card h-96 animate-pulse" aria-busy="true" aria-label="Đang tải" />;
   }
 
   if (!app) {
     return (
-      <section className="neu-card space-y-4">
+      <section className="ui-card space-y-4">
         <h1 className="font-display text-2xl font-bold">Không tìm thấy hồ sơ</h1>
         <Button variant="secondary" onClick={backToList}>
           Quay lại danh sách
@@ -270,9 +270,9 @@ function ApplicationDetailPage({ applicationId }: Props) {
       <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(0,1fr)]">
         {/* Left column */}
         <aside className="space-y-5">
-          <section className="neu-card !p-6 flex flex-col items-center text-center gap-4">
+          <section className="ui-card !p-6 flex flex-col items-center text-center gap-4">
             <span
-              className="flex h-24 w-24 items-center justify-center rounded-full bg-accent/15 text-2xl font-bold text-accent shadow-inset-sm"
+              className="flex h-24 w-24 items-center justify-center rounded-full bg-accent/15 text-2xl font-bold text-accent shadow-hairline"
               aria-hidden
             >
               {initials(app.fullName)}
@@ -286,7 +286,7 @@ function ApplicationDetailPage({ applicationId }: Props) {
 
             <ul className="w-full space-y-3 text-left text-sm text-muted pt-2">
               <li className="flex items-start gap-2.5">
-                <span className="neu-well-sm h-8 w-8 shrink-0 text-accent" aria-hidden>
+                <span className="ui-well-sm h-8 w-8 shrink-0 text-accent" aria-hidden>
                   <svg className="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
                     <rect x="3" y="5" width="14" height="10" rx="2" />
                     <path d="m3.5 6.5 6.5 5 6.5-5" strokeLinecap="round" />
@@ -296,7 +296,7 @@ function ApplicationDetailPage({ applicationId }: Props) {
               </li>
               {app.phone && (
                 <li className="flex items-start gap-2.5">
-                  <span className="neu-well-sm h-8 w-8 shrink-0 text-accent" aria-hidden>
+                  <span className="ui-well-sm h-8 w-8 shrink-0 text-accent" aria-hidden>
                     <svg className="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
                       <path
                         d="M6.5 3.5h2l1 3.5-1.5 1a9 9 0 0 0 4 4l1-1.5 3.5 1v2a2 2 0 0 1-2 2A11.5 11.5 0 0 1 4.5 5.5a2 2 0 0 1 2-2Z"
@@ -309,7 +309,7 @@ function ApplicationDetailPage({ applicationId }: Props) {
               )}
               {app.education && (
                 <li className="flex items-start gap-2.5">
-                  <span className="neu-well-sm h-8 w-8 shrink-0 text-accent" aria-hidden>
+                  <span className="ui-well-sm h-8 w-8 shrink-0 text-accent" aria-hidden>
                     <svg className="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
                       <path d="m2.5 8 7.5-4 7.5 4-7.5 4-7.5-4Z" strokeLinejoin="round" />
                       <path d="M5.5 10v3.5c0 1 2 2 4.5 2s4.5-1 4.5-2V10M17.5 8v5" strokeLinecap="round" />
@@ -321,7 +321,7 @@ function ApplicationDetailPage({ applicationId }: Props) {
             </ul>
           </section>
 
-          <section className="neu-card !p-5 space-y-3">
+          <section className="ui-card !p-5 space-y-3">
             <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
               <svg className="h-4 w-4 text-accent" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden>
                 <path d="M8.5 11.5 5.5 8.5a3 3 0 0 1 4.2-4.2l1.3 1.3" strokeLinecap="round" />
@@ -351,7 +351,7 @@ function ApplicationDetailPage({ applicationId }: Props) {
 
         {/* Right column */}
         <div className="space-y-5 min-w-0">
-          <section className="neu-card !p-6 space-y-4">
+          <section className="ui-card !p-6 space-y-4">
             <h3 className="font-display text-lg font-bold">Câu trả lời Form đăng ký</h3>
 
             {answers.length === 0 ? (
@@ -361,7 +361,7 @@ function ApplicationDetailPage({ applicationId }: Props) {
                 {answers.map((ans) => (
                   <article
                     key={ans.id}
-                    className="rounded-2xl bg-accent/8 px-4 py-4 shadow-inset-sm space-y-2"
+                    className="rounded-2xl bg-accent/8 px-4 py-4 shadow-hairline space-y-2"
                   >
                     <p className="text-sm font-semibold text-accent">
                       Câu {ans.questionOrder}: {ans.questionContent}
@@ -373,7 +373,7 @@ function ApplicationDetailPage({ applicationId }: Props) {
             )}
           </section>
 
-          <section className="neu-card !p-6 space-y-5">
+          <section className="ui-card !p-6 space-y-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h3 className="font-display text-lg font-bold">Phân công người chấm</h3>
               {app.status === "submitted" && (
@@ -413,7 +413,7 @@ function ApplicationDetailPage({ applicationId }: Props) {
                 return (
                   <label
                     key={r.id}
-                    className={`inline-flex cursor-pointer items-center gap-2 rounded-2xl px-3 py-2 text-sm shadow-inset-sm ${
+                    className={`inline-flex cursor-pointer items-center gap-2 rounded-2xl px-3 py-2 text-sm shadow-hairline ${
                       checked ? "bg-accent/15 text-accent" : "bg-background text-muted"
                     }`}
                   >
@@ -435,7 +435,7 @@ function ApplicationDetailPage({ applicationId }: Props) {
             </div>
           </section>
 
-          <section className="neu-card !p-6 space-y-5">
+          <section className="ui-card !p-6 space-y-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h3 className="font-display text-lg font-bold">Phần Đánh Giá (Vòng Đơn)</h3>
               <span className="inline-flex rounded-full bg-muted/15 px-3 py-1 text-xs font-medium text-muted">
@@ -456,7 +456,7 @@ function ApplicationDetailPage({ applicationId }: Props) {
                     max={c.maxScore}
                     step={0.5}
                     disabled={!canScore}
-                    className="neu-input !h-11 max-w-[100px] text-center font-semibold disabled:opacity-60"
+                    className="ui-input !h-11 max-w-[100px] text-center font-semibold disabled:opacity-60"
                     value={scores[c.id] ?? ""}
                     onChange={(e) => setScores((prev) => ({ ...prev, [c.id]: e.target.value }))}
                     aria-label={c.name}
@@ -479,7 +479,7 @@ function ApplicationDetailPage({ applicationId }: Props) {
                 id="screening-comment"
                 rows={5}
                 disabled={!canScore}
-                className="neu-input !h-auto min-h-[120px] py-3 resize-y text-sm leading-relaxed disabled:opacity-60"
+                className="ui-input !h-auto min-h-[120px] py-3 resize-y text-sm leading-relaxed disabled:opacity-60"
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
                 placeholder="Nhập nhận xét về hồ sơ ứng viên..."
@@ -499,7 +499,7 @@ function ApplicationDetailPage({ applicationId }: Props) {
                 title={canScore ? "Loại hồ sơ" : "Hồ sơ đã qua vòng đơn"}
                 onClick={() => void handleDecision("fail")}
                 className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl px-5 text-sm font-semibold text-white
-                  bg-rose-500 shadow-extruded-sm transition-all duration-300
+                  bg-rose-500 shadow-soft-sm transition-all duration-300
                   hover:-translate-y-px hover:bg-rose-600
                   active:translate-y-[0.5px] disabled:opacity-50 disabled:pointer-events-none
                   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400"
@@ -516,7 +516,7 @@ function ApplicationDetailPage({ applicationId }: Props) {
                 title={canScore ? "Pass vòng đơn" : "Hồ sơ đã qua vòng đơn"}
                 onClick={() => void handleDecision("pass")}
                 className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl px-5 text-sm font-semibold text-white
-                  bg-accent shadow-extruded-sm transition-all duration-300
+                  bg-accent shadow-soft-sm transition-all duration-300
                   hover:-translate-y-px hover:brightness-110
                   active:translate-y-[0.5px] disabled:opacity-50 disabled:pointer-events-none
                   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"

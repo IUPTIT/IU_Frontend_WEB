@@ -43,7 +43,7 @@ function DeptIcon({ departmentId }: { departmentId: string }) {
 function DepartmentCell({ departmentId, departmentName }: Props) {
   return (
     <div className="inline-flex items-center gap-2.5">
-      <span className="neu-well-sm h-8 w-8 shrink-0">
+      <span className="ui-well-sm h-8 w-8 shrink-0">
         <DeptIcon departmentId={departmentId} />
       </span>
       <span className="text-sm text-foreground">{departmentName}</span>

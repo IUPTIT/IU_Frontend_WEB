@@ -75,11 +75,11 @@ export default function MemberOverviewPage() {
       {loading ? (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="neu-card h-28 animate-pulse" />
+            <div key={i} className="ui-card h-28 animate-pulse" />
           ))}
         </div>
       ) : !hasTraining ? (
-        <div className="neu-card !p-10 text-center space-y-3">
+        <div className="ui-card !p-10 text-center space-y-3">
           <p className="font-semibold">Chưa vào vòng training</p>
           <p className="text-sm text-muted mx-auto max-w-md">
             Khi Ban Chủ nhiệm bàn giao sau khi bạn trúng tuyển, lộ trình và task
@@ -119,7 +119,7 @@ export default function MemberOverviewPage() {
             />
           </div>
 
-          <div className="neu-card !p-5 flex flex-wrap gap-3">
+          <div className="ui-card !p-5 flex flex-wrap gap-3">
             <Button
               variant="primary"
               size="sm"

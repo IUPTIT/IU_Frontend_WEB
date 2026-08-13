@@ -151,12 +151,12 @@ function CandidateInterviewPage() {
   };
 
   if (loading) {
-    return <div className="neu-card h-64 animate-pulse" aria-busy="true" aria-label="Đang tải" />;
+    return <div className="ui-card h-64 animate-pulse" aria-busy="true" aria-label="Đang tải" />;
   }
 
   if (error || !application) {
     return (
-      <section className="neu-card !p-8 text-center">
+      <section className="ui-card !p-8 text-center">
         <p className="text-muted">{error ?? "Không tìm thấy hồ sơ ứng tuyển."}</p>
       </section>
     );
@@ -187,20 +187,20 @@ function CandidateInterviewPage() {
 
       {/* Đã có lịch */}
       {bookedSlot && !changing && (
-        <section className="neu-card space-y-4 !p-6">
+        <section className="ui-card space-y-4 !p-6">
           <h2 className="font-display text-lg font-bold">Lịch phỏng vấn của bạn</h2>
           <div className="grid gap-3 sm:grid-cols-3">
-            <div className="neu-well-sm !p-4">
+            <div className="ui-well-sm !p-4">
               <p className="text-xs text-muted">Ngày</p>
               <p className="font-bold text-foreground">{formatDate(bookedSlot.date)}</p>
             </div>
-            <div className="neu-well-sm !p-4">
+            <div className="ui-well-sm !p-4">
               <p className="text-xs text-muted">Giờ</p>
               <p className="font-bold text-foreground">
                 {bookedSlot.startTime} - {bookedSlot.endTime}
               </p>
             </div>
-            <div className="neu-well-sm !p-4">
+            <div className="ui-well-sm !p-4">
               <p className="text-xs text-muted">Địa điểm</p>
               <p className="font-bold text-foreground">{bookedSlot.location}</p>
             </div>
@@ -222,7 +222,7 @@ function CandidateInterviewPage() {
 
       {/* Chưa có lịch (hoặc đang đổi ca) và đủ điều kiện đặt */}
       {application.status === "passed_cv" && (!bookedSlot || changing) && (
-        <section className="neu-card space-y-5 !p-6">
+        <section className="ui-card space-y-5 !p-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="font-display text-lg font-bold">
               {changing ? "Chọn ca mới" : "Chọn ca phỏng vấn"}
@@ -296,7 +296,7 @@ function CandidateInterviewPage() {
 
       {/* Trạng thái khác — hiện thông báo tương ứng */}
       {application.status !== "passed_cv" && (
-        <section className="neu-card !p-8 text-center">
+        <section className="ui-card !p-8 text-center">
           <p className="text-foreground">
             {STATUS_NOTE[application.status] ?? "Trạng thái hồ sơ không xác định."}
           </p>

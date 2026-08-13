@@ -26,13 +26,13 @@ export default function Page() {
           Hướng dẫn nhanh cho thành viên và mentor trên Member Portal.
         </p>
       </div>
-      <section className="neu-card !p-5 space-y-3">
+      <section className="ui-card !p-5 space-y-3">
         <h2 className="font-display text-lg font-bold">Câu hỏi thường gặp</h2>
         <ul className="space-y-3">
           {FAQS.map((f) => (
             <li
               key={f.q}
-              className="rounded-2xl bg-background px-4 py-3 shadow-inset-sm"
+              className="rounded-2xl bg-background px-4 py-3 shadow-hairline"
             >
               <p className="font-semibold text-sm">{f.q}</p>
               <p className="mt-1 text-sm text-muted">{f.a}</p>

@@ -305,7 +305,7 @@ function RecruitmentOpenPage() {
       </section>
 
       {loading ? (
-        <div className="neu-card h-64 animate-pulse" aria-busy="true" aria-label="Đang tải" />
+        <div className="ui-card h-64 animate-pulse" aria-busy="true" aria-label="Đang tải" />
       ) : (
         <>
           <CampaignTable

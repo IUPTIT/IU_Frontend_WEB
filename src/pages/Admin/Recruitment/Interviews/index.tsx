@@ -276,13 +276,13 @@ function RecruitmentInterviewsPage() {
               onChange={setCampaignId}
               ariaLabel="Chọn đợt tuyển"
               className="min-w-[200px]"
-              triggerClassName="!h-10 !shadow-extruded-sm text-accent !font-semibold"
+              triggerClassName="!h-10 !shadow-soft-sm text-accent !font-semibold"
             />
           </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex rounded-2xl bg-background p-1 shadow-inset-sm">
+          <div className="flex rounded-2xl bg-background p-1 shadow-hairline">
             {(
               [
                 { id: "schedule" as const, label: "Lịch PV" },
@@ -295,7 +295,7 @@ function RecruitmentInterviewsPage() {
                 onClick={() => setTab(t.id)}
                 className={`rounded-xl px-4 py-2 text-sm font-semibold transition-all ${
                   tab === t.id
-                    ? "bg-accent/20 text-accent shadow-extruded-sm"
+                    ? "bg-accent/20 text-accent shadow-soft-sm"
                     : "text-muted hover:text-foreground"
                 }`}
               >
@@ -315,7 +315,7 @@ function RecruitmentInterviewsPage() {
                 }}
               >
                 <div>
-                  <span className="neu-field-label">Trạng thái slot</span>
+                  <span className="ui-field-label">Trạng thái slot</span>
                   <Select
                     width="full"
                     value={draftStatus}
@@ -460,7 +460,7 @@ function RecruitmentInterviewsPage() {
       </section>
 
       {tab === "schedule" && unbooked.length > 0 && (
-        <section className="neu-card !p-5 space-y-4">
+        <section className="ui-card !p-5 space-y-4">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
               <h2 className="font-display text-lg font-bold">Chưa đặt lịch phỏng vấn</h2>
@@ -588,7 +588,7 @@ function RecruitmentInterviewsPage() {
                 </svg>
               </span>
               <input
-                className="neu-input pl-12"
+                className="ui-input pl-12"
                 placeholder="Tìm kiếm ứng viên, người phỏng vấn..."
                 value={localSearch}
                 onChange={(e) => setLocalSearch(e.target.value)}
@@ -596,9 +596,9 @@ function RecruitmentInterviewsPage() {
             </label>
 
             {loading ? (
-              <div className="neu-card h-48 animate-pulse" aria-busy="true" />
+              <div className="ui-card h-48 animate-pulse" aria-busy="true" />
             ) : filteredDaySlots.length === 0 ? (
-              <div className="neu-card py-16 text-center text-muted">
+              <div className="ui-card py-16 text-center text-muted">
                 Không có ca phỏng vấn ngày {formatDate(selectedDate)}.
               </div>
             ) : (
@@ -622,7 +622,7 @@ function RecruitmentInterviewsPage() {
       )}
 
       {tab === "results" && (
-        <div className="neu-card overflow-hidden !p-0">
+        <div className="ui-card overflow-hidden !p-0">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[900px] text-left">
               <thead>
@@ -676,7 +676,7 @@ function RecruitmentInterviewsPage() {
                             title="Sửa / duyệt kết quả"
                             aria-label="Sửa / duyệt kết quả"
                             disabled={!row.bookingId}
-                            className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-muted shadow-extruded-sm transition-all duration-300 ease-out hover:text-accent active:shadow-inset-sm disabled:opacity-40 focus-visible:ring-2 ring-accent ring-offset-2 ring-offset-background"
+                            className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-muted shadow-soft-sm transition-all duration-300 ease-out hover:text-accent active:shadow-hairline disabled:opacity-40 focus-visible:ring-2 ring-accent ring-offset-2 ring-offset-background"
                             onClick={() =>
                               row.bookingId &&
                               navigate(ROUTES.admin.recruitment.interviewNote(row.bookingId))

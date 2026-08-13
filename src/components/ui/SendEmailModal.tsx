@@ -309,14 +309,14 @@ function SendEmailModal({
     >
       {loading ? (
         <div
-          className="h-48 animate-pulse rounded-2xl bg-background shadow-inset-sm"
+          className="h-48 animate-pulse rounded-2xl bg-background shadow-hairline"
           aria-busy
         />
       ) : (
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_240px]">
           <div className="space-y-4 min-w-0">
             <div>
-              <span className="neu-field-label">Loại email (Template)</span>
+              <span className="ui-field-label">Loại email (Template)</span>
               <Select
                 width="full"
                 value={templateId}
@@ -330,9 +330,9 @@ function SendEmailModal({
             </div>
 
             <label className="block space-y-1.5">
-              <span className="neu-field-label">Subject</span>
+              <span className="ui-field-label">Subject</span>
               <input
-                className="neu-input !h-11"
+                className="ui-input !h-11"
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
                 placeholder="Tiêu đề email"
@@ -340,10 +340,10 @@ function SendEmailModal({
             </label>
 
             <label className="block space-y-1.5">
-              <span className="neu-field-label">Nội dung</span>
+              <span className="ui-field-label">Nội dung</span>
               <textarea
                 ref={bodyRef}
-                className="neu-input !h-auto min-h-[180px] py-3 font-mono text-sm resize-y"
+                className="ui-input !h-auto min-h-[180px] py-3 font-mono text-sm resize-y"
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
                 placeholder="Nội dung email..."
@@ -351,12 +351,12 @@ function SendEmailModal({
             </label>
 
             {showTest && (
-              <div className="flex flex-wrap items-end gap-2 rounded-2xl bg-background p-3 shadow-inset-sm">
+              <div className="flex flex-wrap items-end gap-2 rounded-2xl bg-background p-3 shadow-hairline">
                 <label className="block min-w-[200px] flex-1 space-y-1">
-                  <span className="neu-field-label">Email nhận thử</span>
+                  <span className="ui-field-label">Email nhận thử</span>
                   <input
                     type="email"
-                    className="neu-input !h-10"
+                    className="ui-input !h-10"
                     value={testEmail}
                     onChange={(e) => setTestEmail(e.target.value)}
                     placeholder="admin@gmail.com"
@@ -375,7 +375,7 @@ function SendEmailModal({
             )}
 
             {previewHtml && (
-              <div className="rounded-2xl border border-accent/20 bg-background p-4 shadow-inset-sm space-y-2">
+              <div className="rounded-2xl border border-accent/20 bg-background p-4 shadow-hairline space-y-2">
                 <p className="text-xs font-semibold uppercase tracking-wide text-accent">
                   Xem trước
                   {recipients[0]
@@ -428,9 +428,9 @@ function SendEmailModal({
               )}
             </div>
 
-            <p className="neu-field-label !mb-0">Placeholder</p>
+            <p className="ui-field-label !mb-0">Placeholder</p>
             <p className="text-xs text-muted">Click để chèn vào nội dung</p>
-            <ul className="max-h-[280px] space-y-1.5 overflow-y-auto rounded-2xl bg-background p-2 shadow-inset-sm">
+            <ul className="max-h-[280px] space-y-1.5 overflow-y-auto rounded-2xl bg-background p-2 shadow-hairline">
               {placeholders.map((p) => (
                 <li key={p.key}>
                   <button

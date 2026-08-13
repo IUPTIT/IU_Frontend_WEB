@@ -150,14 +150,14 @@ function SettingsPage() {
       </header>
 
       {/* Avatar + profile */}
-      <section className="neu-card !p-6 space-y-6">
+      <section className="ui-card !p-6 space-y-6">
         <h2 className="font-display text-lg font-bold">Hồ sơ cá nhân</h2>
 
         <div className="flex flex-wrap items-center gap-5">
           <button
             type="button"
             onClick={() => fileRef.current?.click()}
-            className="group relative overflow-hidden rounded-full shadow-extruded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            className="group relative overflow-hidden rounded-full shadow-soft-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             aria-label="Đổi ảnh đại diện"
           >
             <Avatar name={user.name} src={user.avatarDataUrl} size="xl" />
@@ -183,7 +183,7 @@ function SettingsPage() {
                 {user.roles.map((r) => (
                   <span
                     key={r}
-                    className="inline-flex rounded-full bg-background px-2 py-0.5 text-[11px] font-medium text-muted shadow-inset-sm"
+                    className="inline-flex rounded-full bg-background px-2 py-0.5 text-[11px] font-medium text-muted shadow-hairline"
                   >
                     {ROLE_LABEL[r]}
                   </span>
@@ -218,26 +218,26 @@ function SettingsPage() {
 
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="block space-y-1.5 sm:col-span-2">
-            <span className="neu-field-label">Tên hiển thị</span>
-            <input className="neu-input !h-11" value={name} onChange={(e) => setName(e.target.value)} />
+            <span className="ui-field-label">Tên hiển thị</span>
+            <input className="ui-input !h-11" value={name} onChange={(e) => setName(e.target.value)} />
           </label>
           <label className="block space-y-1.5">
-            <span className="neu-field-label">Email</span>
-            <input className="neu-input !h-11 opacity-70" value={user.email} disabled />
+            <span className="ui-field-label">Email</span>
+            <input className="ui-input !h-11 opacity-70" value={user.email} disabled />
           </label>
           <label className="block space-y-1.5">
-            <span className="neu-field-label">Số điện thoại</span>
+            <span className="ui-field-label">Số điện thoại</span>
             <input
-              className="neu-input !h-11"
+              className="ui-input !h-11"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="09xx xxx xxx"
             />
           </label>
           <label className="block space-y-1.5 sm:col-span-2">
-            <span className="neu-field-label">Giới thiệu ngắn</span>
+            <span className="ui-field-label">Giới thiệu ngắn</span>
             <textarea
-              className="neu-input !h-auto min-h-[88px] py-3 resize-y text-sm"
+              className="ui-input !h-auto min-h-[88px] py-3 resize-y text-sm"
               value={bio}
               onChange={(e) => setBio(e.target.value)}
               placeholder="Một dòng về bạn trong CLB..."
@@ -255,7 +255,7 @@ function SettingsPage() {
       </section>
 
       {/* Theme */}
-      <section className="neu-card !p-6 space-y-5">
+      <section className="ui-card !p-6 space-y-5">
         <div>
           <h2 className="font-display text-lg font-bold">Giao diện</h2>
           <p className="text-sm text-muted mt-1">Chế độ sáng / tối — Soft UI thích ứng.</p>
@@ -273,11 +273,11 @@ function SettingsPage() {
               onClick={() => setTheme(opt.id)}
               className={`rounded-2xl p-4 text-left transition-all duration-200 ${
                 theme === opt.id
-                  ? "bg-accent/20 text-accent shadow-inset-sm ring-1 ring-accent/30"
-                  : "shadow-extruded-sm text-foreground hover:bg-accent/5"
+                  ? "bg-accent/20 text-accent shadow-hairline ring-1 ring-accent/30"
+                  : "shadow-soft-sm text-foreground hover:bg-accent/5"
               }`}
             >
-              <span className="mb-2 flex h-9 w-9 items-center justify-center rounded-full bg-background shadow-extruded-sm text-accent">
+              <span className="mb-2 flex h-9 w-9 items-center justify-center rounded-full bg-background shadow-soft-sm text-accent">
                 <Icon icon={opt.id === "dark" ? Moon : Sun} size={18} />
               </span>
               <span className="block font-semibold">{opt.label}</span>
@@ -288,9 +288,9 @@ function SettingsPage() {
       </section>
 
       {/* Notifications */}
-      <section className="neu-card !p-6 space-y-4">
+      <section className="ui-card !p-6 space-y-4">
         <h2 className="font-display text-lg font-bold">Thông báo</h2>
-        <div className="flex items-center justify-between gap-4 rounded-2xl bg-background px-4 py-3 shadow-inset-sm">
+        <div className="flex items-center justify-between gap-4 rounded-2xl bg-background px-4 py-3 shadow-hairline">
           <div>
             <p className="font-medium">Email</p>
             <p className="text-xs text-muted">Nhận thông báo tuyển dụng / training qua email</p>
@@ -301,7 +301,7 @@ function SettingsPage() {
             aria-label="Bật thông báo email"
           />
         </div>
-        <div className="flex items-center justify-between gap-4 rounded-2xl bg-background px-4 py-3 shadow-inset-sm">
+        <div className="flex items-center justify-between gap-4 rounded-2xl bg-background px-4 py-3 shadow-hairline">
           <div>
             <p className="font-medium">Trong ứng dụng</p>
             <p className="text-xs text-muted">Badge chuông trên thanh trên</p>
@@ -315,13 +315,13 @@ function SettingsPage() {
       </section>
 
       {/* Password */}
-      <section className="neu-card !p-6 space-y-4">
+      <section className="ui-card !p-6 space-y-4">
         <h2 className="font-display text-lg font-bold">Bảo mật</h2>
         <label className="block space-y-1.5">
-          <span className="neu-field-label">Mật khẩu hiện tại</span>
+          <span className="ui-field-label">Mật khẩu hiện tại</span>
           <input
             type="password"
-            className="neu-input !h-11"
+            className="ui-input !h-11"
             value={pwd.current}
             onChange={(e) => setPwd({ ...pwd, current: e.target.value })}
             autoComplete="current-password"
@@ -329,20 +329,20 @@ function SettingsPage() {
         </label>
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="block space-y-1.5">
-            <span className="neu-field-label">Mật khẩu mới</span>
+            <span className="ui-field-label">Mật khẩu mới</span>
             <input
               type="password"
-              className="neu-input !h-11"
+              className="ui-input !h-11"
               value={pwd.next}
               onChange={(e) => setPwd({ ...pwd, next: e.target.value })}
               autoComplete="new-password"
             />
           </label>
           <label className="block space-y-1.5">
-            <span className="neu-field-label">Xác nhận</span>
+            <span className="ui-field-label">Xác nhận</span>
             <input
               type="password"
-              className="neu-input !h-11"
+              className="ui-input !h-11"
               value={pwd.confirm}
               onChange={(e) => setPwd({ ...pwd, confirm: e.target.value })}
               autoComplete="new-password"

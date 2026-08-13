@@ -74,7 +74,7 @@ function LayoutInner({ role, children }: { role: Role; children: ReactNode }) {
             aria-modal="true"
             aria-label="Menu điều hướng"
           >
-            <div className="h-full w-[min(288px,85vw)] overflow-hidden rounded-card shadow-extruded">
+            <div className="h-full w-[min(288px,85vw)] overflow-hidden rounded-card shadow-soft">
               <SideNavBar role={role} variant="drawer" />
             </div>
           </div>

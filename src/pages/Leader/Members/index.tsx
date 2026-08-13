@@ -36,7 +36,7 @@ export default function LeaderMembersPage() {
   }, [load]);
 
   if (error) {
-    return <section className="neu-card !p-8 text-center text-muted">{error}</section>;
+    return <section className="ui-card !p-8 text-center text-muted">{error}</section>;
   }
 
   return (
@@ -61,10 +61,10 @@ export default function LeaderMembersPage() {
       </header>
 
       {showAdd && (
-        <div className="neu-card space-y-3 !p-4">
+        <div className="ui-card space-y-3 !p-4">
           <h2 className="font-display text-lg font-bold">Member chưa phân Ban</h2>
           {unassigned.map((m) => (
-            <div key={m.id} className="flex items-center justify-between gap-3 rounded-xl px-3 py-2 shadow-extruded-sm">
+            <div key={m.id} className="flex items-center justify-between gap-3 rounded-xl px-3 py-2 shadow-soft-sm">
               <div>
                 <p className="font-semibold">{m.fullName}</p>
                 <p className="text-xs text-muted">{m.email}</p>
@@ -90,7 +90,7 @@ export default function LeaderMembersPage() {
         </div>
       )}
 
-      <div className="neu-card !p-0 overflow-x-auto">
+      <div className="ui-card !p-0 overflow-x-auto">
         <table className="data-table w-full min-w-[620px] text-sm">
           <thead className="text-left text-xs uppercase">
             <tr>

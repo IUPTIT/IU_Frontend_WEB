@@ -144,7 +144,7 @@ function AttachmentLightbox({ open, onClose, url, label, filename, variant }: Pr
       </div>
 
       <div
-        className="lb-pop neu-scroll min-h-0 flex-1 overflow-auto p-4 sm:p-6"
+        className="lb-pop ui-scroll min-h-0 flex-1 overflow-auto p-4 sm:p-6"
         onClick={(e) => {
           if (e.target === e.currentTarget) onClose();
         }}

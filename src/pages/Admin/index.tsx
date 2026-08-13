@@ -149,7 +149,7 @@ function AdminPage() {
 
   if (!overview) {
     return (
-      <section className="neu-card !p-10 text-center space-y-3">
+      <section className="ui-card !p-10 text-center space-y-3">
         <h1 className="font-display text-2xl font-extrabold">Tổng quan</h1>
         <p className="text-muted text-sm">{error ?? "Không có dữ liệu."}</p>
         <Button variant="secondary" onClick={() => void load()}>
@@ -167,7 +167,7 @@ function AdminPage() {
             <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
               Tổng quan Hoạt động
             </h1>
-            <span className="rounded-full bg-accent/10 px-3 py-1 text-xs font-semibold text-accent shadow-inset-sm">
+            <span className="rounded-full bg-accent/10 px-3 py-1 text-xs font-semibold text-accent shadow-hairline">
               {overview.label}
             </span>
           </div>
@@ -229,7 +229,7 @@ function AdminPage() {
         {overview.trainingScores.length > 0 ? (
           <ScoreChart data={overview.trainingScores} />
         ) : (
-          <section className="neu-card !p-6 text-sm text-muted">
+          <section className="ui-card !p-6 text-sm text-muted">
             Chưa có điểm training trung bình để vẽ biểu đồ.
           </section>
         )}

@@ -271,17 +271,17 @@ function RoadmapBuilder({
         </div>
       </header>
 
-      <section className="neu-card !p-6 grid gap-4 sm:grid-cols-3">
+      <section className="ui-card !p-6 grid gap-4 sm:grid-cols-3">
         <label className="space-y-1.5 block">
-          <span className="neu-field-label">Tên lộ trình</span>
+          <span className="ui-field-label">Tên lộ trình</span>
           <input
-            className="neu-input"
+            className="ui-input"
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
         </label>
         <div>
-          <span className="neu-field-label">Ban áp dụng</span>
+          <span className="ui-field-label">Ban áp dụng</span>
           <Select
             width="full"
             value={deptId}
@@ -290,12 +290,12 @@ function RoadmapBuilder({
           />
         </div>
         <label className="space-y-1.5 block">
-          <span className="neu-field-label">Ngưỡng Pass (% task đạt)</span>
+          <span className="ui-field-label">Ngưỡng Pass (% task đạt)</span>
           <input
             type="number"
             min={0}
             max={100}
-            className="neu-input"
+            className="ui-input"
             value={passThresholdPercent}
             onChange={(e) =>
               setPassThresholdPercent(
@@ -312,13 +312,13 @@ function RoadmapBuilder({
           aria-hidden
         />
         {stages.map((st, idx) => (
-          <article key={st.id} className="relative neu-card !p-5 space-y-4 ml-10">
-            <span className="absolute -left-[42px] top-5 flex h-9 w-9 items-center justify-center rounded-full bg-accent/20 text-sm font-bold text-accent shadow-extruded-sm">
+          <article key={st.id} className="relative ui-card !p-5 space-y-4 ml-10">
+            <span className="absolute -left-[42px] top-5 flex h-9 w-9 items-center justify-center rounded-full bg-accent/20 text-sm font-bold text-accent shadow-soft-sm">
               {idx + 1}
             </span>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <input
-                className="neu-input !h-11 font-semibold max-w-md flex-1"
+                className="ui-input !h-11 font-semibold max-w-md flex-1"
                 value={st.name}
                 onChange={(e) =>
                   setStages((prev) =>
@@ -329,7 +329,7 @@ function RoadmapBuilder({
                 }
               />
               <div className="flex items-center gap-2 text-sm">
-                <label className="rounded-full bg-background px-3 py-1.5 shadow-inset-sm inline-flex items-center gap-1.5">
+                <label className="rounded-full bg-background px-3 py-1.5 shadow-hairline inline-flex items-center gap-1.5">
                   <Icon icon={Timer} size={14} className="text-muted" />
                   <input
                     type="number"
@@ -364,7 +364,7 @@ function RoadmapBuilder({
                 return (
                   <li
                     key={les.id}
-                    className="flex flex-wrap items-center gap-3 rounded-2xl bg-background px-4 py-3 shadow-inset-sm"
+                    className="flex flex-wrap items-center gap-3 rounded-2xl bg-background px-4 py-3 shadow-hairline"
                   >
                     <span className="text-accent shrink-0" aria-hidden>
                       <Icon icon={meta.icon} size={16} />
@@ -412,7 +412,7 @@ function RoadmapBuilder({
                           }
                         />
                         <input
-                          className="neu-input !h-9 !w-28 text-xs"
+                          className="ui-input !h-9 !w-28 text-xs"
                           placeholder="Thời lượng"
                           value={les.durationLabel ?? ""}
                           onChange={(e) =>
@@ -463,7 +463,7 @@ function RoadmapBuilder({
         <button
           type="button"
           onClick={addStage}
-          className="ml-10 flex w-[calc(100%-2.5rem)] items-center justify-center gap-3 rounded-card bg-background py-6 shadow-extruded-sm text-accent font-semibold hover:-translate-y-px transition-all"
+          className="ml-10 flex w-[calc(100%-2.5rem)] items-center justify-center gap-3 rounded-card bg-background py-6 shadow-soft-sm text-accent font-semibold hover:-translate-y-px transition-all"
         >
           <span className="flex h-10 w-10 items-center justify-center rounded-full bg-accent/15">
             <Icon icon={Plus} size={20} />

@@ -42,7 +42,7 @@ function DownloadAction({ url, filename, label }: { url: string; filename: strin
     }
   };
   return (
-    <button type="button" onClick={download} disabled={downloading} className="neu-btn !h-10 !px-4 text-sm">
+    <button type="button" onClick={download} disabled={downloading} className="ui-btn !h-10 !px-4 text-sm">
       <Icon icon={downloading ? Loader2 : Download} size={15} className={downloading ? "animate-spin" : ""} />
       {downloading ? "Đang tải..." : `Tải ${label}`}
     </button>
@@ -108,19 +108,19 @@ function BlobPdfPreview({ url, label }: { url: string; label: string }) {
 
   if (state === "error") {
     return (
-      <p className="rounded-2xl bg-background p-4 text-sm text-muted shadow-inset-sm">
+      <p className="rounded-2xl bg-background p-4 text-sm text-muted shadow-hairline">
         Không xem trước được — dùng nút Tải xuống bên dưới.
       </p>
     );
   }
   if (state === "loading" || !blobUrl) {
-    return <div className="h-96 w-full animate-pulse rounded-2xl bg-background shadow-inset-sm" aria-busy="true" />;
+    return <div className="h-96 w-full animate-pulse rounded-2xl bg-background shadow-hairline" aria-busy="true" />;
   }
   return (
     <iframe
       src={`${blobUrl}#toolbar=0`}
       title={label}
-      className="h-96 w-full rounded-2xl bg-background shadow-inset-sm"
+      className="h-96 w-full rounded-2xl bg-background shadow-hairline"
     />
   );
 }
@@ -147,7 +147,7 @@ function AttachmentPreview({
             src={url}
             alt={label}
             loading="lazy"
-            className="max-h-72 w-full rounded-2xl bg-background object-contain shadow-inset-sm"
+            className="max-h-72 w-full rounded-2xl bg-background object-contain shadow-hairline"
           />
         </ZoomableFrame>
         <DownloadAction url={url} filename={filename} label={label} />
@@ -172,7 +172,7 @@ function AttachmentPreview({
           <iframe
             src={`${url}#toolbar=0`}
             title={label}
-            className="h-96 w-full rounded-2xl bg-background shadow-inset-sm"
+            className="h-96 w-full rounded-2xl bg-background shadow-hairline"
           />
         </ZoomableFrame>
         <DownloadAction url={url} filename={filename} label={label} />
@@ -221,7 +221,7 @@ function AttachmentPreview({
           window.open(url, "_blank", "noopener");
         }
       }}
-      className="neu-btn !h-12 w-full !justify-center !px-4 text-sm"
+      className="ui-btn !h-12 w-full !justify-center !px-4 text-sm"
     >
       <Icon icon={Download} size={16} />
       Tải {label} (định dạng không nhúng được)

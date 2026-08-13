@@ -59,7 +59,7 @@ function MentorManageModal({ open, onClose, onChanged }: Props) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="mentor-manage-title"
-        className="relative z-10 flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-card bg-background shadow-extruded"
+        className="relative z-10 flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-card bg-background shadow-soft"
       >
         <header className="border-b border-black/5 px-5 py-4">
           <h2 id="mentor-manage-title" className="font-display text-xl font-extrabold">

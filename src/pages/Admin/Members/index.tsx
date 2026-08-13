@@ -339,7 +339,7 @@ export default function AdminMembersPage() {
       />
 
       {loading ? (
-        <div className="neu-card h-52 animate-pulse" aria-busy="true" />
+        <div className="ui-card h-52 animate-pulse" aria-busy="true" />
       ) : (
         <>
           <DataTableShell minWidth={900}>

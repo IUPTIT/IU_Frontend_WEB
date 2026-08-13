@@ -25,7 +25,7 @@ type Props = {
 
 /**
  * Dropdown Soft UI — dùng chung mọi role (Admin / Leader / Member).
- * Trigger neu-btn + panel neu-card inset; không dùng native <select>.
+ * Trigger ui-btn + panel ui-card inset; không dùng native <select>.
  */
 function Select({
   value,
@@ -77,8 +77,8 @@ function Select({
         aria-controls={listId}
         aria-label={ariaLabel ?? label}
         onClick={() => !disabled && setOpen((v) => !v)}
-        className={`neu-btn h-11 w-full !px-4 justify-between gap-3 text-left text-sm font-medium disabled:opacity-50 disabled:pointer-events-none ${
-          open ? "!shadow-inset-sm" : ""
+        className={`ui-btn h-11 w-full !px-4 justify-between gap-3 text-left text-sm font-medium disabled:opacity-50 disabled:pointer-events-none ${
+          open ? "!shadow-hairline" : ""
         } ${triggerClassName}`}
       >
         <span className={`truncate ${selected ? "text-foreground" : "text-placeholder"}`}>
@@ -96,7 +96,7 @@ function Select({
           id={listId}
           role="listbox"
           aria-label={ariaLabel ?? label ?? placeholder}
-          className="absolute z-30 mt-2 max-h-60 w-full overflow-auto rounded-2xl bg-background p-2 shadow-extruded ring-1 ring-black/5"
+          className="absolute z-30 mt-2 max-h-60 w-full overflow-auto rounded-2xl bg-background p-2 shadow-soft ring-1 ring-black/5"
         >
           {options.length === 0 && (
             <li className="px-3 py-2.5 text-sm text-muted" role="presentation">
@@ -117,7 +117,7 @@ function Select({
                   }}
                   className={`flex w-full items-center rounded-xl px-3 py-2.5 text-left text-sm transition-colors duration-200 disabled:opacity-40 disabled:pointer-events-none ${
                     isActive
-                      ? "bg-accent/15 text-accent font-semibold shadow-inset-sm"
+                      ? "bg-accent/15 text-accent font-semibold shadow-hairline"
                       : "text-foreground hover:bg-accent/8"
                   }`}
                 >

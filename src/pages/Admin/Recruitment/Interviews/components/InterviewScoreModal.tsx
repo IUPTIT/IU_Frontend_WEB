@@ -87,7 +87,7 @@ function InterviewScoreModal({ open, slot, criteria, onClose, onSave, onPassFail
       <div
         role="dialog"
         aria-modal="true"
-        className="relative z-10 flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-card bg-background shadow-extruded"
+        className="relative z-10 flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-card bg-background shadow-soft"
       >
         <header className="border-b border-black/5 px-5 py-4">
           <h2 className="font-display text-xl font-extrabold">Nhập điểm phỏng vấn</h2>
@@ -108,7 +108,7 @@ function InterviewScoreModal({ open, slot, criteria, onClose, onSave, onPassFail
                   min={0}
                   max={c.maxScore}
                   step={0.5}
-                  className="neu-input !h-11 max-w-[90px] text-center font-semibold"
+                  className="ui-input !h-11 max-w-[90px] text-center font-semibold"
                   value={scores[c.id] ?? ""}
                   onChange={(e) => setScores((p) => ({ ...p, [c.id]: e.target.value }))}
                 />
@@ -117,9 +117,9 @@ function InterviewScoreModal({ open, slot, criteria, onClose, onSave, onPassFail
           </div>
 
           <label className="block space-y-1.5">
-            <span className="neu-field-label">Nhận xét *</span>
+            <span className="ui-field-label">Nhận xét *</span>
             <textarea
-              className="neu-input !h-auto min-h-[100px] py-3 resize-y text-sm"
+              className="ui-input !h-auto min-h-[100px] py-3 resize-y text-sm"
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               placeholder="Nhận xét sau buổi phỏng vấn..."
@@ -140,7 +140,7 @@ function InterviewScoreModal({ open, slot, criteria, onClose, onSave, onPassFail
             type="button"
             disabled={saving}
             onClick={() => void handleDecision("fail")}
-            className="inline-flex h-12 items-center rounded-2xl bg-rose-500 px-4 text-sm font-semibold text-white shadow-extruded-sm disabled:opacity-50"
+            className="inline-flex h-12 items-center rounded-2xl bg-rose-500 px-4 text-sm font-semibold text-white shadow-soft-sm disabled:opacity-50"
           >
             Không đạt
           </button>
@@ -148,7 +148,7 @@ function InterviewScoreModal({ open, slot, criteria, onClose, onSave, onPassFail
             type="button"
             disabled={saving}
             onClick={() => void handleDecision("pass")}
-            className="inline-flex h-12 items-center rounded-2xl bg-accent px-4 text-sm font-semibold text-white shadow-extruded-sm disabled:opacity-50"
+            className="inline-flex h-12 items-center rounded-2xl bg-accent px-4 text-sm font-semibold text-white shadow-soft-sm disabled:opacity-50"
           >
             Đạt (Pass)
           </button>

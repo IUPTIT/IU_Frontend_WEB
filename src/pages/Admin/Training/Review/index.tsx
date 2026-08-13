@@ -380,7 +380,7 @@ function TrainingReviewPage() {
               placeholder="Chọn đợt tuyển"
               ariaLabel="Bộ lọc theo đợt tuyển"
               className="min-w-[220px]"
-              triggerClassName="!shadow-extruded-sm !h-10 text-accent !font-semibold"
+              triggerClassName="!shadow-soft-sm !h-10 text-accent !font-semibold"
             />
           </div>
           <p className="mt-2 text-sm text-muted max-w-xl">
@@ -447,7 +447,7 @@ function TrainingReviewPage() {
         />
       </div>
 
-      <section className="neu-card !p-0 overflow-hidden">
+      <section className="ui-card !p-0 overflow-hidden">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-black/5 px-5 py-4">
           <h2 className="font-display text-lg font-bold">Danh sách đánh giá</h2>
           <div className="flex flex-wrap items-center gap-2">
@@ -464,8 +464,8 @@ function TrainingReviewPage() {
                 onClick={() => setQuick(f.id)}
                 className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-all ${
                   quick === f.id
-                    ? "bg-accent/20 text-accent shadow-inset-sm"
-                    : "text-muted shadow-extruded-sm hover:text-foreground"
+                    ? "bg-accent/20 text-accent shadow-hairline"
+                    : "text-muted shadow-soft-sm hover:text-foreground"
                 }`}
               >
                 {f.label}
@@ -482,7 +482,7 @@ function TrainingReviewPage() {
               }}
             >
               <div>
-                <span className="neu-field-label">Ban</span>
+                <span className="ui-field-label">Ban</span>
                 <Select
                   width="full"
                   value={draft.departmentId}
@@ -496,7 +496,7 @@ function TrainingReviewPage() {
                 />
               </div>
               <div>
-                <span className="neu-field-label">Trạng thái</span>
+                <span className="ui-field-label">Trạng thái</span>
                 <Select
                   width="full"
                   value={draft.evalStatus}
@@ -606,7 +606,7 @@ function TrainingReviewPage() {
                         </td>
                         <td className="px-3 py-4">
                           <div className="space-y-1 min-w-[120px]">
-                            <div className="h-2 rounded-full bg-background shadow-inset-sm overflow-hidden">
+                            <div className="h-2 rounded-full bg-background shadow-hairline overflow-hidden">
                               <div
                                 className="h-full rounded-full bg-accent"
                                 style={{ width: `${pct}%` }}
@@ -626,7 +626,7 @@ function TrainingReviewPage() {
                               type="button"
                               aria-label={`Xem chi tiết kết quả training của ${t.fullName}`}
                               title="Xem chi tiết"
-                              className="flex h-8 w-8 items-center justify-center rounded-full text-accent shadow-extruded-sm transition-colors hover:bg-accent/10"
+                              className="flex h-8 w-8 items-center justify-center rounded-full text-accent shadow-soft-sm transition-colors hover:bg-accent/10"
                               onClick={() => setDetailTrainee(t)}
                             >
                               <Icon icon={Eye} size={17} />
@@ -637,7 +637,7 @@ function TrainingReviewPage() {
                                 type="button"
                                 aria-label={`Đánh dấu ${t.fullName} đạt`}
                                 title="Đạt"
-                                className="flex h-8 w-8 items-center justify-center rounded-full text-emerald-600 shadow-extruded-sm transition-colors hover:bg-emerald-500/10"
+                                className="flex h-8 w-8 items-center justify-center rounded-full text-emerald-600 shadow-soft-sm transition-colors hover:bg-emerald-500/10"
                                 onClick={() =>
                                   void handleEval(t.id, "qualified")
                                 }
@@ -651,7 +651,7 @@ function TrainingReviewPage() {
                                 type="button"
                                 aria-label={`Đánh dấu ${t.fullName} chưa đạt`}
                                 title="Chưa đạt"
-                                className="flex h-8 w-8 items-center justify-center rounded-full text-rose-500 shadow-extruded-sm transition-colors hover:bg-rose-500/10"
+                                className="flex h-8 w-8 items-center justify-center rounded-full text-rose-500 shadow-soft-sm transition-colors hover:bg-rose-500/10"
                                 onClick={() => void handleEval(t.id, "failed")}
                               >
                                 <Icon icon={CircleX} size={17} />
@@ -664,7 +664,7 @@ function TrainingReviewPage() {
                                 type="button"
                                 aria-label={`Xử lý không hoàn thành: ${t.fullName}`}
                                 title="Nhắc / loại khỏi CLB"
-                                className="flex h-8 w-8 items-center justify-center rounded-full text-amber-600 shadow-extruded-sm transition-colors hover:bg-amber-500/10"
+                                className="flex h-8 w-8 items-center justify-center rounded-full text-amber-600 shadow-soft-sm transition-colors hover:bg-amber-500/10"
                                 onClick={() => {
                                   setPenaltyTarget(t);
                                   setPenaltyAction("final_reminder");
@@ -722,7 +722,7 @@ function TrainingReviewPage() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="trainee-detail-title"
-            className="relative z-10 flex max-h-[min(90vh,600px)] w-full max-w-md flex-col overflow-hidden rounded-card bg-background shadow-extruded"
+            className="relative z-10 flex max-h-[min(90vh,600px)] w-full max-w-md flex-col overflow-hidden rounded-card bg-background shadow-soft"
           >
             <header className="flex items-start justify-between gap-3 border-b border-black/5 px-5 py-4 sm:px-6">
               <div>
@@ -748,7 +748,7 @@ function TrainingReviewPage() {
               </Button>
             </header>
             <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-5 sm:px-6">
-              <div className="flex items-center justify-between rounded-2xl bg-background px-4 py-3 shadow-inset-sm">
+              <div className="flex items-center justify-between rounded-2xl bg-background px-4 py-3 shadow-hairline">
                 <span className="text-sm text-muted">Kết quả từ mentor</span>
                 {detailTrainee.mentorReviewStatus === "submitted" ? (
                   <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
@@ -764,7 +764,7 @@ function TrainingReviewPage() {
               </div>
               {detailTrainee.mentorReviewStatus === "submitted" ? (
                 <>
-                  <div className="flex items-center justify-between rounded-2xl bg-background px-4 py-3 shadow-inset-sm">
+                  <div className="flex items-center justify-between rounded-2xl bg-background px-4 py-3 shadow-hairline">
                     <span className="text-sm text-muted">Điểm quá trình</span>
                     <span className="text-xl font-extrabold text-accent">
                       {detailTrainee.avgScore != null
@@ -772,7 +772,7 @@ function TrainingReviewPage() {
                         : "--"}
                     </span>
                   </div>
-                  <div className="rounded-2xl bg-background px-4 py-3 shadow-inset-sm">
+                  <div className="rounded-2xl bg-background px-4 py-3 shadow-hairline">
                     <p className="text-sm text-muted">
                       Note quá trình của mentor
                     </p>
@@ -787,7 +787,7 @@ function TrainingReviewPage() {
                   "Gửi BCN".
                 </p>
               )}
-              <div className="flex items-center justify-between rounded-2xl bg-background px-4 py-3 shadow-inset-sm">
+              <div className="flex items-center justify-between rounded-2xl bg-background px-4 py-3 shadow-hairline">
                 <span className="text-sm text-muted">Kết luận của BCN</span>
                 <EvalBadge status={detailTrainee.evalStatus} />
               </div>
@@ -810,7 +810,7 @@ function TrainingReviewPage() {
           <div
             role="dialog"
             aria-modal="true"
-            className="relative z-10 w-full max-w-md space-y-4 rounded-card bg-background p-5 shadow-extruded"
+            className="relative z-10 w-full max-w-md space-y-4 rounded-card bg-background p-5 shadow-soft"
           >
             <h2 className="font-display text-xl font-extrabold">
               Xử lý không hoàn thành
@@ -834,7 +834,7 @@ function TrainingReviewPage() {
               ]}
             />
             <textarea
-              className="neu-input min-h-[88px] w-full text-sm"
+              className="ui-input min-h-[88px] w-full text-sm"
               placeholder="Lý do *"
               value={penaltyReason}
               onChange={(e) => setPenaltyReason(e.target.value)}

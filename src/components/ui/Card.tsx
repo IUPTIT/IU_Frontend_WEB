@@ -5,7 +5,7 @@ type Props = HTMLAttributes<HTMLDivElement> & {
 };
 
 function Card({ hover = false, className = "", ...rest }: Props) {
-  return <div className={`neu-card ${hover ? "neu-card-hover" : ""} ${className}`} {...rest} />;
+  return <div className={`ui-card ${hover ? "ui-card-hover" : ""} ${className}`} {...rest} />;
 }
 
 export default Card;

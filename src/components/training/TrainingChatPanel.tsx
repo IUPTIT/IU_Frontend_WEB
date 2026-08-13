@@ -97,7 +97,7 @@ export default function TrainingChatPanel({
       className={
         embedded
           ? "flex min-h-0 flex-1 flex-col overflow-hidden"
-          : "neu-card flex flex-col !p-0 overflow-hidden"
+          : "ui-card flex flex-col !p-0 overflow-hidden"
       }
     >
       {!embedded && (
@@ -121,7 +121,7 @@ export default function TrainingChatPanel({
         }
       >
         {loading ? (
-          <div className="m-auto h-16 w-full max-w-xs animate-pulse rounded-2xl bg-background shadow-inset-sm" />
+          <div className="m-auto h-16 w-full max-w-xs animate-pulse rounded-2xl bg-background shadow-hairline" />
         ) : messages.length === 0 ? (
           <p className="m-auto py-10 text-center text-sm text-muted">
             Chưa có tin nhắn. Hãy gửi lời chào đầu tiên.
@@ -135,10 +135,10 @@ export default function TrainingChatPanel({
                 className={`flex ${mine ? "justify-end" : "justify-start"}`}
               >
                 <div
-                  className={`max-w-[85%] rounded-2xl px-3.5 py-2 text-sm shadow-extruded-sm ${
+                  className={`max-w-[85%] rounded-2xl px-3.5 py-2 text-sm shadow-soft-sm ${
                     mine
                       ? "rounded-br-md bg-accent/20 text-foreground"
-                      : "rounded-bl-md bg-background shadow-inset-sm"
+                      : "rounded-bl-md bg-background shadow-hairline"
                   }`}
                 >
                   {!mine && (
@@ -162,7 +162,7 @@ export default function TrainingChatPanel({
 
       <div className="flex gap-2 border-t border-foreground/5 p-3">
         <input
-          className="neu-input flex-1 text-sm"
+          className="ui-input flex-1 text-sm"
           placeholder="Nhập tin nhắn…"
           value={draft}
           onChange={(e) => setDraft(e.target.value)}

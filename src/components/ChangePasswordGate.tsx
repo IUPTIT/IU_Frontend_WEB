@@ -44,7 +44,7 @@ function ChangePasswordGate() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      <form onSubmit={handleSubmit} className="neu-card w-full max-w-md space-y-5 !p-8">
+      <form onSubmit={handleSubmit} className="ui-card w-full max-w-md space-y-5 !p-8">
         <div className="space-y-2 text-center">
           <h1 className="font-display text-2xl font-extrabold text-foreground">
             Đổi mật khẩu lần đầu
@@ -55,10 +55,10 @@ function ChangePasswordGate() {
         </div>
 
         <div>
-          <span className="neu-field-label">Mật khẩu hiện tại (ngày sinh DDMMYYYY)</span>
+          <span className="ui-field-label">Mật khẩu hiện tại (ngày sinh DDMMYYYY)</span>
           <input
             type="password"
-            className="neu-input"
+            className="ui-input"
             value={current}
             onChange={(e) => setCurrent(e.target.value)}
             autoComplete="current-password"
@@ -66,10 +66,10 @@ function ChangePasswordGate() {
           />
         </div>
         <div>
-          <span className="neu-field-label">Mật khẩu mới (tối thiểu 8 ký tự)</span>
+          <span className="ui-field-label">Mật khẩu mới (tối thiểu 8 ký tự)</span>
           <input
             type="password"
-            className="neu-input"
+            className="ui-input"
             value={next}
             onChange={(e) => setNext(e.target.value)}
             autoComplete="new-password"
@@ -77,10 +77,10 @@ function ChangePasswordGate() {
           />
         </div>
         <div>
-          <span className="neu-field-label">Xác nhận mật khẩu mới</span>
+          <span className="ui-field-label">Xác nhận mật khẩu mới</span>
           <input
             type="password"
-            className="neu-input"
+            className="ui-input"
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}
             autoComplete="new-password"

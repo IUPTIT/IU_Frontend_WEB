@@ -24,7 +24,7 @@ function EmptyState({
       className={`flex flex-col items-center justify-center gap-3 rounded-card px-6 py-16 text-center ${className}`}
       role="status"
     >
-      <span className="flex h-14 w-14 items-center justify-center rounded-full bg-accent/10 text-accent shadow-extruded-sm">
+      <span className="flex h-14 w-14 items-center justify-center rounded-full bg-accent/10 text-accent shadow-soft-sm">
         <Icon icon={icon} size={28} />
       </span>
       <div className="space-y-1">

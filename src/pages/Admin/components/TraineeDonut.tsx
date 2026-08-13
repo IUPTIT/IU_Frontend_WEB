@@ -26,13 +26,13 @@ function TraineeDonut({ departments, total }: { departments: TraineeDepartment[]
   });
 
   return (
-    <article className="neu-card">
+    <article className="ui-card">
       <h3 className="text-lg">Cơ cấu Trainee</h3>
       <p className="mt-1 text-sm text-muted">Phân bổ theo Ban chuyên môn</p>
 
       <div className="mt-8 flex flex-col sm:flex-row items-center gap-10">
         <div className="relative">
-          <div className="neu-well rounded-full h-48 w-48">
+          <div className="ui-well rounded-full h-48 w-48">
             <svg viewBox={`0 0 ${SIZE} ${SIZE}`} className="h-44 w-44 -rotate-90" role="img" aria-label="Biểu đồ tròn cơ cấu trainee theo ban">
               {segments.map((s) => (
                 <circle

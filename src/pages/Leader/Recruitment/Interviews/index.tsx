@@ -66,9 +66,9 @@ export default function LeaderRecruitmentInterviewsPage() {
       </header>
 
       {loading ? (
-        <div className="neu-card h-48 animate-pulse" aria-busy="true" />
+        <div className="ui-card h-48 animate-pulse" aria-busy="true" />
       ) : slots.length === 0 ? (
-        <div className="neu-card !p-10 text-center text-sm text-muted">
+        <div className="ui-card !p-10 text-center text-sm text-muted">
           Bạn chưa được phân công ca phỏng vấn nào. Khi BCN gắn bạn vào ca, thông
           báo sẽ hiện ở chuông và email.
         </div>

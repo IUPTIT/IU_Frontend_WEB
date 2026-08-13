@@ -9,7 +9,7 @@ const stageTone: Record<Tone, string> = {
 
 function RecruitmentFunnel({ stages }: { stages: FunnelStage[] }) {
   return (
-    <article className="neu-card">
+    <article className="ui-card">
       <h3 className="text-lg">Phễu Tuyển dụng</h3>
       <p className="mt-1 text-sm text-muted">Tỷ lệ chuyển đổi qua các vòng</p>
 
@@ -17,7 +17,7 @@ function RecruitmentFunnel({ stages }: { stages: FunnelStage[] }) {
         {stages.map((stage, i) => (
           <div key={stage.id} className="w-full flex flex-col items-center">
             <div
-              className={`flex items-center justify-between gap-3 rounded-2xl px-4 h-12 shadow-extruded-sm transition-all duration-300 ease-out hover:-translate-y-px hover:shadow-extruded ${stageTone[stage.tone]}`}
+              className={`flex items-center justify-between gap-3 rounded-2xl px-4 h-12 shadow-soft-sm transition-all duration-300 ease-out hover:-translate-y-px hover:shadow-soft ${stageTone[stage.tone]}`}
               style={{ width: `${100 - i * 14}%`, minWidth: "60%" }}
             >
               <span className="text-sm font-medium truncate">{stage.label}</span>
