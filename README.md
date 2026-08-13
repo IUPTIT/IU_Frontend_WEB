@@ -1,6 +1,6 @@
 # IU-Club — Frontend
 
-Web frontend của IU-Club, xây dựng với **React 19 + TypeScript + Vite + TailwindCSS 3**, theme **Neumorphism (Soft UI)** (spec đầy đủ tại `docs/reqcss.md` ở repo gốc).
+Web frontend của IU-Club, xây dựng với **React 19 + TypeScript + Vite + TailwindCSS 3**, theme khu quản trị **IU Club Studio — Airy Card SaaS** (card trắng trên nền lavender, nhấn tím + gradient tím→magenta). Trang marketing (Landing/Lookup/Recruitment) dùng theme dark riêng.
 
 ---
 
@@ -64,7 +64,7 @@ src/
 ├── services/     # Logic gọi API theo domain (userService, clubService...)
 ├── types/        # TypeScript types/interfaces dùng chung
 ├── utils/        # Hàm tiện ích thuần (formatDate, validate...)
-├── index.css     # Tailwind entry + component classes (neu-btn, neu-card...)
+├── index.css     # Tailwind entry + component classes (ui-btn, ui-card...)
 ├── App.tsx       # Root component, khai báo routes
 └── main.tsx      # Entry point
 ```
@@ -104,54 +104,54 @@ Quy luật base:
 
 Trang mới (ví dụ `Events`) làm y hệt: `pages/Events/index.tsx` + `pages/Events/components/...`.
 
-## 4. Theme Neumorphism — cách dùng
+## 4. Theme — Airy Card SaaS (cách dùng)
 
-Toàn bộ token đã khai báo trong `tailwind.config.js`, **không hard-code màu/bóng** trong component.
+Toàn bộ token đã khai báo trong `tailwind.config.js`, **không hard-code màu/bóng** trong component. Khu quản trị (`.portal-shell`) và các trang Login/Reset dùng hệ này; trang marketing có theme dark riêng ở `src/styles/landing.css`.
 
-### Màu
+### Màu — nền trang (canvas) TÁCH khỏi bề mặt (surface)
 
 | Class | Giá trị | Dùng cho |
 | --- | --- | --- |
-| `bg-background` | `#E0E5EC` | Nền trang VÀ nền card/button (cùng một bề mặt — không bao giờ `bg-white`) |
-| `text-foreground` | `#3D4852` | Chữ chính |
-| `text-muted` | `#6B7280` | Chữ phụ |
-| `bg-accent` / `text-accent` | `#6C63FF` | CTA, highlight, focus ring |
-| `accent-light` | `#8B84FF` | Gradient, hover |
+| `bg-canvas` | `#F4F4FB` | Nền trang (lavender airy) |
+| `bg-background` / `bg-surface` | `#FFFFFF` | Card / topbar / sidebar / modal (bề mặt trắng, khác canvas) |
+| `bg-surface-2` | `#F5F6FB` | Chip, header bảng, hover nhẹ |
+| `border-line` / `border-line-strong` | `#EBEBF3` / `#E2E3EF` | Hairline / divider |
+| `text-foreground` | `#191A2C` | Chữ chính |
+| `text-muted` / `text-faint` | `#6B7086` / `#9AA0B4` | Chữ phụ / caption |
+| `bg-accent` / `text-accent` | `#7C3AED` | CTA, highlight, focus ring |
+| `brand-from` → `brand-to` | `#6E2CE6 → #E0348C` | Gradient thương hiệu (nút primary, `bg-brand-gradient`) |
 | `accent-secondary` | `#38B2AC` | Trạng thái thành công |
 
-### Bóng (linh hồn của theme)
+### Bóng (airy, một chiều)
 
 | Class | Dùng cho |
 | --- | --- |
-| `shadow-extruded` | Trạng thái nổi mặc định (card, button) |
-| `shadow-extruded-hover` | Hover (kèm `-translate-y-px`) |
-| `shadow-extruded-sm` | Element nhỏ |
-| `shadow-inset` | Input mặc định, well nông |
-| `shadow-inset-deep` | Input focus, hốc icon |
-| `shadow-inset-sm` | Trạng thái nhấn (active) của button |
+| `shadow-soft` | Trạng thái nổi mặc định (card) |
+| `shadow-soft-lg` | Hover (kèm `-translate-y-0.5`) |
+| `shadow-soft-sm` | Element nhỏ, button |
+| `shadow-hairline` | Viền mảnh 1px (input, well) — hoặc `border border-line` |
 
 ### Component classes có sẵn (trong `src/index.css`)
 
 ```html
-<button class="neu-btn">Secondary</button>
-<button class="neu-btn-primary">Primary</button>
-<div class="neu-card neu-card-hover">...</div>
-<input class="neu-input" placeholder="..." />
-<div class="neu-well h-16 w-16">icon</div>
+<button class="ui-btn">Secondary</button>
+<button class="ui-btn-primary">Primary</button>
+<div class="ui-card ui-card-hover">...</div>
+<input class="ui-input" placeholder="..." />
+<div class="ui-well h-16 w-16">icon</div>
 ```
 
-Đã bao gồm sẵn hover lift, active press, focus ring, transition 300ms — cứ dùng, đừng tự viết lại bóng.
+Đã bao gồm sẵn hover lift, active press, focus ring, transition 200ms — cứ dùng, đừng tự viết lại bóng.
 
 ### Quy tắc phải nhớ
 
-- **Không border** — bóng định nghĩa mọi cạnh (`border-transparent`).
-- **Không nền trắng, không flat button.**
-- Bo góc: card `rounded-card` (32px), button/input `rounded-2xl` (16px). Không dùng `rounded-lg` trở xuống.
-- Font: heading `font-display` (Plus Jakarta Sans, đã tự áp cho `h1–h6`), body mặc định DM Sans.
+- **Tách bề mặt:** card = `bg-surface` (trắng), nền trang = `bg-canvas` (lavender). Không đảo ngược.
+- **Card luôn có bóng** (`ui-card`/`shadow-soft`); border hairline (`border-line`) được phép để tách bề mặt.
+- Không tái tạo bóng đôi lồi-lõm kiểu Neumorphism (đã gỡ).
+- Bo góc: card `rounded-card` (16px), button/input `rounded-xl` (12px). Không dùng `rounded-md` trở xuống cho card/button.
+- Font: heading `font-display` (Plus Jakarta Sans, tự áp cho `h1–h6`), body mặc định DM Sans; `.portal-shell` dùng Inter + Space Grotesk.
 - Mọi element tương tác phải có focus ring (`focus-visible:ring-2 ring-accent`) và touch target tối thiểu 44px (`h-12`).
 - Mobile-first: breakpoint `md:` (768px), `lg:` (1024px); grid 3 cột → 1 cột trên mobile.
-
-Chi tiết đầy đủ (contrast, animation, anti-patterns): xem `docs/reqcss.md`.
 
 ## 5. Quy tắc commit (Conventional Commits)
 
