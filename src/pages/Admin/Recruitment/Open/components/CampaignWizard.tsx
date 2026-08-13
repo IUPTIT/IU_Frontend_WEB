@@ -99,11 +99,7 @@ function CampaignWizard({
   };
 
   const handleSaveDraft = () => {
-    if (nameConflict) {
-      setError(nameConflict.message);
-      return;
-    }
-    // Nháp: vẫn chặn nếu form cơ bản thiếu; overlap time chỉ chặn khi xuất bản
+    // Nháp: chặn thiếu form cơ bản + trùng tên (BE cũng chặn tên)
     const parts: string[] = [];
     if (!draft.name.trim()) parts.push("Vui lòng nhập tên đợt tuyển.");
     if (!draft.openAt || !draft.closeAt) {

@@ -58,6 +58,7 @@ export function findCampaignConflicts(
     const overlap = campaigns.find((c) => {
       if (c.id === excludeId) return false;
       if (!isOpenCampaign(c)) return false;
+      if (!c.openAt || !c.closeAt) return false;
       const cOpen = new Date(c.openAt).getTime();
       const cClose = new Date(c.closeAt).getTime();
       if (!(open < cClose && close > cOpen)) return false;
@@ -68,7 +69,7 @@ export function findCampaignConflicts(
       if (openDepts.length === 0 || deptsToCheck.length === 0) return true;
       return openDepts.some((d) => deptsToCheck.includes(d));
     });
-    if (overlap) {
+    if (overlap && overlap.openAt && overlap.closeAt) {
       conflicts.push({
         kind: "overlap",
         message: `Trùng thời gian với đợt đang mở "${overlap.name}" (${formatRange(overlap.openAt, overlap.closeAt)}). Đổi thời gian/ban hoặc đóng đợt đó trước.`,

@@ -48,8 +48,8 @@ function toAuthUser(u: BackendUser): AuthUser {
   const roles = (u.roles?.length ? u.roles : [u.role]).map(mapRole);
   const id =
     u.id ||
-    (typeof (u as { _id?: string })._id === "string"
-      ? (u as { _id: string })._id
+    (typeof (u as unknown as { _id?: string })._id === "string"
+      ? (u as unknown as { _id: string })._id
       : "");
   return {
     id,

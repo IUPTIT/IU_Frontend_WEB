@@ -241,7 +241,7 @@ function RecruitmentOpenPage() {
         const close = new Date(closeIso).getTime();
         const overlap = campaigns.find((c) => {
           if (c.id === editing?.id) return false;
-          if (!c.isActive) return false;
+          if (!c.isActive || !c.openAt || !c.closeAt) return false;
           const cOpen = new Date(c.openAt).getTime();
           const cClose = new Date(c.closeAt).getTime();
           if (!(open < cClose && close > cOpen)) return false;
