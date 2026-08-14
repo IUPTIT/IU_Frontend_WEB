@@ -7,8 +7,14 @@ import BoardSection from "./components/BoardSection";
 import LandingNavBar from "../../components/LandingNavBar";
 import LandingFooter from "../../components/LandingFooter";
 import "../../styles/landing.css";
+import { usePageMeta } from "../../hooks/usePageMeta";
 
 function LandingPage() {
+  usePageMeta(
+    "IU Club (IU PTIT) — Câu lạc bộ CNTT UDU | Shine and Thrive",
+    "IU Club (IUPTIT) là câu lạc bộ CNTT định hướng ứng dụng thuộc UDU, thành lập năm 2024. Môi trường Shine and Thrive giúp sinh viên sáng tạo, học hỏi và phát triển tối đa tiềm năng.",
+    "/"
+  );
   return (
     <div className="landing-theme relative min-h-screen">
       {/* Video nền fixed — phủ toàn bộ trang, các section cuộn phía trên */}
