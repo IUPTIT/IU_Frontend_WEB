@@ -77,7 +77,7 @@ function StatCardItem({ card }: { card: StatCard }) {
   const display = card.decimals ? value.toFixed(card.decimals) : value;
 
   return (
-    <article className="neu-card neu-card-hover !p-5 flex flex-col gap-4">
+    <article className="ui-card ui-card-hover !p-5 flex flex-col gap-4">
       <div className="flex items-center justify-between gap-3">
         <span className={`flex h-11 w-11 items-center justify-center rounded-xl ${t.icon}`}>
           <Icon icon={icons[card.icon]} size={20} />

@@ -8,8 +8,14 @@ import EditApplicationForm from "./components/EditApplicationForm";
 import { lookupApplication, withdrawApplication } from "../../services/publicRecruitmentService";
 import type { PublicApplication } from "../../services/publicRecruitmentService";
 import "../../styles/landing.css";
+import { usePageMeta } from "../../hooks/usePageMeta";
 
 function LookupPage() {
+  usePageMeta(
+    "Tra cứu hồ sơ ứng tuyển | IU Club — IU PTIT",
+    "Tra cứu trạng thái hồ sơ ứng tuyển thành viên IU Club (IUPTIT) bằng mã hồ sơ hoặc email.",
+    "/tra-cuu"
+  );
   const [result, setResult] = useState<PublicApplication | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [searching, setSearching] = useState(false);

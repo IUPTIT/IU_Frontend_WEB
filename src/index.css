@@ -2,13 +2,36 @@
 @tailwind components;
 @tailwind utilities;
 
+/* =====================================================================
+   IU CLUB STUDIO — Airy Card SaaS
+   Một hệ style duy nhất: nền lavender airy, card trắng, bóng mềm 1 chiều,
+   nhấn tím #7C3AED + gradient thương hiệu #6E2CE6 → #E0348C.
+   (Đã gỡ Neumorphism/Soft UI.)
+   ===================================================================== */
+
+:root {
+  --canvas: #f4f4fb; /* nền trang — lavender nhạt airy */
+  --surface: #ffffff; /* card / topbar / sidebar / modal */
+  --surface-2: #f5f6fb; /* chip, header bảng, hover nhẹ */
+  --line: #ebebf3; /* hairline mảnh */
+  --line-strong: #e2e3ef; /* divider đậm hơn */
+  --fg: #191a2c; /* ink chính — tương phản AA */
+  --muted: #6b7086; /* chữ phụ */
+  --faint: #9aa0b4; /* chữ mờ / caption */
+  --primary: #7c3aed; /* nhấn tím — khớp logo-v2 */
+  --primary-strong: #6d28d9; /* tím cho CHỮ trên nền sáng (AA) */
+  --primary-tint: #f1e9fe; /* nền chip tím */
+  --brand-from: #6e2ce6; /* gradient thương hiệu — tím */
+  --brand-to: #e0348c; /* gradient thương hiệu — magenta */
+}
+
 @layer base {
   html {
     scroll-behavior: smooth;
   }
 
   body {
-    @apply bg-background text-foreground font-sans antialiased;
+    @apply bg-canvas text-foreground font-sans antialiased;
   }
 
   h1,
@@ -25,50 +48,90 @@
   }
 }
 
+/* Lightbox mở mượt: nền mờ dần, nội dung bung nhẹ */
+@keyframes lb-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes lb-pop {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1); }
+}
+.lb-fade { animation: lb-fade 0.2s ease-out; }
+.lb-pop { animation: lb-pop 0.24s cubic-bezier(0.22, 1, 0.36, 1); }
+@media (prefers-reduced-motion: reduce) {
+  .lb-fade, .lb-pop { animation: none; }
+}
+
+/* Thanh cuộn mảnh, nhấn tím — dùng cho vùng cuộn (preview, lightbox, modal) */
+.ui-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(124, 58, 237, 0.35) transparent;
+}
+.ui-scroll::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.ui-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.ui-scroll::-webkit-scrollbar-thumb {
+  background: rgba(124, 58, 237, 0.32);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+.ui-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(124, 58, 237, 0.55);
+  background-clip: content-box;
+}
+
 @layer components {
-  /* Buttons — always have depth, never flat */
-  .neu-btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-2xl px-6 h-12
-      font-medium bg-background text-foreground shadow-extruded
-      transition-all duration-300 ease-out
-      hover:-translate-y-px hover:shadow-extruded-hover
-      active:translate-y-[0.5px] active:shadow-inset-sm
+  /* Buttons — phẳng, viền hairline; primary = gradient thương hiệu */
+  .ui-btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-6 h-12
+      font-medium bg-surface text-foreground border border-line shadow-soft-sm
+      transition-all duration-200 ease-out
+      hover:-translate-y-px hover:bg-surface-2 hover:shadow-soft
+      active:translate-y-0 active:shadow-hairline
       focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
-      focus-visible:ring-offset-2 focus-visible:ring-offset-background
-      disabled:opacity-45 disabled:cursor-not-allowed disabled:shadow-inset-sm
-      disabled:hover:translate-y-0 disabled:hover:shadow-inset-sm
-      disabled:active:translate-y-0;
+      focus-visible:ring-offset-2 focus-visible:ring-offset-canvas
+      disabled:opacity-45 disabled:cursor-not-allowed
+      disabled:hover:translate-y-0 disabled:hover:bg-surface;
   }
 
-  .neu-btn-primary {
-    @apply neu-btn bg-accent text-white
-      active:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.2),inset_-4px_-4px_8px_rgba(255,255,255,0.15)];
+  .ui-btn-primary {
+    @apply ui-btn text-white border-transparent
+      bg-gradient-to-br from-brand-from to-brand-to
+      shadow-[0_4px_12px_rgba(124,58,237,0.32)]
+      hover:bg-surface-2 hover:brightness-105
+      hover:shadow-[0_6px_18px_rgba(124,58,237,0.42)];
   }
 
-  /* Cards — molded from the same surface as the page */
-  .neu-card {
-    @apply rounded-card bg-background p-8 shadow-extruded
-      transition-all duration-300 ease-out;
+  /* Cards — nền surface trắng, bóng airy, hover nhấc mượt */
+  .ui-card {
+    @apply rounded-card bg-surface p-8 shadow-soft
+      transition-all duration-200 ease-out;
   }
 
-  .neu-card-hover {
-    @apply hover:-translate-y-0.5 hover:shadow-extruded-hover;
+  .ui-card-hover {
+    @apply hover:-translate-y-0.5 hover:shadow-soft-lg;
   }
 
-  /* Inputs — carved wells */
-  .neu-input {
-    @apply w-full rounded-2xl bg-background px-5 h-12 text-foreground
-      shadow-inset border-0 transition-all duration-300 ease-out
-      focus:outline-none focus:shadow-inset-deep focus:ring-2 focus:ring-accent
-      focus:ring-offset-2 focus:ring-offset-background;
+  /* Inputs — ô viền phẳng, focus ring tím */
+  .ui-input {
+    @apply w-full rounded-xl bg-surface px-5 h-12 text-foreground
+      border border-line transition-all duration-200 ease-out
+      focus:outline-none focus:border-accent
+      focus:shadow-[0_0_0_3px_rgba(124,58,237,0.16)];
   }
 
-  /* Select / filter field label inside panels */
-  .neu-field-label {
+  /* Nhãn field trong panel */
+  .ui-field-label {
     @apply mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted;
   }
 
-  /* IU Club Studio — nhãn caption & số liệu KPI */
+  /* Nhãn caption & số liệu KPI */
   .eyebrow {
     @apply text-[11px] font-semibold uppercase tracking-wide text-muted;
   }
@@ -78,40 +141,37 @@
     font-family: "Space Grotesk", "Plus Jakarta Sans", sans-serif;
   }
 
-  /* Icon wells — drilled into the card */
-  .neu-well {
-    @apply flex items-center justify-center rounded-2xl bg-background shadow-inset-deep;
+  /* Icon well → chip nền nhạt có hairline */
+  .ui-well {
+    @apply flex items-center justify-center rounded-xl bg-surface-2 shadow-hairline;
   }
 
-  .neu-well-sm {
-    @apply flex items-center justify-center rounded-xl bg-background shadow-inset;
+  .ui-well-sm {
+    @apply flex items-center justify-center rounded-lg bg-surface-2 shadow-hairline;
   }
 
-  /* Enterprise Soft UI data table */
+  /* Bảng dữ liệu airy — header phẳng, hairline, hover mượt */
+  .data-table {
+    font-variant-numeric: tabular-nums;
+  }
+
   .data-table thead tr {
-    background-image: linear-gradient(
-      to right,
-      rgba(108, 99, 255, 0.2),
-      rgba(108, 99, 255, 0.12),
-      rgba(108, 99, 255, 0.08)
-    );
-    color: #6c63ff;
+    background-color: var(--surface-2);
+    color: var(--muted);
   }
 
   .data-table-th {
-    @apply border-r border-accent/20 font-semibold;
-  }
-
-  .data-table-th:last-child {
-    @apply border-r-0;
+    @apply font-semibold;
+    border-bottom: 1px solid var(--line-strong);
   }
 
   .data-table-td {
-    @apply border-b border-black/5 align-middle;
+    border-bottom: 1px solid var(--line);
+    @apply align-middle;
   }
 
   .data-table tbody tr:last-child .data-table-td {
-    @apply border-b-0;
+    border-bottom: 0;
   }
 
   .data-table tbody tr {
@@ -119,7 +179,7 @@
   }
 
   .data-table tbody tr:hover {
-    background-color: rgba(108, 99, 255, 0.05);
+    background-color: #f7f8fc;
   }
 
   .data-table-resize {
@@ -134,46 +194,41 @@
     bottom: 0.5rem;
     width: 1px;
     transform: translateX(-50%);
-    background-color: rgba(108, 99, 255, 0.35);
+    background-color: var(--line-strong);
   }
 
   .data-table-resize:hover::after,
   .data-table-resize:focus-visible::after {
     width: 2px;
-    background-color: #6c63ff;
+    background-color: var(--primary);
   }
 
-  /* Login — input neumorphism theo mockup (màu cố định, không theo dark mode) */
+  /* Login / ResetPassword — input phẳng viền hairline, focus ring tím */
   .login-input {
-    @apply w-full h-12 rounded-2xl border-0 px-5
-      transition-all duration-300 ease-out
+    @apply w-full h-12 rounded-xl border px-5
+      transition-all duration-200 ease-out
       focus:outline-none;
-    background-color: #eef1f5;
-    color: #2c3340;
-    box-shadow:
-      inset 4px 4px 8px rgba(163, 177, 198, 0.45),
-      inset -4px -4px 8px rgba(255, 255, 255, 0.9);
+    background-color: #ffffff;
+    border-color: var(--line);
+    color: var(--fg);
   }
 
   .login-input::placeholder {
-    color: #a0a8b8;
+    color: var(--faint);
   }
 
   .login-input:focus {
-    background-color: #f4f6f9;
-    box-shadow:
-      inset 6px 6px 12px rgba(163, 177, 198, 0.55),
-      inset -6px -6px 12px rgba(255, 255, 255, 1),
-      0 0 0 3px rgba(124, 58, 237, 0.22);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.16);
   }
 
   /* Chrome autofill đè nền/chữ — ép về đúng style login-input */
   .login-input:-webkit-autofill,
   .login-input:-webkit-autofill:hover,
   .login-input:-webkit-autofill:focus {
-    -webkit-box-shadow: 0 0 0 1000px #eef1f5 inset;
-    -webkit-text-fill-color: #3d4852;
-    caret-color: #3d4852;
+    -webkit-box-shadow: 0 0 0 1000px #ffffff inset;
+    -webkit-text-fill-color: var(--fg);
+    caret-color: var(--fg);
     transition: background-color 9999s ease-out;
   }
 
@@ -192,7 +247,7 @@
   }
 }
 
-/* Bàn tay vẫy — hiệu ứng chào thật, xoay qua lại quanh cổ tay */
+/* Bàn tay vẫy — hiệu ứng chào, xoay qua lại quanh cổ tay */
 @keyframes wave-hand {
   0%, 65%, 100% { transform: rotate(0deg); }
   10% { transform: rotate(14deg); }
@@ -211,185 +266,41 @@
 }
 
 /* =====================================================================
-   IU CLUB STUDIO — Airy Card SaaS (light) · scoped to .portal-shell
-   Thay Neumorphism trong khu quản lý bằng thẻ trắng bo mềm, bóng nhẹ,
-   nhấn tím tiết chế + chuyển động mượt. Public (landing/recruitment/lookup)
-   nằm ngoài .portal-shell → giữ nguyên. Rule ngoài @layer nên luôn thắng
-   utility Tailwind. Prefix html:not(.dark) để không đụng dark mode.
+   PORTAL SHELL — khu quản lý (admin/leader/member/candidate)
+   Hệ style base đã airy nên portal chỉ thêm: font riêng, cỡ tiêu đề,
+   nền topbar khớp canvas, reveal animation.
    ===================================================================== */
-html:not(.dark) .portal-shell {
-  --canvas: #f4f4fb;      /* nền trang — lavender nhạt airy */
-  --surface: #ffffff;     /* card / topbar / sidebar / modal */
-  --surface-2: #f5f6fb;   /* chip, header bảng, hover nhẹ */
-  --line: #ebebf3;        /* hairline mảnh */
-  --line-strong: #e2e3ef; /* divider đậm hơn */
-  --fg: #191a2c;          /* ink chính — tương phản AA */
-  --muted: #6b7086;       /* chữ phụ */
-  --faint: #9aa0b4;       /* chữ mờ / caption */
-  --primary: #7c3aed;     /* nhấn tím — khớp logo-v2 */
-  --primary-strong: #6d28d9; /* tím cho CHỮ trên nền sáng (AA) */
-  --primary-tint: #f1e9fe;   /* nền chip tím */
-  --accent-ink: #6d28d9;
-  --brand-from: #6e2ce6;     /* gradient thương hiệu — tím */
-  --brand-to: #e0348c;       /* gradient thương hiệu — magenta */
-  background-color: var(--canvas);
-  color: var(--fg);
+.portal-shell {
   font-family: "Inter", "DM Sans", sans-serif;
 }
 
 /* Tiêu đề trong portal dùng Space Grotesk */
-html:not(.dark) .portal-shell h1,
-html:not(.dark) .portal-shell h2,
-html:not(.dark) .portal-shell h3,
-html:not(.dark) .portal-shell h4,
-html:not(.dark) .portal-shell h5,
-html:not(.dark) .portal-shell h6,
-html:not(.dark) .portal-shell .font-display {
+.portal-shell h1,
+.portal-shell h2,
+.portal-shell h3,
+.portal-shell h4,
+.portal-shell h5,
+.portal-shell h6,
+.portal-shell .font-display {
   font-family: "Space Grotesk", "Plus Jakarta Sans", sans-serif;
 }
 
-/* Cỡ tiêu đề trang — khớp design (24–28px), tránh quá to khi ở 100% */
+/* Cỡ tiêu đề trang — khớp design (24–28px) */
 .portal-shell h1 {
   font-size: 1.75rem;
   line-height: 1.22;
 }
 
-/* Nền sticky top bar = đúng màu canvas → che hẳn nội dung cuộn phía sau
-   (không lộ chữ tràn qua top bar). Áp cả light lẫn dark. */
+/* Nền sticky top bar = màu canvas → che nội dung cuộn phía sau */
 .portal-topbar-bg {
-  background-color: #e0e5ec;
-}
-html:not(.dark) .portal-shell .portal-topbar-bg {
   background-color: var(--canvas);
 }
 html.dark .portal-topbar-bg {
   background-color: var(--dark-page);
 }
 
-html:not(.dark) .portal-shell .text-accent { color: var(--primary-strong); }
-html:not(.dark) .portal-shell .rounded-card { border-radius: 16px; }
-
-/* Bề mặt: mọi bg-background bên trong = surface trắng, tách khỏi canvas */
-html:not(.dark) .portal-shell .bg-background { background-color: var(--surface); }
-html:not(.dark) .portal-shell .bg-background\/80 { background-color: rgba(255, 255, 255, 0.82); }
-
-/* Chữ */
-html:not(.dark) .portal-shell .text-foreground,
-html:not(.dark) .portal-shell h1,
-html:not(.dark) .portal-shell h2,
-html:not(.dark) .portal-shell h3,
-html:not(.dark) .portal-shell h4,
-html:not(.dark) .portal-shell h5,
-html:not(.dark) .portal-shell h6 { color: var(--fg); }
-html:not(.dark) .portal-shell .text-muted { color: var(--muted); }
-
-/* Bóng airy — 2 lớp mềm, không neumorphism */
-html:not(.dark) .portal-shell .shadow-extruded {
-  box-shadow: 0 2px 8px rgba(26, 26, 80, 0.06), 0 12px 28px -10px rgba(26, 26, 80, 0.1);
-}
-html:not(.dark) .portal-shell .shadow-extruded-sm {
-  box-shadow: 0 1px 2px rgba(26, 26, 80, 0.06), 0 2px 4px rgba(26, 26, 80, 0.04);
-}
-html:not(.dark) .portal-shell .shadow-extruded-hover {
-  box-shadow: 0 8px 20px rgba(26, 26, 80, 0.1), 0 22px 44px -12px rgba(26, 26, 80, 0.16);
-}
-html:not(.dark) .portal-shell .shadow-inset,
-html:not(.dark) .portal-shell .shadow-inset-sm,
-html:not(.dark) .portal-shell .shadow-inset-deep {
-  box-shadow: inset 0 0 0 1px var(--line);
-}
-
-/* Card — nền trắng, bóng airy, hover nhấc mượt */
-html:not(.dark) .portal-shell .neu-card {
-  background-color: var(--surface);
-  border-radius: 16px;
-  box-shadow: 0 2px 8px rgba(26, 26, 80, 0.06), 0 12px 28px -10px rgba(26, 26, 80, 0.1);
-}
-html:not(.dark) .portal-shell .neu-card-hover {
-  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s ease;
-}
-html:not(.dark) .portal-shell .neu-card-hover:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 10px 24px rgba(26, 26, 80, 0.1), 0 26px 50px -14px rgba(26, 26, 80, 0.18);
-}
-
-/* Nút phẳng */
-html:not(.dark) .portal-shell .neu-btn {
-  background-color: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  color: var(--fg);
-  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
-  transition: transform 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease;
-}
-html:not(.dark) .portal-shell .neu-btn:hover {
-  transform: translateY(-1px);
-  background-color: var(--surface-2);
-  box-shadow: 0 4px 10px rgba(16, 24, 40, 0.09);
-}
-html:not(.dark) .portal-shell .neu-btn:active {
-  transform: translateY(0);
-  box-shadow: inset 0 1px 2px rgba(16, 24, 40, 0.08);
-}
-html:not(.dark) .portal-shell .neu-btn-primary {
-  background-color: var(--primary);
-  background-image: linear-gradient(135deg, var(--brand-from) 0%, var(--brand-to) 100%);
-  border-color: transparent;
-  color: #fff;
-  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.32);
-}
-html:not(.dark) .portal-shell .neu-btn-primary:hover {
-  filter: brightness(1.06);
-  box-shadow: 0 6px 18px rgba(124, 58, 237, 0.42);
-}
-
-/* Input — ô viền phẳng, focus ring tím */
-html:not(.dark) .portal-shell .neu-input {
-  background-color: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  color: var(--fg);
-  box-shadow: none;
-  transition: border-color 0.18s ease, box-shadow 0.18s ease;
-}
-html:not(.dark) .portal-shell .neu-input:focus {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(110, 90, 240, 0.16);
-}
-
-/* Icon well → chip nền nhạt có viền */
-html:not(.dark) .portal-shell .neu-well,
-html:not(.dark) .portal-shell .neu-well-sm {
-  background-color: var(--surface-2);
-  box-shadow: inset 0 0 0 1px var(--line);
-}
-
-/* Chip / nền accent → tím tint */
-html:not(.dark) .portal-shell .bg-accent\/10,
-html:not(.dark) .portal-shell .bg-accent\/12,
-html:not(.dark) .portal-shell .bg-accent\/15,
-html:not(.dark) .portal-shell .bg-accent\/20 {
-  background-color: var(--primary-tint);
-}
-
-/* Bảng dữ liệu airy — header phẳng, hairline, hover mượt */
-html:not(.dark) .portal-shell .data-table { font-variant-numeric: tabular-nums; }
-html:not(.dark) .portal-shell .data-table thead tr {
-  background-image: none;
-  background-color: var(--surface-2);
-  color: var(--muted);
-}
-html:not(.dark) .portal-shell .data-table-th {
-  border-right: 0;
-  border-bottom: 1px solid var(--line-strong);
-}
-html:not(.dark) .portal-shell .data-table-td { border-bottom: 1px solid var(--line); }
-html:not(.dark) .portal-shell .data-table tbody tr { transition: background-color 0.15s ease; }
-html:not(.dark) .portal-shell .data-table tbody tr:hover { background-color: #f7f8fc; }
-html:not(.dark) .portal-shell .data-table-resize::after { background-color: var(--line-strong); }
-
 /* =====================================================================
-   CHUYỂN ĐỘNG — micro-interactions + reveal khi vào trang (light & dark)
+   CHUYỂN ĐỘNG — micro-interactions + reveal khi vào trang portal
    ===================================================================== */
 .portal-shell a,
 .portal-shell button,
@@ -416,47 +327,58 @@ html:not(.dark) .portal-shell .data-table-resize::after { background-color: var(
     animation: none !important;
     transition-duration: 0.01ms !important;
   }
-  .portal-shell .neu-card-hover:hover { transform: none; }
+  .portal-shell .ui-card-hover:hover { transform: none; }
 }
 
-/* Login luôn sáng — chặn override từ html.dark */
+/* =====================================================================
+   LOGIN — luôn sáng, chặn override từ html.dark
+   ===================================================================== */
+html.dark .login-shell,
+html.dark .login-shell * {
+  color-scheme: light;
+}
 html.dark .login-shell {
   background-color: #e8eef8 !important;
   color: #2c3340 !important;
 }
-
 html.dark .login-shell .login-card,
-html.dark .login-shell .bg-white {
+html.dark .login-shell .login-panel,
+html.dark .login-shell .bg-white,
+html.dark .login-shell .bg-surface,
+html.dark .login-shell .bg-background {
   background-color: #ffffff !important;
 }
-
 html.dark .login-shell .login-title {
   color: #2c3340 !important;
 }
-
 html.dark .login-shell .login-label,
 html.dark .login-shell .login-forgot,
 html.dark .login-shell .text-muted {
   color: #8a94a6 !important;
 }
-
 html.dark .login-shell .login-input {
-  background-color: #eef1f5 !important;
+  background-color: #ffffff !important;
   color: #2c3340 !important;
 }
+html.dark .login-shell .login-input::placeholder {
+  color: var(--faint) !important;
+}
+html.dark .login-shell .bg-\[\#DDE2FF\] {
+  background-color: #dde2ff !important;
+}
 
-/* Dark Soft UI — elevated surfaces, clear hierarchy, soft highlights */
+/* =====================================================================
+   DARK MODE — flat, đồng bộ với airy light (không neumorphism)
+   ===================================================================== */
 html.dark {
   color-scheme: dark;
-  --dark-page: #12141a;
-  --dark-chrome: #1a1d26;
-  --dark-surface: #222733;
-  --dark-elevated: #2a303d;
-  --dark-well: #151820;
+  --dark-page: #12141a; /* nền trang */
+  --dark-surface: #222733; /* card / chrome */
+  --dark-surface-2: #2a303d; /* chip, header bảng, hover */
+  --dark-line: rgba(255, 255, 255, 0.08);
+  --dark-line-strong: rgba(255, 255, 255, 0.13);
   --dark-fg: #eef1f6;
   --dark-muted: #9aa3b5;
-  --dark-line: rgba(255, 255, 255, 0.08);
-  --dark-glow: rgba(108, 99, 255, 0.18);
 }
 
 html.dark body {
@@ -464,286 +386,157 @@ html.dark body {
   color: var(--dark-fg);
 }
 
-html.dark .bg-background {
+/* Nền trang & bề mặt */
+html.dark .bg-canvas {
   background-color: var(--dark-page) !important;
 }
+html.dark .bg-background,
+html.dark .bg-surface,
+html.dark .bg-white {
+  background-color: var(--dark-surface) !important;
+}
+html.dark .bg-surface-2 {
+  background-color: var(--dark-surface-2) !important;
+}
+html.dark .bg-background\/80,
+html.dark .bg-white\/80 {
+  background-color: rgba(34, 39, 51, 0.82) !important;
+}
 
-/* Ambient glow on portal canvas only — keeps chrome/cards solid */
+/* Ambient glow chỉ trên canvas portal — chrome/card giữ đặc */
 html.dark .portal-shell {
   background-image:
-    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(108, 99, 255, 0.16), transparent 55%),
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(124, 58, 237, 0.16), transparent 55%),
     radial-gradient(ellipse 55% 35% at 100% 0%, rgba(56, 178, 172, 0.08), transparent 45%);
   background-attachment: fixed;
 }
 
 /* Sidebar sits above the page canvas */
-html.dark aside.bg-background {
+html.dark aside.bg-background,
+html.dark aside.bg-surface {
   background-color: var(--dark-surface) !important;
 }
 
-html.dark .neu-card {
+/* Card / nút / input / well — bề mặt phẳng, hairline, bóng đổ mềm xuống */
+html.dark .ui-card {
   background-color: var(--dark-surface) !important;
-  box-shadow:
-    10px 10px 22px rgba(0, 0, 0, 0.5),
-    -5px -5px 14px rgba(255, 255, 255, 0.055),
-    inset 0 1px 0 rgba(255, 255, 255, 0.07) !important;
-}
-
-html.dark .neu-btn {
-  background-color: var(--dark-elevated) !important;
-  color: var(--dark-fg);
-}
-
-html.dark .neu-input,
-html.dark .neu-well,
-html.dark .neu-well-sm {
-  background-color: var(--dark-well) !important;
-}
-
-html.dark .text-foreground {
-  color: var(--dark-fg) !important;
-}
-
-html.dark .text-muted,
-html.dark .text-placeholder {
-  color: var(--dark-muted) !important;
-}
-
-html.dark .shadow-extruded,
-html.dark .neu-btn {
-  box-shadow:
-    7px 7px 16px rgba(0, 0, 0, 0.45),
-    -5px -5px 12px rgba(255, 255, 255, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
-}
-
-html.dark .shadow-extruded-sm,
-html.dark .shadow-extruded-hover {
-  box-shadow:
-    5px 5px 12px rgba(0, 0, 0, 0.4),
-    -4px -4px 10px rgba(255, 255, 255, 0.055),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
-}
-
-html.dark .shadow-inset,
-html.dark .shadow-inset-sm,
-html.dark .shadow-inset-deep,
-html.dark .neu-input {
-  box-shadow:
-    inset 5px 5px 12px rgba(0, 0, 0, 0.55),
-    inset -3px -3px 8px rgba(255, 255, 255, 0.04),
-    0 0 0 1px var(--dark-line) !important;
-}
-
-html.dark .neu-input:focus {
-  box-shadow:
-    inset 5px 5px 12px rgba(0, 0, 0, 0.55),
-    inset -3px -3px 8px rgba(255, 255, 255, 0.04),
-    0 0 0 2px rgba(108, 99, 255, 0.45),
-    0 0 20px var(--dark-glow) !important;
-}
-
-html.dark .bg-white,
-html.dark .bg-white\/80 {
-  background-color: var(--dark-surface) !important;
-}
-
-/* Login card không bị rule .bg-white tối đè (specificity ngang !important) */
-html.dark .login-shell,
-html.dark .login-shell * {
-  color-scheme: light;
-}
-
-html.dark .login-shell .login-card,
-html.dark .login-shell .login-panel,
-html.dark .login-shell .bg-white,
-html.dark .login-shell .bg-white\/80 {
-  background-color: #ffffff !important;
-}
-
-html.dark .login-shell .bg-\[\#DDE2FF\] {
-  background-color: #dde2ff !important;
-}
-
-html.dark .login-shell .login-input::placeholder {
-  color: #a0a8b8 !important;
-}
-
-html.dark .bg-background\/80 {
-  background-color: rgba(26, 29, 38, 0.82) !important;
-}
-
-html.dark .border-black\/5 {
-  border-color: var(--dark-line) !important;
-}
-
-html.dark .ring-black\/5 {
-  --tw-ring-color: var(--dark-line) !important;
-}
-
-html.dark .ring-offset-background {
-  --tw-ring-offset-color: var(--dark-page) !important;
-}
-
-/* Accent chips / soft fills read clearer on dark */
-html.dark .bg-accent\/10,
-html.dark .bg-accent\/15,
-html.dark .bg-accent\/20 {
-  background-color: rgba(108, 99, 255, 0.22) !important;
-}
-
-html.dark .text-accent {
-  color: #a8a3ff !important;
-}
-
-/* Soft tonal chips — keep readable if any *-100 leftovers remain */
-html.dark .bg-emerald-100 {
-  background-color: rgba(16, 185, 129, 0.18) !important;
-}
-html.dark .bg-amber-100 {
-  background-color: rgba(245, 158, 11, 0.18) !important;
-}
-html.dark .bg-sky-100 {
-  background-color: rgba(14, 165, 233, 0.18) !important;
-}
-html.dark .bg-rose-100 {
-  background-color: rgba(244, 63, 94, 0.18) !important;
-}
-html.dark .bg-violet-100 {
-  background-color: rgba(139, 92, 246, 0.2) !important;
-}
-html.dark .text-emerald-700,
-html.dark .text-emerald-600 {
-  color: #6ee7b7 !important;
-}
-html.dark .text-amber-700 {
-  color: #fcd34d !important;
-}
-html.dark .text-sky-700,
-html.dark .text-sky-600 {
-  color: #7dd3fc !important;
-}
-html.dark .text-rose-600,
-html.dark .text-rose-700 {
-  color: #fda4af !important;
-}
-html.dark .data-table thead tr {
-  background-image: linear-gradient(
-    to right,
-    rgba(108, 99, 255, 0.28),
-    rgba(108, 99, 255, 0.14),
-    rgba(108, 99, 255, 0.08)
-  ) !important;
-}
-
-html.dark .data-table-th {
-  border-color: rgba(168, 163, 255, 0.22) !important;
-}
-
-html.dark .data-table-td {
-  border-color: rgba(255, 255, 255, 0.06) !important;
-}
-
-html.dark .data-table-resize::after {
-  background-color: rgba(168, 163, 255, 0.45) !important;
-}
-
-/* =====================================================================
-   FLAT DARK — làm phẳng dark mode đồng bộ với airy light (scoped portal)
-   Ghi đè neumorphism (bóng đôi lồi + highlight trắng) bằng bề mặt phẳng,
-   hairline mảnh + bóng đổ mềm một chiều. Chỉ trong .portal-shell nên
-   public/login không đụng tới. Specificity cao hơn + !important nên thắng
-   các rule dark neumorphism phía trên.
-   ===================================================================== */
-html.dark .portal-shell {
-  --d-line: rgba(255, 255, 255, 0.08);
-  --d-line-strong: rgba(255, 255, 255, 0.13);
-  --d-elevated: #2b313d;
-  font-family: "Inter", "DM Sans", sans-serif;
-}
-
-/* Đồng bộ font với light portal: body Inter · tiêu đề Space Grotesk */
-html.dark .portal-shell h1,
-html.dark .portal-shell h2,
-html.dark .portal-shell h3,
-html.dark .portal-shell h4,
-html.dark .portal-shell h5,
-html.dark .portal-shell h6,
-html.dark .portal-shell .font-display {
-  font-family: "Space Grotesk", "Plus Jakarta Sans", sans-serif;
-}
-
-/* Card & bề mặt nổi — phẳng, viền hairline, bóng đổ mềm xuống dưới */
-html.dark .portal-shell .neu-card,
-html.dark .portal-shell .shadow-extruded {
   box-shadow:
     0 1px 2px rgba(0, 0, 0, 0.4),
     0 16px 32px -16px rgba(0, 0, 0, 0.75),
-    inset 0 0 0 1px var(--d-line) !important;
+    inset 0 0 0 1px var(--dark-line) !important;
 }
-html.dark .portal-shell .neu-card {
-  border-radius: 16px;
-}
-html.dark .portal-shell .shadow-extruded-sm {
-  box-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.4),
-    inset 0 0 0 1px var(--d-line) !important;
-}
-html.dark .portal-shell .shadow-extruded-hover,
-html.dark .portal-shell .neu-card-hover:hover {
+html.dark .ui-card-hover:hover {
   box-shadow:
     0 12px 26px rgba(0, 0, 0, 0.55),
     0 30px 56px -18px rgba(0, 0, 0, 0.8),
-    inset 0 0 0 1px var(--d-line-strong) !important;
+    inset 0 0 0 1px var(--dark-line-strong) !important;
 }
-html.dark .portal-shell .neu-card-hover:hover {
-  transform: translateY(-3px);
+html.dark .ui-btn {
+  background-color: var(--dark-surface-2) !important;
+  border-color: var(--dark-line) !important;
+  color: var(--dark-fg);
 }
-
-/* Lõm → chỉ còn hairline, bỏ bóng inset neumorphism */
-html.dark .portal-shell .shadow-inset,
-html.dark .portal-shell .shadow-inset-sm,
-html.dark .portal-shell .shadow-inset-deep {
-  box-shadow: inset 0 0 0 1px var(--d-line) !important;
+html.dark .ui-btn:hover {
+  background-color: #313847 !important;
 }
-
-/* Nút phẳng — bề mặt nổi + viền hairline */
-html.dark .portal-shell .neu-btn {
-  border: 1px solid var(--d-line) !important;
-  border-radius: 12px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4) !important;
-}
-html.dark .portal-shell .neu-btn:hover {
-  transform: translateY(-1px);
-  background-color: var(--d-elevated) !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
-}
-html.dark .portal-shell .neu-btn:active {
-  transform: translateY(0);
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.5) !important;
-}
-html.dark .portal-shell .neu-btn-primary {
-  /* Ghi đè nền xám của html.dark .neu-btn — giữ gradient thương hiệu */
+html.dark .ui-btn-primary {
   background-color: #7c3aed !important;
   background-image: linear-gradient(135deg, #6e2ce6 0%, #e0348c 100%) !important;
   border-color: transparent !important;
   color: #fff !important;
   box-shadow: 0 4px 14px rgba(124, 58, 237, 0.42) !important;
 }
-
-/* Input phẳng — viền hairline, focus ring tím */
-html.dark .portal-shell .neu-input {
-  border: 1px solid var(--d-line) !important;
-  border-radius: 12px;
-  box-shadow: none !important;
+html.dark .ui-input,
+html.dark .ui-well,
+html.dark .ui-well-sm {
+  background-color: #151820 !important;
+  border-color: var(--dark-line) !important;
 }
-html.dark .portal-shell .neu-input:focus {
+html.dark .ui-input:focus {
   border-color: rgba(168, 163, 255, 0.6) !important;
-  box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.28) !important;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.28) !important;
 }
 
-/* Icon well → chip phẳng có hairline */
-html.dark .portal-shell .neu-well,
-html.dark .portal-shell .neu-well-sm {
-  box-shadow: inset 0 0 0 1px var(--d-line) !important;
+/* Bóng airy → dark */
+html.dark .shadow-soft,
+html.dark .shadow-soft-lg {
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.4),
+    0 16px 32px -16px rgba(0, 0, 0, 0.7) !important;
+}
+html.dark .shadow-soft-sm {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4) !important;
+}
+html.dark .shadow-hairline {
+  box-shadow: inset 0 0 0 1px var(--dark-line) !important;
+}
+
+/* Chữ */
+html.dark .text-foreground {
+  color: var(--dark-fg) !important;
+}
+html.dark .text-muted,
+html.dark .text-faint,
+html.dark .text-placeholder {
+  color: var(--dark-muted) !important;
+}
+html.dark .text-accent {
+  color: #a8a3ff !important;
+}
+
+/* Viền / ring hairline */
+html.dark .border-line {
+  border-color: var(--dark-line) !important;
+}
+html.dark .border-line-strong {
+  border-color: var(--dark-line-strong) !important;
+}
+html.dark .border-black\/5 {
+  border-color: var(--dark-line) !important;
+}
+html.dark .ring-black\/5 {
+  --tw-ring-color: var(--dark-line) !important;
+}
+html.dark .ring-offset-canvas {
+  --tw-ring-offset-color: var(--dark-page) !important;
+}
+
+/* Chip / nền accent */
+html.dark .bg-accent\/10,
+html.dark .bg-accent\/12,
+html.dark .bg-accent\/15,
+html.dark .bg-accent\/20 {
+  background-color: rgba(124, 58, 237, 0.22) !important;
+}
+
+/* Soft tonal chips — giữ đọc rõ trên dark */
+html.dark .bg-emerald-100 { background-color: rgba(16, 185, 129, 0.18) !important; }
+html.dark .bg-amber-100 { background-color: rgba(245, 158, 11, 0.18) !important; }
+html.dark .bg-sky-100 { background-color: rgba(14, 165, 233, 0.18) !important; }
+html.dark .bg-rose-100 { background-color: rgba(244, 63, 94, 0.18) !important; }
+html.dark .bg-violet-100 { background-color: rgba(139, 92, 246, 0.2) !important; }
+html.dark .text-emerald-700,
+html.dark .text-emerald-600 { color: #6ee7b7 !important; }
+html.dark .text-amber-700 { color: #fcd34d !important; }
+html.dark .text-sky-700,
+html.dark .text-sky-600 { color: #7dd3fc !important; }
+html.dark .text-rose-600,
+html.dark .text-rose-700 { color: #fda4af !important; }
+
+/* Bảng dữ liệu — dark */
+html.dark .data-table thead tr {
+  background-color: var(--dark-surface-2) !important;
+  color: var(--dark-muted) !important;
+}
+html.dark .data-table-th {
+  border-color: var(--dark-line-strong) !important;
+}
+html.dark .data-table-td {
+  border-color: var(--dark-line) !important;
+}
+html.dark .data-table tbody tr:hover {
+  background-color: rgba(255, 255, 255, 0.03) !important;
+}
+html.dark .data-table-resize::after {
+  background-color: var(--dark-line-strong) !important;
 }

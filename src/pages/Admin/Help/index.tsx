@@ -48,20 +48,20 @@ export default function Page() {
             body: "Templates API + SMTP server.",
           },
         ].map((c) => (
-          <article key={c.title} className="neu-card !p-5 space-y-2">
+          <article key={c.title} className="ui-card !p-5 space-y-2">
             <Icon icon={c.icon} size={20} className="text-accent" />
             <h2 className="font-semibold">{c.title}</h2>
             <p className="text-sm text-muted">{c.body}</p>
           </article>
         ))}
       </div>
-      <section className="neu-card !p-5 space-y-3">
+      <section className="ui-card !p-5 space-y-3">
         <h2 className="font-display text-lg font-bold">Câu hỏi thường gặp</h2>
         <ul className="space-y-3">
           {FAQS.map((f) => (
             <li
               key={f.q}
-              className="rounded-2xl bg-background px-4 py-3 shadow-inset-sm"
+              className="rounded-2xl bg-background px-4 py-3 shadow-hairline"
             >
               <p className="font-semibold text-sm">{f.q}</p>
               <p className="mt-1 text-sm text-muted">{f.a}</p>
@@ -69,7 +69,7 @@ export default function Page() {
           ))}
         </ul>
       </section>
-      <div className="neu-card !p-6">
+      <div className="ui-card !p-6">
         <EmptyState
           icon={LifeBuoy}
           title="Cần hỗ trợ kỹ thuật?"

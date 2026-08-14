@@ -62,7 +62,7 @@ function GroupDetailModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="group-detail-title"
-        className="relative z-10 flex max-h-[min(90vh,600px)] w-full max-w-md flex-col overflow-hidden rounded-card bg-background shadow-extruded"
+        className="relative z-10 flex max-h-[min(90vh,600px)] w-full max-w-md flex-col overflow-hidden rounded-card bg-background shadow-soft"
       >
         <header className="flex items-start justify-between gap-3 border-b border-black/5 px-5 py-4 sm:px-6">
           <div>
@@ -93,10 +93,10 @@ function GroupDetailModal({
 
         <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-5 sm:px-6">
           <div className="flex items-center justify-between">
-            <span className="neu-field-label !mb-0">Thành viên</span>
+            <span className="ui-field-label !mb-0">Thành viên</span>
             <span className="text-xs text-muted">{members.length}</span>
           </div>
-          <ul className="space-y-1 rounded-2xl bg-background p-2 shadow-inset-sm">
+          <ul className="space-y-1 rounded-2xl bg-background p-2 shadow-hairline">
             {members.map((t) => (
               <li
                 key={t.id}
@@ -245,7 +245,7 @@ function TrainingTeamsPage() {
               placeholder="Chọn đợt tuyển"
               ariaLabel="Bộ lọc theo đợt tuyển"
               className="min-w-[220px]"
-              triggerClassName="!shadow-extruded-sm !h-10 text-accent !font-semibold"
+              triggerClassName="!shadow-soft-sm !h-10 text-accent !font-semibold"
             />
           </div>
           <p className="mt-2 text-sm text-muted max-w-xl">
@@ -302,16 +302,16 @@ function TrainingTeamsPage() {
       </section>
 
       {loading ? (
-        <div className="neu-card h-64 animate-pulse" aria-busy="true" />
+        <div className="ui-card h-64 animate-pulse" aria-busy="true" />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {filtered.map((g) => (
-            <article key={g.id} className="neu-card !p-5 space-y-4">
+            <article key={g.id} className="ui-card !p-5 space-y-4">
               <Badge tone="violet">
                 {g.specialtyLabel ?? g.departmentName}
               </Badge>
               <h3 className="font-display text-xl font-bold">{g.name}</h3>
-              <div className="rounded-2xl bg-background px-3 py-3 shadow-inset-sm flex items-center gap-3">
+              <div className="rounded-2xl bg-background px-3 py-3 shadow-hairline flex items-center gap-3">
                 <Avatar name={g.mentorName ?? "?"} size="md" />
                 <div>
                   <p className="text-[10px] uppercase tracking-wide text-muted">

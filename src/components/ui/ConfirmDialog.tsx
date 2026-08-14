@@ -47,12 +47,12 @@ function ConfirmDialog({
       aria-label={title}
     >
       <div
-        className="neu-card w-full max-w-md !p-6 animate-fade-up"
+        className="ui-card w-full max-w-md !p-6 animate-fade-up"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start gap-4">
           <div
-            className={`neu-well-sm h-11 w-11 shrink-0 ${
+            className={`ui-well-sm h-11 w-11 shrink-0 ${
               tone === "danger" ? "text-red-500" : "text-accent"
             }`}
           >
@@ -75,7 +75,7 @@ function ConfirmDialog({
         </div>
 
         <div className="mt-6 flex justify-end gap-3">
-          <button type="button" className="neu-btn" onClick={onClose} disabled={loading}>
+          <button type="button" className="ui-btn" onClick={onClose} disabled={loading}>
             {cancelLabel}
           </button>
           <button
@@ -85,12 +85,12 @@ function ConfirmDialog({
             className={
               tone === "danger"
                 ? `inline-flex items-center justify-center gap-2 rounded-2xl px-6 h-12 font-medium text-white
-                   bg-red-500 shadow-extruded transition-all duration-300 ease-out
+                   bg-red-500 shadow-soft transition-all duration-300 ease-out
                    hover:-translate-y-px hover:bg-red-600 active:translate-y-[0.5px]
                    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500
                    focus-visible:ring-offset-2 focus-visible:ring-offset-background
                    disabled:opacity-60 disabled:pointer-events-none`
-                : "neu-btn-primary disabled:opacity-60 disabled:pointer-events-none"
+                : "ui-btn-primary disabled:opacity-60 disabled:pointer-events-none"
             }
           >
             {loading ? "Đang xử lý..." : confirmLabel}

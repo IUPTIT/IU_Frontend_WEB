@@ -68,7 +68,7 @@ function MentorRoadmapPage() {
 
   if (!isMentor) {
     return (
-      <section className="neu-card !p-10 text-center space-y-3">
+      <section className="ui-card !p-10 text-center space-y-3">
         <h1 className="font-display text-2xl font-extrabold">
           Lộ trình mentor
         </h1>
@@ -127,9 +127,9 @@ function MentorRoadmapPage() {
       </section>
 
       {loading ? (
-        <div className="neu-card h-64 animate-pulse" aria-busy="true" />
+        <div className="ui-card h-64 animate-pulse" aria-busy="true" />
       ) : programs.length === 0 ? (
-        <section className="neu-card !p-10 text-center space-y-3">
+        <section className="ui-card !p-10 text-center space-y-3">
           <p className="font-semibold text-foreground">
             Bạn chưa có lộ trình nào.
           </p>
@@ -140,7 +140,7 @@ function MentorRoadmapPage() {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">
           {programs.map((p) => (
-            <article key={p.id} className="neu-card !p-5 space-y-3">
+            <article key={p.id} className="ui-card !p-5 space-y-3">
               <div className="flex items-start justify-between gap-3">
                 <button
                   type="button"
@@ -188,7 +188,7 @@ function MentorRoadmapPage() {
                   .map((s) => (
                     <li
                       key={s.id}
-                      className="rounded-xl bg-background px-3 py-2 text-sm shadow-inset-sm"
+                      className="rounded-xl bg-background px-3 py-2 text-sm shadow-hairline"
                     >
                       <span className="font-semibold text-accent">
                         {s.order}.

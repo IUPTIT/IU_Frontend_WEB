@@ -79,7 +79,7 @@ function InterviewCandidateNotePage({ bookingId }: { bookingId: string }) {
   if (loading) {
     return (
       <div
-        className="neu-card h-64 animate-pulse"
+        className="ui-card h-64 animate-pulse"
         aria-busy="true"
         aria-label="Đang tải"
       />
@@ -87,7 +87,7 @@ function InterviewCandidateNotePage({ bookingId }: { bookingId: string }) {
   }
   if (error || !detail) {
     return (
-      <section className="neu-card !p-8 text-center">
+      <section className="ui-card !p-8 text-center">
         <p className="text-muted">{error ?? "Không tìm thấy lịch phỏng vấn."}</p>
       </section>
     );
@@ -207,7 +207,7 @@ function InterviewCandidateNotePage({ bookingId }: { bookingId: string }) {
           </p>
         </div>
         {detail.averageScore != null && (
-          <div className="neu-well-sm !px-5 !py-3 text-center">
+          <div className="ui-well-sm !px-5 !py-3 text-center">
             <p className="text-xs text-muted">Điểm TB hiện tại</p>
             <p className="text-2xl font-extrabold text-accent">
               {detail.averageScore.toFixed(1)}
@@ -217,7 +217,7 @@ function InterviewCandidateNotePage({ bookingId }: { bookingId: string }) {
       </section>
 
       <div className="grid gap-5 lg:grid-cols-[1fr_360px]">
-        <section className="neu-card space-y-5 !p-6">
+        <section className="ui-card space-y-5 !p-6">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="font-display text-lg font-bold">
               Phỏng vấn & chấm điểm
@@ -244,7 +244,7 @@ function InterviewCandidateNotePage({ bookingId }: { bookingId: string }) {
           )}
 
           <div className="flex flex-wrap items-center gap-3">
-            <span className="neu-field-label !mb-0">Điểm danh:</span>
+            <span className="ui-field-label !mb-0">Điểm danh:</span>
             {(["present", "absent"] as const).map((v) => (
               <button
                 key={v}
@@ -253,9 +253,9 @@ function InterviewCandidateNotePage({ bookingId }: { bookingId: string }) {
                 className={`rounded-full px-4 py-2 text-sm font-medium transition-all ${
                   attendance === v
                     ? v === "absent"
-                      ? "bg-rose-500/15 text-rose-600 shadow-inset-sm"
-                      : "bg-accent/20 text-accent shadow-inset-sm"
-                    : "shadow-extruded-sm text-muted"
+                      ? "bg-rose-500/15 text-rose-600 shadow-hairline"
+                      : "bg-accent/20 text-accent shadow-hairline"
+                    : "shadow-soft-sm text-muted"
                 }`}
               >
                 {v === "present" ? "Có mặt" : "Vắng mặt"}
@@ -267,7 +267,7 @@ function InterviewCandidateNotePage({ bookingId }: { bookingId: string }) {
             <div className="grid gap-4 sm:grid-cols-3">
               {criteria.map((c) => (
                 <label key={c.id} className="block space-y-1.5">
-                  <span className="neu-field-label">
+                  <span className="ui-field-label">
                     {c.name} (0–{c.maxScore})
                   </span>
                   <input
@@ -275,7 +275,7 @@ function InterviewCandidateNotePage({ bookingId }: { bookingId: string }) {
                     min={0}
                     max={c.maxScore}
                     step={0.5}
-                    className="neu-input !h-11"
+                    className="ui-input !h-11"
                     value={scores[c.id] ?? ""}
                     onChange={(e) =>
                       setScores((s) => ({ ...s, [c.id]: e.target.value }))
@@ -287,11 +287,11 @@ function InterviewCandidateNotePage({ bookingId }: { bookingId: string }) {
           )}
 
           <label className="block space-y-1.5">
-            <span className="neu-field-label">
+            <span className="ui-field-label">
               Ghi chú quá trình phỏng vấn {attendance === "present" && "*"}
             </span>
             <textarea
-              className="neu-input !h-auto min-h-[160px] resize-y py-3 text-sm"
+              className="ui-input !h-auto min-h-[160px] resize-y py-3 text-sm"
               placeholder="Câu hỏi đã hỏi, câu trả lời nổi bật, thái độ, điểm mạnh/yếu..."
               value={note}
               onChange={(e) => setNote(e.target.value)}
@@ -323,7 +323,7 @@ function InterviewCandidateNotePage({ bookingId }: { bookingId: string }) {
           </div>
         </section>
 
-        <aside className="neu-card space-y-4 !p-6">
+        <aside className="ui-card space-y-4 !p-6">
           <h2 className="font-display text-lg font-bold">
             Đánh giá đã lưu ({detail.reviewerScores.length})
           </h2>

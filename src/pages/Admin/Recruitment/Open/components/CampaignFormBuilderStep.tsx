@@ -137,13 +137,13 @@ function CampaignFormBuilderStep({ draft, onChange, onBack, onNext, onSaveDraft,
           </p>
         </div>
         <div className="flex flex-wrap gap-3">
-          <button type="button" className="neu-btn text-accent" onClick={onSaveDraft}>
+          <button type="button" className="ui-btn text-accent" onClick={onSaveDraft}>
             <svg className="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8">
               <path d="M4 4h10l2 2v10H4V4Zm3 0v4h6V4M6 14h8" strokeLinejoin="round" />
             </svg>
             Lưu nháp
           </button>
-          <button type="button" className="neu-btn-primary" onClick={onNext}>
+          <button type="button" className="ui-btn-primary" onClick={onNext}>
             Xuất bản
             <span aria-hidden>↑</span>
           </button>
@@ -153,7 +153,7 @@ function CampaignFormBuilderStep({ draft, onChange, onBack, onNext, onSaveDraft,
       <div className="grid gap-6 xl:grid-cols-[1.4fr_0.9fr]">
         <div className="space-y-5">
           {/* Trường cố định — luôn có trong mọi đợt tuyển, không xoá được (nghiệp vụ 0.2) */}
-          <section className="neu-card !p-5 space-y-3">
+          <section className="ui-card !p-5 space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-semibold">Trường cố định</h2>
               <span className="rounded-full bg-accent/15 px-3 py-1 text-xs font-medium text-accent">
@@ -168,7 +168,7 @@ function CampaignFormBuilderStep({ draft, onChange, onBack, onNext, onSaveDraft,
               {FIXED_FIELDS.map((field) => (
                 <div
                   key={field.label}
-                  className="flex items-start gap-3 rounded-2xl bg-background p-3 shadow-inset-sm"
+                  className="flex items-start gap-3 rounded-2xl bg-background p-3 shadow-hairline"
                 >
                   <svg
                     className="mt-0.5 h-4 w-4 shrink-0 text-muted"
@@ -200,7 +200,7 @@ function CampaignFormBuilderStep({ draft, onChange, onBack, onNext, onSaveDraft,
           )}
 
           <section
-            className={`neu-card !p-5 space-y-4 ${locked ? "pointer-events-none select-none opacity-50" : ""}`}
+            className={`ui-card !p-5 space-y-4 ${locked ? "pointer-events-none select-none opacity-50" : ""}`}
             aria-disabled={locked}
           >
             <h2 className="text-sm font-semibold">Thêm câu hỏi riêng của đợt tuyển</h2>
@@ -210,7 +210,7 @@ function CampaignFormBuilderStep({ draft, onChange, onBack, onNext, onSaveDraft,
                   key={t.type}
                   type="button"
                   onClick={() => addQuestion(t.type)}
-                  className="neu-card neu-card-hover !p-4 flex flex-col items-center gap-2 text-center text-sm text-muted hover:text-accent"
+                  className="ui-card ui-card-hover !p-4 flex flex-col items-center gap-2 text-center text-sm text-muted hover:text-accent"
                 >
                   <span className="text-accent">
                     <TypeIcon icon={t.icon} />
@@ -224,12 +224,12 @@ function CampaignFormBuilderStep({ draft, onChange, onBack, onNext, onSaveDraft,
           {draft.questions.map((q) => (
             <article
               key={q.id}
-              className={`neu-card !p-5 space-y-4 ${locked ? "pointer-events-none select-none opacity-50" : ""}`}
+              className={`ui-card !p-5 space-y-4 ${locked ? "pointer-events-none select-none opacity-50" : ""}`}
               aria-disabled={locked}
             >
               <div className="flex items-start justify-between gap-3">
                 <input
-                  className="neu-input font-semibold"
+                  className="ui-input font-semibold"
                   value={q.content}
                   onChange={(e) => updateQuestion(q.id, { content: e.target.value })}
                   aria-label="Nội dung câu hỏi"
@@ -237,7 +237,7 @@ function CampaignFormBuilderStep({ draft, onChange, onBack, onNext, onSaveDraft,
                 <div className="flex shrink-0 gap-2">
                   <button
                     type="button"
-                    className="neu-btn h-10 w-10 !px-0 rounded-full"
+                    className="ui-btn h-10 w-10 !px-0 rounded-full"
                     aria-label="Đưa câu hỏi lên"
                     disabled={draft.questions[0]?.id === q.id}
                     onClick={() => moveQuestion(q.id, -1)}
@@ -246,7 +246,7 @@ function CampaignFormBuilderStep({ draft, onChange, onBack, onNext, onSaveDraft,
                   </button>
                   <button
                     type="button"
-                    className="neu-btn h-10 w-10 !px-0 rounded-full"
+                    className="ui-btn h-10 w-10 !px-0 rounded-full"
                     aria-label="Đưa câu hỏi xuống"
                     disabled={draft.questions[draft.questions.length - 1]?.id === q.id}
                     onClick={() => moveQuestion(q.id, 1)}
@@ -255,7 +255,7 @@ function CampaignFormBuilderStep({ draft, onChange, onBack, onNext, onSaveDraft,
                   </button>
                   <button
                     type="button"
-                    className="neu-btn h-10 w-10 !px-0 rounded-full"
+                    className="ui-btn h-10 w-10 !px-0 rounded-full"
                     aria-label="Nhân đôi câu hỏi"
                     onClick={() => duplicateQuestion(q.id)}
                   >
@@ -266,7 +266,7 @@ function CampaignFormBuilderStep({ draft, onChange, onBack, onNext, onSaveDraft,
                   </button>
                   <button
                     type="button"
-                    className="neu-btn h-10 w-10 !px-0 rounded-full text-red-500"
+                    className="ui-btn h-10 w-10 !px-0 rounded-full text-red-500"
                     aria-label="Xóa câu hỏi"
                     onClick={() => removeQuestion(q.id)}
                   >
@@ -278,15 +278,15 @@ function CampaignFormBuilderStep({ draft, onChange, onBack, onNext, onSaveDraft,
               </div>
 
               {q.type === "short_text" && (
-                <div className="neu-input text-muted pointer-events-none">Văn bản trả lời ngắn</div>
+                <div className="ui-input text-muted pointer-events-none">Văn bản trả lời ngắn</div>
               )}
               {q.type === "long_text" && (
-                <div className="neu-input !h-24 text-muted pointer-events-none flex items-start pt-3">
+                <div className="ui-input !h-24 text-muted pointer-events-none flex items-start pt-3">
                   Đoạn văn trả lời dài...
                 </div>
               )}
               {q.type === "file_upload" && (
-                <div className="neu-input !h-20 text-muted pointer-events-none flex items-center justify-center">
+                <div className="ui-input !h-20 text-muted pointer-events-none flex items-center justify-center">
                   Kéo thả hoặc chọn tệp để tải lên
                 </div>
               )}
@@ -296,7 +296,7 @@ function CampaignFormBuilderStep({ draft, onChange, onBack, onNext, onSaveDraft,
                     <div key={o.id} className="flex items-center gap-3">
                       <span className="h-4 w-4 rounded-full border-2 border-muted shrink-0" aria-hidden />
                       <input
-                        className="neu-input !h-10"
+                        className="ui-input !h-10"
                         value={o.label}
                         onChange={(e) => updateOption(q.id, o.id, e.target.value)}
                       />
@@ -329,12 +329,12 @@ function CampaignFormBuilderStep({ draft, onChange, onBack, onNext, onSaveDraft,
         </div>
 
         {/* Preview */}
-        <aside className="neu-card !p-5 h-fit sticky top-24 space-y-4">
+        <aside className="ui-card !p-5 h-fit sticky top-24 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold">Preview Giao diện</h2>
             <span className="text-xs text-muted">Mobile</span>
           </div>
-          <div className="mx-auto w-full max-w-[260px] rounded-[2rem] border-[6px] border-foreground/80 bg-white p-4 shadow-extruded">
+          <div className="mx-auto w-full max-w-[260px] rounded-[2rem] border-[6px] border-foreground/80 bg-white p-4 shadow-soft">
             <div className="mx-auto mb-3 h-1.5 w-16 rounded-full bg-muted/40" />
             <div className="flex flex-col items-center gap-2 mb-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-accent to-accent-light text-white text-xs font-bold">
@@ -347,7 +347,7 @@ function CampaignFormBuilderStep({ draft, onChange, onBack, onNext, onSaveDraft,
               {FIXED_FIELDS.slice(0, 2).map((field) => (
                 <div key={field.label} className="space-y-1">
                   <p className="font-medium text-foreground">{field.label} *</p>
-                  <div className="h-8 rounded-lg bg-background shadow-inset-sm" />
+                  <div className="h-8 rounded-lg bg-background shadow-hairline" />
                 </div>
               ))}
               {draft.questions.slice(0, 2).map((q) => (
@@ -363,7 +363,7 @@ function CampaignFormBuilderStep({ draft, onChange, onBack, onNext, onSaveDraft,
                       ))}
                     </div>
                   ) : (
-                    <div className="h-8 rounded-lg bg-background shadow-inset-sm" />
+                    <div className="h-8 rounded-lg bg-background shadow-hairline" />
                   )}
                 </div>
               ))}
@@ -380,14 +380,14 @@ function CampaignFormBuilderStep({ draft, onChange, onBack, onNext, onSaveDraft,
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <button type="button" className="neu-btn" onClick={onBack}>
+        <button type="button" className="ui-btn" onClick={onBack}>
           ← Quay lại
         </button>
         <button
           type="button"
           onClick={onNext}
           className="inline-flex h-12 items-center gap-2 rounded-2xl px-8 font-semibold text-foreground
-            bg-gradient-to-r from-[#F5B4C8] to-[#8BB7F0] shadow-extruded-sm
+            bg-gradient-to-r from-[#F5B4C8] to-[#8BB7F0] shadow-soft-sm
             transition-all duration-300 hover:-translate-y-0.5
             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
         >

@@ -41,7 +41,7 @@ function InterviewCalendar({
   ];
 
   return (
-    <section className="neu-card !p-5 space-y-4">
+    <section className="ui-card !p-5 space-y-4">
       <div className="flex items-center justify-between gap-2">
         <Button
           variant="icon"
@@ -93,7 +93,7 @@ function InterviewCalendar({
               onClick={() => onSelectDate(iso)}
               className={`relative flex h-9 flex-col items-center justify-center rounded-xl text-sm transition-all duration-200 ${
                 selected
-                  ? "bg-accent text-white font-bold shadow-extruded-sm"
+                  ? "bg-accent text-white font-bold shadow-soft-sm"
                   : "text-foreground hover:bg-accent/10"
               }`}
             >

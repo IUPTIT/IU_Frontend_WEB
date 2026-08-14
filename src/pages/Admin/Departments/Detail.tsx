@@ -150,11 +150,11 @@ export default function AdminDepartmentDetailPage({
   };
 
   if (loading && !dept) {
-    return <div className="neu-card h-64 animate-pulse" aria-busy="true" />;
+    return <div className="ui-card h-64 animate-pulse" aria-busy="true" />;
   }
   if (!dept) {
     return (
-      <section className="neu-card !p-8 text-center text-muted">
+      <section className="ui-card !p-8 text-center text-muted">
         Không tìm thấy Ban.
       </section>
     );
@@ -194,7 +194,7 @@ export default function AdminDepartmentDetailPage({
         </p>
       </header>
 
-      <div className="flex flex-wrap gap-2 rounded-2xl bg-background p-1 shadow-inset-sm">
+      <div className="flex flex-wrap gap-2 rounded-2xl bg-background p-1 shadow-hairline">
         {tabs.map((t) => (
           <button
             key={t.id}
@@ -202,7 +202,7 @@ export default function AdminDepartmentDetailPage({
             onClick={() => setTab(t.id)}
             className={`rounded-xl px-4 py-2 text-sm font-semibold transition-all ${
               tab === t.id
-                ? "bg-accent/15 text-accent shadow-extruded-sm"
+                ? "bg-accent/15 text-accent shadow-soft-sm"
                 : "text-muted hover:text-foreground"
             }`}
           >
@@ -212,7 +212,7 @@ export default function AdminDepartmentDetailPage({
       </div>
 
       {tab === "members" && (
-        <div className="neu-card !p-0 overflow-hidden">
+        <div className="ui-card !p-0 overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-background/80 text-left text-xs uppercase text-muted">
               <tr>
@@ -273,7 +273,7 @@ export default function AdminDepartmentDetailPage({
               Gán {selected.length || ""} vào Ban này
             </Button>
           </div>
-          <ul className="neu-card space-y-1 !p-3">
+          <ul className="ui-card space-y-1 !p-3">
             {unassigned.map((m) => (
               <li key={m.id}>
                 <label className="flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-accent/5">
@@ -302,7 +302,7 @@ export default function AdminDepartmentDetailPage({
 
       {tab === "leaders" && (
         <div className="space-y-4">
-          <div className="neu-card space-y-3 !p-5">
+          <div className="ui-card space-y-3 !p-5">
             <h2 className="font-display text-lg font-bold">Chỉ định Leader</h2>
             <div className="grid gap-3">
               <Select
@@ -316,7 +316,7 @@ export default function AdminDepartmentDetailPage({
                 }))}
               />
               <input
-                className="neu-input !h-11"
+                className="ui-input !h-11"
                 placeholder="Thời hạn nhiệm kỳ (VD: HK1 2026)"
                 value={termLabel}
                 onChange={(e) => setTermLabel(e.target.value)}
@@ -331,11 +331,11 @@ export default function AdminDepartmentDetailPage({
             </Button>
           </div>
 
-          <ul className="neu-card space-y-2 !p-4">
+          <ul className="ui-card space-y-2 !p-4">
             {leaders.map((m) => (
               <li
                 key={m.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-xl px-3 py-2.5 shadow-extruded-sm"
+                className="flex flex-wrap items-center justify-between gap-3 rounded-xl px-3 py-2.5 shadow-soft-sm"
               >
                 <div>
                   <p className="font-semibold">{m.fullName}</p>
@@ -363,7 +363,7 @@ export default function AdminDepartmentDetailPage({
       )}
 
       {tab === "history" && (
-        <div className="neu-card !p-0 overflow-hidden">
+        <div className="ui-card !p-0 overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-background/80 text-left text-xs uppercase text-muted">
               <tr>

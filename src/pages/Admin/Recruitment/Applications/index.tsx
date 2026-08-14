@@ -9,8 +9,19 @@ import SendEmailModal from "../../../../components/ui/SendEmailModal";
 import { ROUTES } from "../../../../constants/routes";
 import { usePortalUi } from "../../../../context/usePortalUi";
 import { useToast } from "../../../../context/useToast";
-import { getApplications, getCampaigns, bulkDecideCvByThreshold } from "../../../../services/recruitmentService";
-import type { Application, ApplicationStatus, RecruitmentCampaign } from "../../../../types/recruitment";
+import {
+  getApplications,
+  getCampaigns,
+  bulkDecideCvByThreshold,
+  getFormQuestions,
+  exportApplications,
+} from "../../../../services/recruitmentService";
+import type {
+  Application,
+  ApplicationStatus,
+  FormQuestion,
+  RecruitmentCampaign,
+} from "../../../../types/recruitment";
 import { applicationToEmailRecipient } from "../../../../utils/emailRecipients";
 import { formatDate } from "../../../../utils/formatDate";
 import ConfirmDialog from "../../../../components/ui/ConfirmDialog";
@@ -39,11 +50,30 @@ function countActiveFilters(f: ApplicationFilterDraft) {
 function buildApplicationExportColumns(
   campaignName: string,
   departments: { id: string; name: string }[],
+  questions: FormQuestion[],
 ): ExportColumnDef<Application>[] {
-  return [
-    { id: "fullName", label: "Họ và tên", getValue: (r) => r.fullName, defaultSelected: true },
-    { id: "email", label: "Email", getValue: (r) => r.email, defaultSelected: true },
-    { id: "phone", label: "Số điện thoại", getValue: (r) => r.phone ?? "", defaultSelected: true },
+  const profile: ExportColumnDef<Application>[] = [
+    {
+      id: "fullName",
+      label: "Họ và tên",
+      getValue: (r) => r.fullName,
+      defaultSelected: true,
+      serverKey: { type: "profile", key: "fullName" },
+    },
+    {
+      id: "email",
+      label: "Email",
+      getValue: (r) => r.email,
+      defaultSelected: true,
+      serverKey: { type: "profile", key: "email" },
+    },
+    {
+      id: "phone",
+      label: "Số điện thoại",
+      getValue: (r) => r.phone ?? "",
+      defaultSelected: true,
+      serverKey: { type: "profile", key: "phone" },
+    },
     {
       id: "department",
       label: "Ban nguyện vọng",
@@ -51,24 +81,28 @@ function buildApplicationExportColumns(
       getFilterKey: (r) => r.preferredDepartmentId,
       filterOptions: departments.map((d) => ({ value: d.id, label: d.name })),
       defaultSelected: true,
+      serverKey: { type: "profile", key: "department" },
     },
     {
       id: "campaign",
       label: "Đợt tuyển",
       getValue: () => campaignName,
       defaultSelected: true,
+      serverKey: { type: "profile", key: "campaign" },
     },
     {
       id: "submittedAt",
       label: "Ngày nộp",
       getValue: (r) => formatDate(r.submittedAt),
       defaultSelected: true,
+      serverKey: { type: "profile", key: "submittedAt" },
     },
     {
       id: "totalScore",
       label: "Điểm ĐG",
       getValue: (r) => (r.totalScore != null ? String(r.totalScore) : ""),
       defaultSelected: true,
+      serverKey: { type: "profile", key: "totalScore" },
     },
     {
       id: "status",
@@ -85,8 +119,33 @@ function buildApplicationExportColumns(
         { value: "rejected", label: "Không trúng tuyển" },
       ],
       defaultSelected: true,
+      serverKey: { type: "profile", key: "status" },
     },
   ];
+
+  const answerCols: ExportColumnDef<Application>[] = questions.map((q) => ({
+    id: `q:${q.id}`,
+    label: q.content,
+    group: "Câu trả lời form",
+    defaultSelected: false,
+    serverKey: { type: "question", key: q.id },
+    getValue: (r) => {
+      const v = r.answers[q.id];
+      if (v == null) return "";
+      return Array.isArray(v) ? v.join(", ") : String(v);
+    },
+    ...(q.type === "single_choice" || q.type === "multi_choice"
+      ? {
+          getFilterKey: (r: Application) => {
+            const v = r.answers[q.id];
+            return Array.isArray(v) ? v.join(", ") : String(v ?? "");
+          },
+          filterOptions: (q.options ?? []).map((o) => ({ value: o.label, label: o.label })),
+        }
+      : {}),
+  }));
+
+  return [...profile, ...answerCols];
 }
 
 function RecruitmentApplicationsPage() {
@@ -94,6 +153,7 @@ function RecruitmentApplicationsPage() {
   const toast = useToast();
   const [campaigns, setCampaigns] = useState<RecruitmentCampaign[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
+  const [questions, setQuestions] = useState<FormQuestion[]>([]);
   // campaignId dẫn xuất: user chọn thì ưu tiên, không thì lấy đợt đang mở / mới nhất
   const [campaignIdOverride, setCampaignIdOverride] = useState<string>("");
   const campaignId = useMemo(() => {
@@ -145,6 +205,7 @@ function RecruitmentApplicationsPage() {
     setSelectedIds(new Set());
     setPage(1);
     setLoading(true);
+    setQuestions([]);
   }
 
   useEffect(() => {
@@ -161,6 +222,19 @@ function RecruitmentApplicationsPage() {
   useEffect(() => {
     void loadApplications(campaignId);
   }, [campaignId, loadApplications]);
+
+  useEffect(() => {
+    if (!campaignId) return;
+    let alive = true;
+    getFormQuestions(campaignId)
+      .then((qs) => {
+        if (alive) setQuestions(qs);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [campaignId]);
 
   const selectedCampaign = campaigns.find((c) => c.id === campaignId);
 
@@ -223,8 +297,8 @@ function RecruitmentApplicationsPage() {
 
   const campaignName = campaigns.find((c) => c.id === campaignId)?.name ?? "";
   const exportColumns = useMemo(
-    () => buildApplicationExportColumns(campaignName, departmentOptions),
-    [campaignName, departmentOptions],
+    () => buildApplicationExportColumns(campaignName, departmentOptions, questions),
+    [campaignName, departmentOptions, questions],
   );
 
   const activeFilterCount = countActiveFilters(appliedFilter);
@@ -311,7 +385,7 @@ function RecruitmentApplicationsPage() {
               placeholder="Chọn đợt tuyển"
               ariaLabel="Bộ lọc theo đợt tuyển"
               className="min-w-[220px]"
-              triggerClassName="!shadow-extruded-sm !h-10 text-accent !font-semibold"
+              triggerClassName="!shadow-soft-sm !h-10 text-accent !font-semibold"
             />
           </div>
         </div>
@@ -323,7 +397,7 @@ function RecruitmentApplicationsPage() {
               min={0}
               max={10}
               step={0.5}
-              className="neu-input !h-11 !w-20 text-sm"
+              className="ui-input !h-11 !w-20 text-sm"
               value={bulkThreshold}
               onChange={(e) => setBulkThreshold(e.target.value)}
               aria-label="Ngưỡng điểm Pass"
@@ -384,7 +458,7 @@ function RecruitmentApplicationsPage() {
       </section>
 
       {loading ? (
-        <div className="neu-card h-64 animate-pulse" aria-busy="true" aria-label="Đang tải" />
+        <div className="ui-card h-64 animate-pulse" aria-busy="true" aria-label="Đang tải" />
       ) : (
         <>
           <ApplicationTable
@@ -408,7 +482,24 @@ function RecruitmentApplicationsPage() {
         columns={exportColumns}
         rows={filtered}
         filenameBase={`ho_so_${campaignId || "dot"}`}
-        onExported={(n) => showToast(`Đã tải xuống ${n} hồ sơ (CSV).`)}
+        exporter={async ({ columns, rows }) => {
+          const cols = columns
+            .map((c) => c.serverKey)
+            .filter(Boolean) as { type: "profile" | "question"; key: string }[];
+          const profileKeys = cols.filter((c) => c.type === "profile").map((c) => c.key);
+          const questionFieldIds = cols.filter((c) => c.type === "question").map((c) => c.key);
+          const applicationIds = rows.map((r) => r.id);
+          try {
+            await exportApplications(campaignId, {
+              applicationIds,
+              columns: profileKeys,
+              questionFieldIds,
+            });
+            showToast(`Đã xuất ${applicationIds.length} hồ sơ (xlsx).`);
+          } catch {
+            showToast("Xuất file thất bại — thử lại sau.");
+          }
+        }}
       />
 
       <SendEmailModal

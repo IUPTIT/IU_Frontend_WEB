@@ -138,7 +138,7 @@ export default function LeaderOverviewPage() {
             Quản lý thành viên Ban; quyền Mentor do BCN cấp riêng.
           </p>
         </header>
-        <div className="neu-card !p-6">
+        <div className="ui-card !p-6">
           <Button
             variant="primary"
             onClick={() => navigate(ROUTES.leader.members)}
@@ -169,7 +169,7 @@ export default function LeaderOverviewPage() {
       {loading ? (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="neu-card h-28 animate-pulse" />
+            <div key={i} className="ui-card h-28 animate-pulse" />
           ))}
         </div>
       ) : (
@@ -199,9 +199,9 @@ export default function LeaderOverviewPage() {
             <button
               type="button"
               onClick={() => navigate(ROUTES.leader.training.tasks)}
-              className="neu-card !p-5 text-left transition hover:-translate-y-0.5 hover:shadow-extruded-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              className="ui-card !p-5 text-left transition hover:-translate-y-0.5 hover:shadow-soft-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             >
-              <span className="neu-well mb-3 inline-flex h-11 w-11 text-accent bg-accent/15">
+              <span className="ui-well mb-3 inline-flex h-11 w-11 text-accent bg-accent/15">
                 <Icon icon={Plus} size={20} />
               </span>
               <p className="text-[10px] font-bold uppercase tracking-wide text-muted">
@@ -214,7 +214,7 @@ export default function LeaderOverviewPage() {
           </div>
 
           <div className="grid gap-5 lg:grid-cols-[1.4fr_1fr]">
-            <article className="neu-card !p-5 space-y-4">
+            <article className="ui-card !p-5 space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <h2 className="font-display text-lg font-bold">
@@ -234,7 +234,7 @@ export default function LeaderOverviewPage() {
                     key={i}
                     className="flex flex-1 flex-col items-center gap-2"
                   >
-                    <div className="flex h-32 w-full items-end justify-center rounded-2xl bg-background shadow-inset-sm px-1 pb-1">
+                    <div className="flex h-32 w-full items-end justify-center rounded-2xl bg-background shadow-hairline px-1 pb-1">
                       <div
                         className="w-full max-w-[32px] rounded-t-xl bg-accent/70"
                         style={{
@@ -251,7 +251,7 @@ export default function LeaderOverviewPage() {
               </div>
             </article>
 
-            <article className="neu-card !p-5 space-y-3">
+            <article className="ui-card !p-5 space-y-3">
               <h2 className="font-display text-lg font-bold">
                 Thành viên nổi bật
               </h2>
@@ -264,7 +264,7 @@ export default function LeaderOverviewPage() {
                   {featured.map((f) => (
                     <li
                       key={f.id}
-                      className="flex items-center gap-3 rounded-2xl bg-background px-3 py-2.5 shadow-inset-sm"
+                      className="flex items-center gap-3 rounded-2xl bg-background px-3 py-2.5 shadow-hairline"
                     >
                       <Avatar name={f.name} size="sm" />
                       <div className="min-w-0 flex-1">
@@ -292,7 +292,7 @@ export default function LeaderOverviewPage() {
             </article>
           </div>
 
-          <article className="neu-card !p-5 space-y-4">
+          <article className="ui-card !p-5 space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className="font-display text-lg font-bold">
                 Phân công công việc gần đây
@@ -386,12 +386,12 @@ function Kpi({
   tone: string;
 }) {
   return (
-    <article className="neu-card !p-5 space-y-3">
+    <article className="ui-card !p-5 space-y-3">
       <div className="flex items-start justify-between gap-3">
         <p className="text-[10px] font-bold uppercase tracking-wide text-muted">
           {label}
         </p>
-        <span className={`neu-well inline-flex h-10 w-10 ${tone}`}>
+        <span className={`ui-well inline-flex h-10 w-10 ${tone}`}>
           <Icon icon={icon} size={18} />
         </span>
       </div>

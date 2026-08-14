@@ -136,7 +136,7 @@ export default function LeaderTrainingGroupsPage() {
   }, [trainees, rows]);
 
   if (loading) {
-    return <div className="neu-card h-64 animate-pulse" />;
+    return <div className="ui-card h-64 animate-pulse" />;
   }
 
   return (
@@ -157,7 +157,7 @@ export default function LeaderTrainingGroupsPage() {
       </header>
 
       {groups.length === 0 ? (
-        <div className="neu-card !p-10 text-center text-muted text-sm">
+        <div className="ui-card !p-10 text-center text-muted text-sm">
           Bạn chưa được phân công nhóm training nào.
         </div>
       ) : (
@@ -172,7 +172,7 @@ export default function LeaderTrainingGroupsPage() {
               }}
             />
 
-            <section className="neu-card !p-5 space-y-4 min-w-0">
+            <section className="ui-card !p-5 space-y-4 min-w-0">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <h2 className="font-display text-lg font-bold">
                   Bảng theo dõi tiến độ training
@@ -233,7 +233,7 @@ export default function LeaderTrainingGroupsPage() {
                             </td>
                             <td className="data-table-td py-3">
                               <div className="flex items-center gap-2">
-                                <div className="h-2.5 w-24 overflow-hidden rounded-full bg-background shadow-inset-sm">
+                                <div className="h-2.5 w-24 overflow-hidden rounded-full bg-background shadow-hairline">
                                   <div
                                     className="h-full rounded-full bg-accent transition-all"
                                     style={{ width: `${r.pct}%` }}
@@ -282,10 +282,10 @@ export default function LeaderTrainingGroupsPage() {
             ].map((c) => (
               <article
                 key={c.label}
-                className="neu-card !p-5 flex items-center gap-4"
+                className="ui-card !p-5 flex items-center gap-4"
               >
                 <span
-                  className={`neu-well inline-flex h-12 w-12 shrink-0 ${c.tone}`}
+                  className={`ui-well inline-flex h-12 w-12 shrink-0 ${c.tone}`}
                 >
                   <Icon icon={c.icon} size={18} />
                 </span>

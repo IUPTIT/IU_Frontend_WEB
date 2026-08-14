@@ -47,7 +47,7 @@ function ScoreBar({
           {valueLabel}
         </span>
       </div>
-      <div className="h-2.5 overflow-hidden rounded-full bg-background shadow-inset-sm">
+      <div className="h-2.5 overflow-hidden rounded-full bg-background shadow-hairline">
         <div
           className={`h-full rounded-full transition-all ${tone}`}
           style={{ width: `${Math.min(100, Math.max(0, pct))}%` }}
@@ -119,15 +119,15 @@ export default function MemberTrainingProgressPage() {
   if (loading) {
     return (
       <section className="space-y-4">
-        <div className="neu-card h-32 animate-pulse" />
-        <div className="neu-card h-64 animate-pulse" />
+        <div className="ui-card h-32 animate-pulse" />
+        <div className="ui-card h-64 animate-pulse" />
       </section>
     );
   }
 
   if (!me) {
     return (
-      <section className="neu-card !p-10 text-center text-muted">
+      <section className="ui-card !p-10 text-center text-muted">
         Bạn chưa ở vòng đào tạo thành viên mới.
       </section>
     );
@@ -152,7 +152,7 @@ export default function MemberTrainingProgressPage() {
       </header>
 
       <div className="grid gap-5 lg:grid-cols-[1.4fr_1fr]">
-        <article className="neu-card !p-5 space-y-4">
+        <article className="ui-card !p-5 space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="font-display text-lg font-bold">Thống kê học tập</h2>
             <span className="rounded-full bg-accent/15 px-3 py-1 text-xs font-bold text-accent">
@@ -165,7 +165,7 @@ export default function MemberTrainingProgressPage() {
           <div className="flex h-40 items-end gap-3 px-1">
             {weeklyBuckets.map((v, i) => (
               <div key={i} className="flex flex-1 flex-col items-center gap-2">
-                <div className="flex h-28 w-full items-end justify-center rounded-2xl bg-background shadow-inset-sm px-1 pb-1">
+                <div className="flex h-28 w-full items-end justify-center rounded-2xl bg-background shadow-hairline px-1 pb-1">
                   <div
                     className="w-full max-w-[36px] rounded-t-xl bg-accent/80 transition-all"
                     style={{
@@ -184,14 +184,14 @@ export default function MemberTrainingProgressPage() {
           </p>
         </article>
 
-        <article className="neu-card !p-5 space-y-4">
+        <article className="ui-card !p-5 space-y-4">
           <div>
             <h2 className="font-display text-lg font-bold">Điểm trung bình</h2>
             <p className="text-xs text-muted">
               Dựa trên {scored.length} task đã duyệt có điểm
             </p>
           </div>
-          <div className="mx-auto flex h-36 w-36 flex-col items-center justify-center rounded-full bg-accent/10 shadow-inset-sm">
+          <div className="mx-auto flex h-36 w-36 flex-col items-center justify-center rounded-full bg-accent/10 shadow-hairline">
             <p className="font-display text-4xl font-extrabold text-accent">
               {avgScore != null ? avgScore.toFixed(1) : "—"}
             </p>
@@ -227,7 +227,7 @@ export default function MemberTrainingProgressPage() {
           )}
 
           {me.trainee.mentorNote && (
-            <p className="rounded-2xl bg-background p-3 text-xs shadow-inset-sm">
+            <p className="rounded-2xl bg-background p-3 text-xs shadow-hairline">
               <span className="text-muted">Note mentor: </span>
               {me.trainee.mentorNote}
             </p>
@@ -235,7 +235,7 @@ export default function MemberTrainingProgressPage() {
         </article>
       </div>
 
-      <article className="neu-card !p-5 space-y-3">
+      <article className="ui-card !p-5 space-y-3">
         <h2 className="font-display text-lg font-bold">Bảng điểm chi tiết</h2>
         {tasks.length === 0 ? (
           <p className="py-8 text-center text-sm text-muted">Chưa có task.</p>

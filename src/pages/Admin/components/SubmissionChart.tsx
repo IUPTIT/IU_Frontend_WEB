@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { WeeklySubmission } from "../../../types/admin";
 
 const SERIES = [
-  { key: "received" as const, label: "Hồ sơ nhận", color: "#6C63FF" },
+  { key: "received" as const, label: "Hồ sơ nhận", color: "#7C3AED" },
   { key: "passed" as const, label: "Đạt vòng đơn", color: "#38B2AC" },
 ];
 
@@ -30,7 +30,7 @@ function SubmissionChart({ weeklyData, dailyData, periodLabel }: Props) {
   const gridSteps = [0, 0.25, 0.5, 0.75, 1].map((t) => Math.round(max * t));
 
   return (
-    <article className="neu-card">
+    <article className="ui-card">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h3 className="text-lg">Tiến độ nộp hồ sơ</h3>
@@ -38,7 +38,7 @@ function SubmissionChart({ weeklyData, dailyData, periodLabel }: Props) {
             Theo {range === "week" ? "tuần" : "ngày"} – {periodLabel}
           </p>
         </div>
-        <div className="flex rounded-2xl shadow-inset-sm p-1" role="group" aria-label="Bộ lọc thời gian biểu đồ">
+        <div className="flex rounded-2xl shadow-hairline p-1" role="group" aria-label="Bộ lọc thời gian biểu đồ">
           {(["week", "day"] as const).map((r) => (
             <button
               key={r}
@@ -48,7 +48,7 @@ function SubmissionChart({ weeklyData, dailyData, periodLabel }: Props) {
                 setHover(null);
               }}
               className={`rounded-xl px-4 py-1.5 text-sm font-medium transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
-                range === r ? "text-accent shadow-extruded-sm" : "text-muted hover:text-foreground"
+                range === r ? "text-accent shadow-soft-sm" : "text-muted hover:text-foreground"
               }`}
             >
               {r === "week" ? "Tuần" : "Ngày"}

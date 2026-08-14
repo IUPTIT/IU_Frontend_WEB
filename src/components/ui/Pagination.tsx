@@ -39,8 +39,8 @@ function Pagination({ page, totalPages, onChange, className = "" }: Props) {
           onClick={() => onChange(p)}
           className={`flex h-10 min-w-10 items-center justify-center rounded-full px-3 text-sm font-medium transition-all duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
             p === page
-              ? "bg-accent/15 text-accent shadow-inset-sm"
-              : "text-muted hover:text-foreground hover:shadow-extruded-sm"
+              ? "bg-accent/15 text-accent shadow-hairline"
+              : "text-muted hover:text-foreground hover:shadow-soft-sm"
           }`}
         >
           {p}

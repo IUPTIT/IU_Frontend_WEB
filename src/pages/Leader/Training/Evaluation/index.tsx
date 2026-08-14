@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CheckCircle2, ChevronRight, Send } from "lucide-react";
+import { ChevronRight, Send } from "lucide-react";
 import Avatar from "../../../../components/ui/Avatar";
 import Badge from "../../../../components/ui/Badge";
 import Button from "../../../../components/ui/Button";
 import Icon from "../../../../components/ui/Icon";
 import { useToast } from "../../../../context/useToast";
 import {
-  confirmTrainingCompletion,
   getMentorTasks,
   getMyTeamTrainees,
   saveMentorTraineeReview,
@@ -62,7 +61,7 @@ export default function LeaderTrainingEvaluationPage() {
   );
 
   if (loading) {
-    return <div className="neu-card h-40 animate-pulse" />;
+    return <div className="ui-card h-40 animate-pulse" />;
   }
 
   return (
@@ -84,12 +83,12 @@ export default function LeaderTrainingEvaluationPage() {
       </header>
 
       {trainees.length === 0 ? (
-        <div className="neu-card !p-10 text-center text-muted">
+        <div className="ui-card !p-10 text-center text-muted">
           Chưa có tân binh trong nhóm bạn phụ trách.
         </div>
       ) : (
         <div className="grid gap-5 lg:grid-cols-[280px_1fr]">
-          <aside className="neu-card !p-3 space-y-1 h-fit">
+          <aside className="ui-card !p-3 space-y-1 h-fit">
             <p className="px-2 pb-2 text-[10px] font-bold uppercase tracking-wide text-muted">
               Danh sách thành viên ({trainees.length})
             </p>
@@ -103,8 +102,8 @@ export default function LeaderTrainingEvaluationPage() {
                       onClick={() => setSelectedId(t.id)}
                       className={`flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition duration-300 ${
                         active
-                          ? "bg-accent/15 shadow-inset-sm"
-                          : "hover:shadow-extruded-sm"
+                          ? "bg-accent/15 shadow-hairline"
+                          : "hover:shadow-soft-sm"
                       }`}
                     >
                       <Avatar name={t.fullName} size="sm" />
@@ -234,28 +233,18 @@ function EvalDetail({
     }
   };
 
-  const handleConfirm = async () => {
-    setSaving(true);
-    try {
-      await confirmTrainingCompletion(trainee.id, note.trim());
-      toast.success(`Đã xác nhận hoàn thành training cho ${trainee.fullName}.`);
-      onChanged();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Xác nhận thất bại.");
-    } finally {
-      setSaving(false);
-    }
-  };
-
   return (
     <div className="space-y-5">
-      <article className="neu-card !p-6 flex flex-wrap items-center gap-4">
+      <article className="ui-card !p-6 flex flex-wrap items-center gap-4">
         <Avatar name={trainee.fullName} size="xl" />
         <div className="min-w-0 flex-1 space-y-1">
           <h2 className="font-display text-2xl font-extrabold">
             {trainee.fullName}
           </h2>
           <p className="text-sm text-muted">{trainee.email}</p>
+          <p className="text-xs text-muted">
+            Mentor gửi đánh giá lên BCN — BCN mới chốt Đạt / Trượt / chứng nhận.
+          </p>
           <div className="flex flex-wrap gap-2 pt-1">
             <Badge tone="violet">Tân binh</Badge>
             <Badge tone={submitted ? "success" : "muted"}>
@@ -274,25 +263,24 @@ function EvalDetail({
             variant="secondary"
             size="sm"
             disabled={saving}
-            onClick={() => void handleSave(true)}
-            leftIcon={<Icon icon={Send} size={14} />}
+            onClick={() => void handleSave(false)}
           >
-            Gửi đánh giá
+            Lưu nháp
           </Button>
           <Button
             variant="primary"
             size="sm"
             disabled={saving}
-            onClick={() => void handleConfirm()}
-            leftIcon={<Icon icon={CheckCircle2} size={14} />}
+            onClick={() => void handleSave(true)}
+            leftIcon={<Icon icon={Send} size={14} />}
           >
-            Xác nhận hoàn thành
+            Gửi đánh giá lên BCN
           </Button>
         </div>
       </article>
 
       <div className="grid gap-5 md:grid-cols-2">
-        <article className="neu-card !p-5 space-y-4">
+        <article className="ui-card !p-5 space-y-4">
           <h3 className="font-display text-lg font-bold">Chỉ số từ dữ liệu thật</h3>
           <ScoreRow
             label="Điểm mentor (quá trình)"
@@ -324,13 +312,13 @@ function EvalDetail({
             tone="bg-emerald-500"
           />
           <label className="block space-y-1.5 pt-2">
-            <span className="neu-field-label">Chấm điểm mentor (0–10)</span>
+            <span className="ui-field-label">Chấm điểm mentor (0–10)</span>
             <input
               type="number"
               min={0}
               max={10}
               step={0.5}
-              className="neu-input !h-12 w-full max-w-[140px] text-lg font-bold"
+              className="ui-input !h-12 w-full max-w-[140px] text-lg font-bold"
               placeholder="0–10"
               value={score}
               onChange={(e) => setScore(e.target.value)}
@@ -338,7 +326,7 @@ function EvalDetail({
           </label>
         </article>
 
-        <article className="neu-card !p-5 space-y-3">
+        <article className="ui-card !p-5 space-y-3">
           <h3 className="font-display text-lg font-bold">
             Tóm tắt lịch sử Task
           </h3>
@@ -348,7 +336,7 @@ function EvalDetail({
           <div className="flex h-40 items-end gap-2 px-1">
             {assignmentStats.weekly.map((v, i) => (
               <div key={i} className="flex flex-1 flex-col items-center gap-2">
-                <div className="flex h-28 w-full items-end justify-center rounded-2xl bg-background shadow-inset-sm px-1 pb-1">
+                <div className="flex h-28 w-full items-end justify-center rounded-2xl bg-background shadow-hairline px-1 pb-1">
                   <div
                     className="w-full max-w-[28px] rounded-t-xl bg-accent/80"
                     style={{
@@ -377,10 +365,10 @@ function EvalDetail({
         </article>
       </div>
 
-      <article className="neu-card !p-5 space-y-3">
+      <article className="ui-card !p-5 space-y-3">
         <h3 className="font-display text-lg font-bold">Nhận xét tổng thể</h3>
         <textarea
-          className="neu-input min-h-[120px] w-full text-sm shadow-inset"
+          className="ui-input min-h-[120px] w-full text-sm shadow-hairline"
           placeholder="Nhập nhận xét, góp ý cụ thể cho tân binh này..."
           value={note}
           onChange={(e) => setNote(e.target.value)}
@@ -433,7 +421,7 @@ function ScoreRow({
           {valueLabel}
         </span>
       </div>
-      <div className="h-2.5 overflow-hidden rounded-full bg-background shadow-inset-sm">
+      <div className="h-2.5 overflow-hidden rounded-full bg-background shadow-hairline">
         <div
           className={`h-full rounded-full transition-all ${tone}`}
           style={{ width: `${pct}%` }}

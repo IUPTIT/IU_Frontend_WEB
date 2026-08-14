@@ -1,7 +1,10 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
+import { ArrowRight, Save } from "lucide-react";
 import LandingSelect from "../../../components/LandingSelect";
 import LandingDatePicker from "../../../components/LandingDatePicker";
+import SectionCard from "./SectionCard";
+import FileDropzone from "./FileDropzone";
 import type { ApplicationForm } from "../types";
 import type { PublicCampaign, PublicQuestion } from "../../../services/publicRecruitmentService";
 import { validatePersonName, validatePhoneVN } from "../../../utils/validateContact";
@@ -105,16 +108,12 @@ function ApplicationFormStep({ campaign, value, onSubmit, onSaveDraft }: Props) 
     }
   };
 
-  const sectionClass = "liquid-glass landing-card-solid rounded-3xl p-6 md:p-8";
   const labelClass = "mb-1.5 block text-sm font-medium text-[hsl(var(--landing-foreground)/0.8)]";
 
   return (
     <form onSubmit={handleSubmit} noValidate className="space-y-6">
       {/* 1. Thông tin cá nhân */}
-      <section className={sectionClass}>
-        <h2 className="landing-headline mb-5 text-xl font-semibold text-[hsl(var(--landing-foreground))]">
-          1. Thông tin cá nhân
-        </h2>
+      <SectionCard step="01" eyebrow="Về bạn" title="Thông tin cá nhân" delay={0.1}>
         <div className="grid gap-4 md:grid-cols-2">
           <div>
             <label className={labelClass}>Họ và tên *</label>
@@ -156,144 +155,143 @@ function ApplicationFormStep({ campaign, value, onSubmit, onSaveDraft }: Props) 
             <FieldError message={errors.dateOfBirth} />
           </div>
         </div>
-      </section>
+      </SectionCard>
 
-      {/* 2. Hồ sơ */}
-      <section className={sectionClass}>
-        <h2 className="landing-headline mb-5 text-xl font-semibold text-[hsl(var(--landing-foreground))]">
-          2. Hồ sơ đính kèm
-        </h2>
+      {/* 2. Hồ sơ đính kèm */}
+      <SectionCard step="02" eyebrow="Minh chứng" title="Hồ sơ đính kèm" delay={0.18}>
         <div className="grid gap-4 md:grid-cols-2">
           <div>
-            <label className={labelClass}>Ảnh đại diện * (JPG/PNG, tối đa {MAX_AVATAR_MB}MB)</label>
-            <input
-              className="landing-input file:mr-3 file:rounded-lg file:border-0 file:bg-white/10 file:px-3 file:py-1 file:text-sm file:text-[hsl(var(--landing-foreground))]"
-              type="file"
+            <FileDropzone
+              label="Ảnh đại diện"
+              hint={`JPG/PNG · tối đa ${MAX_AVATAR_MB}MB`}
               accept=".jpg,.jpeg,.png"
-              onChange={(e) => set("avatar", e.target.files?.[0] ?? null)}
+              file={form.avatar}
+              onChange={(f) => set("avatar", f)}
             />
             <FieldError message={errors.avatar} />
           </div>
           <div>
-            <label className={labelClass}>CV * (PDF/DOCX, tối đa {MAX_CV_MB}MB)</label>
-            <input
-              className="landing-input file:mr-3 file:rounded-lg file:border-0 file:bg-white/10 file:px-3 file:py-1 file:text-sm file:text-[hsl(var(--landing-foreground))]"
-              type="file"
+            <FileDropzone
+              label="CV của bạn"
+              hint={`PDF/DOCX · tối đa ${MAX_CV_MB}MB`}
               accept=".pdf,.doc,.docx"
-              onChange={(e) => set("cv", e.target.files?.[0] ?? null)}
+              file={form.cv}
+              onChange={(f) => set("cv", f)}
             />
             <FieldError message={errors.cv} />
           </div>
         </div>
-      </section>
+      </SectionCard>
 
       {/* 3. Ban nguyện vọng */}
-      <section className={sectionClass}>
-        <h2 className="landing-headline mb-2 text-xl font-semibold text-[hsl(var(--landing-foreground))]">
-          3. Ban nguyện vọng
-        </h2>
-        <p className="mb-5 text-sm text-[hsl(var(--landing-foreground)/0.6)]">
+      <SectionCard step="03" eyebrow="Định hướng" title="Ban nguyện vọng" delay={0.26}>
+        <p className="mb-5 -mt-2 text-sm text-[hsl(var(--landing-foreground)/0.6)]">
           Chọn tối đa {MAX_WISHES} ban theo thứ tự ưu tiên — nguyện vọng 1 là ban bạn mong muốn nhất.
         </p>
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="space-y-3">
           {Array.from({ length: MAX_WISHES }, (_, i) => (
-            <div key={i}>
-              <label className={labelClass}>
-                Nguyện vọng {i + 1} {i === 0 ? "*" : "(tuỳ chọn)"}
-              </label>
-              <LandingSelect
-                options={teams}
-                value={form.wishes[i] ?? ""}
-                onChange={(team) => setWish(i, team)}
-                placeholder="— Không chọn —"
-                isClearable
-              />
+            <div
+              key={i}
+              className="flex flex-col gap-3 rounded-2xl bg-white/[0.03] p-3 sm:flex-row sm:items-center"
+            >
+              <span className="reg-wish-badge shrink-0">NV{i + 1}</span>
+              <div className="flex-1">
+                <LandingSelect
+                  options={teams}
+                  value={form.wishes[i] ?? ""}
+                  onChange={(team) => setWish(i, team)}
+                  placeholder={i === 0 ? "— Chọn ban mong muốn nhất —" : "— Không chọn —"}
+                  isClearable
+                />
+              </div>
             </div>
           ))}
         </div>
         <FieldError message={errors.wishes} />
-      </section>
+      </SectionCard>
 
       {/* 4. Câu hỏi của đợt tuyển */}
-      <section className={sectionClass}>
-        <h2 className="landing-headline mb-5 text-xl font-semibold text-[hsl(var(--landing-foreground))]">
-          4. Câu hỏi của đợt tuyển
-        </h2>
-        <div className="space-y-5">
-          {questions.map((q) => (
-            <div key={q._id}>
-              <label className={labelClass}>
-                {q.label} {q.required && "*"}
-              </label>
-              {q.type === "short_text" && (
-                <input
-                  className="landing-input"
-                  value={(form.answers[q._id] as string) ?? ""}
-                  onChange={(e) => set("answers", { ...form.answers, [q._id]: e.target.value })}
-                />
-              )}
-              {q.type === "long_text" && (
-                <textarea
-                  className="landing-input min-h-28 resize-y"
-                  value={(form.answers[q._id] as string) ?? ""}
-                  onChange={(e) => set("answers", { ...form.answers, [q._id]: e.target.value })}
-                />
-              )}
-              {q.type === "single_choice" && (
-                <div className="flex flex-wrap gap-3">
-                  {q.options?.map((option) => (
-                    <label
-                      key={option}
-                      className={`landing-input w-auto cursor-pointer px-4 py-2 text-sm ${
-                        form.answers[q._id] === option ? "!border-purple-400 !bg-purple-500/20" : ""
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name={q._id}
-                        className="sr-only"
-                        checked={form.answers[q._id] === option}
-                        onChange={() => set("answers", { ...form.answers, [q._id]: option })}
-                      />
-                      {option}
-                    </label>
-                  ))}
-                </div>
-              )}
-              {q.type === "multi_choice" && (
-                <div className="flex flex-wrap gap-3">
-                  {q.options?.map((option) => {
-                    const selected = ((form.answers[q._id] as string[]) ?? []).includes(option);
-                    return (
+      {questions.length > 0 && (
+        <SectionCard step="04" eyebrow="Hiểu bạn hơn" title="Câu hỏi của đợt tuyển" delay={0.34}>
+          <div className="space-y-5">
+            {questions.map((q) => (
+              <div key={q._id}>
+                <label className={labelClass}>
+                  {q.label} {q.required && "*"}
+                </label>
+                {q.type === "short_text" && (
+                  <input
+                    className="landing-input"
+                    value={(form.answers[q._id] as string) ?? ""}
+                    onChange={(e) => set("answers", { ...form.answers, [q._id]: e.target.value })}
+                  />
+                )}
+                {q.type === "long_text" && (
+                  <textarea
+                    className="landing-input min-h-28 resize-y"
+                    value={(form.answers[q._id] as string) ?? ""}
+                    onChange={(e) => set("answers", { ...form.answers, [q._id]: e.target.value })}
+                  />
+                )}
+                {q.type === "single_choice" && (
+                  <div className="flex flex-wrap gap-3">
+                    {q.options?.map((option) => (
                       <label
                         key={option}
                         className={`landing-input w-auto cursor-pointer px-4 py-2 text-sm ${
-                          selected ? "!border-purple-400 !bg-purple-500/20" : ""
+                          form.answers[q._id] === option ? "!border-purple-400 !bg-purple-500/20" : ""
                         }`}
                       >
                         <input
-                          type="checkbox"
+                          type="radio"
+                          name={q._id}
                           className="sr-only"
-                          checked={selected}
-                          onChange={() => {
-                            const current = (form.answers[q._id] as string[]) ?? [];
-                            const next = selected ? current.filter((o) => o !== option) : [...current, option];
-                            set("answers", { ...form.answers, [q._id]: next });
-                          }}
+                          checked={form.answers[q._id] === option}
+                          onChange={() => set("answers", { ...form.answers, [q._id]: option })}
                         />
                         {option}
                       </label>
-                    );
-                  })}
-                </div>
-              )}
-              <FieldError message={errors[q._id]} />
-            </div>
-          ))}
-        </div>
-      </section>
+                    ))}
+                  </div>
+                )}
+                {q.type === "multi_choice" && (
+                  <div className="flex flex-wrap gap-3">
+                    {q.options?.map((option) => {
+                      const selected = ((form.answers[q._id] as string[]) ?? []).includes(option);
+                      return (
+                        <label
+                          key={option}
+                          className={`landing-input w-auto cursor-pointer px-4 py-2 text-sm ${
+                            selected ? "!border-purple-400 !bg-purple-500/20" : ""
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            className="sr-only"
+                            checked={selected}
+                            onChange={() => {
+                              const current = (form.answers[q._id] as string[]) ?? [];
+                              const next = selected ? current.filter((o) => o !== option) : [...current, option];
+                              set("answers", { ...form.answers, [q._id]: next });
+                            }}
+                          />
+                          {option}
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
+                <FieldError message={errors[q._id]} />
+              </div>
+            ))}
+          </div>
+        </SectionCard>
+      )}
 
-      <div className="flex flex-col gap-3 md:flex-row">
+      <div
+        className="reg-rise flex flex-col gap-3 md:flex-row"
+        style={{ animationDelay: "0.42s" }}
+      >
         <button
           type="button"
           disabled={savingDraft}
@@ -310,12 +308,17 @@ function ApplicationFormStep({ campaign, value, onSubmit, onSaveDraft }: Props) 
               setSavingDraft(false);
             }
           }}
-          className="landing-btn-secondary liquid-glass rounded-full px-6 py-3.5 disabled:opacity-50 md:w-auto"
+          className="landing-btn-secondary liquid-glass inline-flex items-center justify-center gap-2 rounded-full px-6 py-3.5 disabled:opacity-50 md:w-auto"
         >
+          <Save size={17} />
           {savingDraft ? "Đang lưu nháp..." : "Lưu nháp — nhận link qua email"}
         </button>
-        <button type="submit" className="landing-btn-primary flex-1 py-3.5 text-lg">
-          Xem lại & xác nhận
+        <button
+          type="submit"
+          className="landing-btn-primary inline-flex flex-1 items-center justify-center gap-2 py-3.5 text-lg"
+        >
+          Xem lại &amp; xác nhận
+          <ArrowRight size={19} />
         </button>
       </div>
     </form>

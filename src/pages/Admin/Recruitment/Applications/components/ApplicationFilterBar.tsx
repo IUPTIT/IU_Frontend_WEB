@@ -46,7 +46,7 @@ function ApplicationFilterBar({
   return (
     <FilterMenu activeCount={activeCount} onApply={onApply} onReset={onReset}>
       <div>
-        <span className="neu-field-label">Ban nguyện vọng</span>
+        <span className="ui-field-label">Ban nguyện vọng</span>
         <Select
           width="full"
           value={draft.departmentId}
@@ -60,7 +60,7 @@ function ApplicationFilterBar({
       </div>
 
       <div>
-        <span className="neu-field-label">Trạng thái</span>
+        <span className="ui-field-label">Trạng thái</span>
         <Select
           width="full"
           value={draft.status}
@@ -73,14 +73,14 @@ function ApplicationFilterBar({
       </div>
 
       <div>
-        <span className="neu-field-label">Điểm đánh giá tối thiểu</span>
+        <span className="ui-field-label">Điểm đánh giá tối thiểu</span>
         <input
           type="number"
           min={0}
           max={10}
           step={0.5}
           placeholder="VD: 7"
-          className="neu-input !h-11 text-sm"
+          className="ui-input !h-11 text-sm"
           value={draft.scoreMin}
           onChange={(e) => onDraftChange({ ...draft, scoreMin: e.target.value })}
         />

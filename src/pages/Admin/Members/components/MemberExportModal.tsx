@@ -142,7 +142,7 @@ function MemberExportModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="member-export-title"
-        className="relative z-10 flex max-h-[min(90vh,720px)] w-full max-w-4xl flex-col overflow-hidden rounded-card bg-background shadow-extruded"
+        className="relative z-10 flex max-h-[min(90vh,720px)] w-full max-w-4xl flex-col overflow-hidden rounded-card bg-background shadow-soft"
       >
         <header className="flex items-start justify-between gap-4 border-b border-black/5 px-5 py-4 sm:px-6">
           <div>
@@ -218,7 +218,7 @@ function MemberExportModal({
                     if (dragId) moveItem(dragId, f.id);
                     setDragId(null);
                   }}
-                  className="flex cursor-grab items-center gap-2 rounded-xl bg-background px-3 py-2 shadow-extruded-sm active:cursor-grabbing"
+                  className="flex cursor-grab items-center gap-2 rounded-xl bg-background px-3 py-2 shadow-soft-sm active:cursor-grabbing"
                 >
                   <Icon icon={GripVertical} size={14} className="text-muted" />
                   <span className="flex-1 text-sm font-medium">{f.label}</span>

@@ -193,7 +193,7 @@ function BatchScheduleModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="batch-schedule-title"
-        className="relative z-10 flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-card bg-background shadow-extruded"
+        className="relative z-10 flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-card bg-background shadow-soft"
       >
         <header className="flex items-center justify-between border-b border-black/5 px-5 py-4">
           <h2
@@ -224,22 +224,22 @@ function BatchScheduleModal({
 
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="block space-y-1.5">
-              <span className="neu-field-label">Ngày phỏng vấn *</span>
+              <span className="ui-field-label">Ngày phỏng vấn *</span>
               <input
                 type="date"
-                className="neu-input !h-11"
+                className="ui-input !h-11"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
               />
             </label>
             <label className="block space-y-1.5">
-              <span className="neu-field-label">Ứng viên tối đa / ca *</span>
+              <span className="ui-field-label">Ứng viên tối đa / ca *</span>
               <input
                 type="number"
                 min={1}
                 max={50}
                 inputMode="numeric"
-                className="neu-input !h-11"
+                className="ui-input !h-11"
                 value={Number.isFinite(capacity) && capacity > 0 ? capacity : ""}
                 onChange={(e) => {
                   const raw = e.target.value;
@@ -258,13 +258,13 @@ function BatchScheduleModal({
           </div>
 
           <div className="space-y-3">
-            <span className="neu-field-label">Buổi *</span>
+            <span className="ui-field-label">Buổi *</span>
             <div className="grid gap-3">
               <div
                 className={`min-w-0 rounded-2xl p-4 transition-all ${
                   includeMorning
-                    ? "bg-accent/15 shadow-inset-sm"
-                    : "shadow-extruded-sm opacity-70"
+                    ? "bg-accent/15 shadow-hairline"
+                    : "shadow-soft-sm opacity-70"
                 }`}
               >
                 <label className="flex cursor-pointer items-center gap-2">
@@ -281,7 +281,7 @@ function BatchScheduleModal({
                     <span className="text-[11px] text-muted">Bắt đầu</span>
                     <input
                       type="time"
-                      className="neu-input !h-10 !w-full min-w-0"
+                      className="ui-input !h-10 !w-full min-w-0"
                       disabled={!includeMorning}
                       value={ranges.morningStart}
                       onChange={(e) =>
@@ -295,7 +295,7 @@ function BatchScheduleModal({
                     <span className="text-[11px] text-muted">Kết thúc</span>
                     <input
                       type="time"
-                      className="neu-input !h-10 !w-full min-w-0"
+                      className="ui-input !h-10 !w-full min-w-0"
                       disabled={!includeMorning}
                       value={ranges.morningEnd}
                       onChange={(e) =>
@@ -310,8 +310,8 @@ function BatchScheduleModal({
               <div
                 className={`min-w-0 rounded-2xl p-4 transition-all ${
                   includeAfternoon
-                    ? "bg-accent/15 shadow-inset-sm"
-                    : "shadow-extruded-sm opacity-70"
+                    ? "bg-accent/15 shadow-hairline"
+                    : "shadow-soft-sm opacity-70"
                 }`}
               >
                 <label className="flex cursor-pointer items-center gap-2">
@@ -328,7 +328,7 @@ function BatchScheduleModal({
                     <span className="text-[11px] text-muted">Bắt đầu</span>
                     <input
                       type="time"
-                      className="neu-input !h-10 !w-full min-w-0"
+                      className="ui-input !h-10 !w-full min-w-0"
                       disabled={!includeAfternoon}
                       value={ranges.afternoonStart}
                       onChange={(e) =>
@@ -342,7 +342,7 @@ function BatchScheduleModal({
                     <span className="text-[11px] text-muted">Kết thúc</span>
                     <input
                       type="time"
-                      className="neu-input !h-10 !w-full min-w-0"
+                      className="ui-input !h-10 !w-full min-w-0"
                       disabled={!includeAfternoon}
                       value={ranges.afternoonEnd}
                       onChange={(e) =>
@@ -355,7 +355,7 @@ function BatchScheduleModal({
               </div>
             </div>
 
-            <p className="rounded-2xl bg-background px-3 py-2 text-sm text-muted shadow-inset-sm">
+            <p className="rounded-2xl bg-background px-3 py-2 text-sm text-muted shadow-hairline">
               {sessions.length === 0 ? (
                 <>Chọn ít nhất một buổi.</>
               ) : (
@@ -377,7 +377,7 @@ function BatchScheduleModal({
           </div>
 
           <div className="space-y-1.5">
-            <span className="neu-field-label">
+            <span className="ui-field-label">
               Người phỏng vấn phụ trách ca ({selectedInterviewers.length} đã
               chọn)
             </span>
@@ -385,7 +385,7 @@ function BatchScheduleModal({
               Có thể bỏ trống và phân công sau. Ứng viên chỉ đặt được ca đã có ≥1
               người PV.
             </p>
-            <div className="max-h-44 space-y-2 overflow-y-auto rounded-2xl bg-background p-2 shadow-inset-sm">
+            <div className="max-h-44 space-y-2 overflow-y-auto rounded-2xl bg-background p-2 shadow-hairline">
               {interviewers.length === 0 ? (
                 <p className="px-2 py-4 text-center text-sm text-muted">
                   Chưa có danh sách người PV (BCN / Leader / Member).
@@ -419,9 +419,9 @@ function BatchScheduleModal({
           </div>
 
           <label className="block space-y-1.5">
-            <span className="neu-field-label">Địa điểm / Link *</span>
+            <span className="ui-field-label">Địa điểm / Link *</span>
             <input
-              className="neu-input !h-11"
+              className="ui-input !h-11"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
               placeholder="Phòng 302 hoặc link Meet"

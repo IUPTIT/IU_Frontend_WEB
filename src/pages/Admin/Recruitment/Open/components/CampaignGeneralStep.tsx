@@ -61,7 +61,7 @@ function CampaignGeneralStep({ draft, onChange, onCancel, onNext, lockNameAndOpe
         <p className="text-muted">Thiết lập thông tin cơ bản cho chiến dịch tuyển dụng sắp tới.</p>
       </header>
 
-      <div className="neu-card space-y-8">
+      <div className="ui-card space-y-8">
         <div className="grid gap-6 md:grid-cols-2">
           <label className="block space-y-2">
             <span className="text-sm font-medium">
@@ -74,7 +74,7 @@ function CampaignGeneralStep({ draft, onChange, onCancel, onNext, lockNameAndOpe
                 </svg>
               </span>
               <input
-                className="neu-input pl-11 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="ui-input pl-11 disabled:opacity-50 disabled:cursor-not-allowed"
                 placeholder="VD: Tuyển Gen 4 - Fall 2024"
                 value={draft.name}
                 disabled={lockNameAndOpen}
@@ -97,7 +97,7 @@ function CampaignGeneralStep({ draft, onChange, onCancel, onNext, lockNameAndOpe
                 <span className="text-xs text-muted">Mở đơn (ngày + giờ)</span>
                 <input
                   type="datetime-local"
-                  className="neu-input disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="ui-input disabled:opacity-50 disabled:cursor-not-allowed"
                   value={draft.openAt}
                   disabled={lockNameAndOpen}
                   title={
@@ -113,7 +113,7 @@ function CampaignGeneralStep({ draft, onChange, onCancel, onNext, lockNameAndOpe
                 <span className="text-xs text-muted">Đóng đơn (ngày + giờ)</span>
                 <input
                   type="datetime-local"
-                  className="neu-input disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="ui-input disabled:opacity-50 disabled:cursor-not-allowed"
                   value={draft.closeAt}
                   min={draft.openAt || undefined}
                   disabled={lockNameAndOpen}
@@ -133,7 +133,7 @@ function CampaignGeneralStep({ draft, onChange, onCancel, onNext, lockNameAndOpe
         <label className="block space-y-2">
           <span className="text-sm font-medium">Mô tả ngắn gọn</span>
           <textarea
-            className="neu-input !h-auto min-h-[120px] py-3 resize-y"
+            className="ui-input !h-auto min-h-[120px] py-3 resize-y"
             placeholder="Mô tả mục tiêu, yêu cầu và thông tin nổi bật của đợt tuyển này..."
             value={draft.description}
             onChange={(e) => onChange({ description: e.target.value })}
@@ -152,7 +152,7 @@ function CampaignGeneralStep({ draft, onChange, onCancel, onNext, lockNameAndOpe
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {draft.quotas.map((q) => (
-                <article key={q.departmentId} className="neu-card !p-5 flex flex-col items-center gap-3 text-center">
+                <article key={q.departmentId} className="ui-card !p-5 flex flex-col items-center gap-3 text-center">
                   <div className={`flex h-12 w-12 items-center justify-center rounded-full ${toneIconBg[q.tone]}`}>
                     <QuotaIcon icon={q.icon} />
                   </div>
@@ -160,7 +160,7 @@ function CampaignGeneralStep({ draft, onChange, onCancel, onNext, lockNameAndOpe
                   <input
                     type="text"
                     inputMode="numeric"
-                    className="neu-input text-center !h-10"
+                    className="ui-input text-center !h-10"
                     value={String(q.quota)}
                     onChange={(e) => {
                       // Chỉ giữ chữ số, bỏ số 0 thừa đằng trước (010 → 10)
@@ -177,15 +177,15 @@ function CampaignGeneralStep({ draft, onChange, onCancel, onNext, lockNameAndOpe
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <button type="button" className="neu-btn" onClick={onCancel}>
+        <button type="button" className="ui-btn" onClick={onCancel}>
           Hủy
         </button>
         <button
           type="button"
           onClick={onNext}
           className="inline-flex h-12 items-center gap-2 rounded-2xl px-8 font-semibold text-foreground
-            bg-gradient-to-r from-[#F5B4C8] to-[#8BB7F0] shadow-extruded-sm
-            transition-all duration-300 hover:-translate-y-0.5 hover:shadow-extruded
+            bg-gradient-to-r from-[#F5B4C8] to-[#8BB7F0] shadow-soft-sm
+            transition-all duration-300 hover:-translate-y-0.5 hover:shadow-soft
             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
         >
           Tiếp tục (Form Builder)

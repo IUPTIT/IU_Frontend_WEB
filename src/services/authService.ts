@@ -121,10 +121,11 @@ export async function changePassword(
 }
 
 export async function logoutFromServer(): Promise<void> {
+  // Xoá access token sync trước — tránh race còn gọi API với JWT cũ
+  setAccessToken(null);
   try {
     await api.post("/auth/logout");
   } catch {
-    // logout là best-effort — kể cả lỗi mạng vẫn xoá phiên phía client
+    // logout là best-effort — kể cả lỗi mạng vẫn đã xoá phiên phía client
   }
-  setAccessToken(null);
 }

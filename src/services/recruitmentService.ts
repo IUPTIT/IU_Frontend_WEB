@@ -1,7 +1,7 @@
 // Recruitment (Admin) — campaigns/hồ sơ/câu hỏi/thống kê gọi API thật.
 // Phần chấm điểm vòng đơn & phỏng vấn backend CHƯA có endpoint — các hàm giữ
 // nguyên chữ ký, lưu in-memory (khởi đầu rỗng) để UI hoạt động, sẽ nối API sau.
-import { api, ApiRequestError } from "../api/client";
+import { api, ApiRequestError, getAccessToken } from "../api/client";
 import type {
   Application,
   ApplicationAnswer,
@@ -17,6 +17,8 @@ import type {
   RecruitmentStats,
   ScreeningCriterion,
 } from "../types/recruitment";
+
+const EXPORT_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3456/api/v1";
 
 // ---- Kiểu dữ liệu backend trả về (model mới: RecruitmentCampaign + ApplicationForm) ----
 
@@ -235,6 +237,7 @@ function toApplication(a: BackendApplication): Application {
       .map((r) => (typeof r === "string" ? "" : r.name))
       .filter(Boolean),
     resultNotifyStatus: a.resultNotifyStatus ?? "pending",
+    answers: Object.fromEntries((a.answers ?? []).map((ans) => [ans.fieldId, ans.value])),
   };
 }
 
@@ -253,10 +256,12 @@ export async function getCampaignById(id: string): Promise<RecruitmentCampaign |
 export async function setCampaignActive(
   id: string,
   isActive: boolean,
+  opts?: { notify?: boolean },
 ): Promise<RecruitmentCampaign | undefined> {
   const action = isActive ? "publish" : "close";
   const { campaign } = await api.post<{ campaign: BackendCampaign }>(
     `/recruitment/campaigns/${id}/${action}`,
+    action === "publish" ? { notify: opts?.notify !== false } : {},
   );
   return toCampaign(campaign);
 }
@@ -282,6 +287,8 @@ export type CreateCampaignInput = {
   customQuestions?: CreateCampaignQuestion[];
   status: "draft" | "published";
   isActive: boolean;
+  /** Gửi in-app cho BCN/Leader khi publish (mặc định true) */
+  notifyOnPublish?: boolean;
 };
 
 function toQuotasBody(quotas: CreateCampaignInput["quotas"]) {
@@ -329,6 +336,7 @@ export async function createCampaign(input: CreateCampaignInput): Promise<Recrui
   if (input.status === "published" || input.isActive) {
     const { campaign: published } = await api.post<{ campaign: BackendCampaign }>(
       `/recruitment/campaigns/${campaign._id}/publish`,
+      { notify: input.notifyOnPublish !== false },
     );
     return toCampaign(published);
   }
@@ -664,10 +672,15 @@ export async function setScreeningDecision(
   return getApplicationById(applicationId);
 }
 
-export async function getInterviewers(): Promise<InterviewerRef[]> {
+export async function getInterviewers(
+  campaignId?: string,
+): Promise<InterviewerRef[]> {
+  const qs = campaignId
+    ? `?campaignId=${encodeURIComponent(campaignId)}`
+    : "";
   const { interviewers } = await api.get<{
     interviewers: { _id: string; name: string; role?: InterviewerRef["role"] }[];
-  }>("/recruitment/interviewers");
+  }>(`/recruitment/interviewers${qs}`);
   return interviewers.map((u) => ({
     id: u._id,
     name: u.name,
@@ -1366,4 +1379,36 @@ export async function getCampaignResultSummary(campaignId: string): Promise<Camp
     interviewed: apps.filter((a) => a.interviewResult !== "pending").length,
     accepted: apps.filter((a) => a.finalResult === "pass" || a.status === "accepted").length,
   };
+}
+
+export async function exportApplications(
+  campaignId: string,
+  body: { applicationIds: string[]; columns: string[]; questionFieldIds: string[] },
+): Promise<void> {
+  const token = getAccessToken();
+  const res = await fetch(
+    `${EXPORT_BASE}/recruitment/campaigns/${campaignId}/applications/export`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      credentials: "include",
+      body: JSON.stringify(body),
+    },
+  );
+  if (!res.ok) throw new Error("Xuất file thất bại — thử lại sau");
+  const blob = await res.blob();
+  const disposition = res.headers.get("Content-Disposition") ?? "";
+  const match = /filename="?([^"]+)"?/.exec(disposition);
+  const filename = match?.[1] ?? `ho_so_${campaignId}.xlsx`;
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
 }

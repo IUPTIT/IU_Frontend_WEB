@@ -191,12 +191,12 @@ export default function TrainingTaskDetailPage({
   };
 
   if (loading) {
-    return <div className="neu-card h-64 animate-pulse" aria-busy="true" />;
+    return <div className="ui-card h-64 animate-pulse" aria-busy="true" />;
   }
 
   if (!me || !task) {
     return (
-      <section className="neu-card !p-10 text-center space-y-3">
+      <section className="ui-card !p-10 text-center space-y-3">
         <p className="text-muted">Không tìm thấy nhiệm vụ này.</p>
         <Button variant="secondary" onClick={() => navigate(tasksBasePath)}>
           Quay lại danh sách task
@@ -234,7 +234,7 @@ export default function TrainingTaskDetailPage({
 
       <div className="grid gap-5 lg:grid-cols-[1.4fr_1fr]">
         <div className="space-y-5">
-          <article className="neu-card !p-5 space-y-4">
+          <article className="ui-card !p-5 space-y-4">
             <h2 className="font-display text-lg font-bold">Cập nhật trạng thái</h2>
             <div className="flex flex-wrap items-center justify-between gap-3">
               {STEPS.map((s, i) => {
@@ -248,10 +248,10 @@ export default function TrainingTaskDetailPage({
                     <span
                       className={`inline-flex h-11 w-11 items-center justify-center rounded-full transition ${
                         done
-                          ? "bg-emerald-500 text-white shadow-extruded-sm"
+                          ? "bg-emerald-500 text-white shadow-soft-sm"
                           : active
-                            ? "bg-accent text-white shadow-extruded-sm"
-                            : "bg-background text-muted shadow-inset-sm"
+                            ? "bg-accent text-white shadow-soft-sm"
+                            : "bg-background text-muted shadow-hairline"
                       }`}
                     >
                       <Icon icon={s.icon} size={18} />
@@ -267,13 +267,13 @@ export default function TrainingTaskDetailPage({
                 );
               })}
             </div>
-            <p className="rounded-2xl bg-background px-3 py-2.5 text-xs text-muted shadow-inset-sm">
+            <p className="rounded-2xl bg-background px-3 py-2.5 text-xs text-muted shadow-hairline">
               Bạn đang ở <b className="text-foreground">{STEPS[activeIdx]?.label}</b>
               . Cập nhật nhật ký bên phải để mentor theo dõi tiến độ.
             </p>
           </article>
 
-          <article className="neu-card !p-5 space-y-3">
+          <article className="ui-card !p-5 space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className="font-display text-lg font-bold">Chi tiết nhiệm vụ</h2>
               <Badge
@@ -312,13 +312,13 @@ export default function TrainingTaskDetailPage({
               <div className="space-y-3 border-t border-black/5 pt-4">
                 <h3 className="text-sm font-bold">Nộp bài chính thức</h3>
                 <input
-                  className="neu-input !h-11"
+                  className="ui-input !h-11"
                   placeholder="https://github.com/... hoặc Drive"
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
                 />
                 <textarea
-                  className="neu-input min-h-[72px] text-sm"
+                  className="ui-input min-h-[72px] text-sm"
                   placeholder="Ghi chú kèm bài nộp..."
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
@@ -337,12 +337,12 @@ export default function TrainingTaskDetailPage({
         </div>
 
         <div className="space-y-5">
-          <article className="neu-card !p-5 space-y-3">
+          <article className="ui-card !p-5 space-y-3">
             <h2 className="font-display text-lg font-bold">Nhật ký hoạt động</h2>
             {task.status !== "approved" && (
               <div className="space-y-2">
                 <textarea
-                  className="neu-input min-h-[80px] text-sm"
+                  className="ui-input min-h-[80px] text-sm"
                   placeholder="Thêm ghi chú tiến độ nhanh..."
                   value={logDraft}
                   onChange={(e) => setLogDraft(e.target.value)}
@@ -368,7 +368,7 @@ export default function TrainingTaskDetailPage({
                 timeline.map((item) => (
                   <li
                     key={item.id}
-                    className={`rounded-2xl px-3 py-2.5 text-sm shadow-inset-sm ${
+                    className={`rounded-2xl px-3 py-2.5 text-sm shadow-hairline ${
                       item.tone === "mentor"
                         ? "bg-accent/10"
                         : "bg-background"
@@ -391,7 +391,7 @@ export default function TrainingTaskDetailPage({
             </ul>
           </article>
 
-          <article className="neu-card !p-5 space-y-3">
+          <article className="ui-card !p-5 space-y-3">
             <p className="text-[10px] font-bold uppercase tracking-wide text-accent">
               Hỗ trợ bởi Mentor
             </p>

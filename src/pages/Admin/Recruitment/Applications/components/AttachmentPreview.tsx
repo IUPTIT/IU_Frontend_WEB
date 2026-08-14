@@ -1,32 +1,74 @@
 import { useEffect, useState } from "react";
+import type { ReactNode } from "react";
+import { Download, Loader2, Maximize2 } from "lucide-react";
 import type { ApplicationAttachment } from "../../../../../types/recruitment";
+import Icon from "../../../../../components/ui/Icon";
+import AttachmentLightbox from "./AttachmentLightbox";
+import { downloadUrlAsFile, safeFileStem } from "../../../../../utils/downloadFile";
 
 function isImage(url: string, kind: ApplicationAttachment["kind"]) {
   if (kind === "pdf") return false;
-  return (
-    /\.(jpe?g|png|gif|webp)(\?|$)/i.test(url) ||
-    url.includes("/image/upload/")
-  );
+  return /\.(jpe?g|png|gif|webp)(\?|$)/i.test(url) || url.includes("/image/upload/");
 }
 
-/** Cloudinary raw/upload: CV thường không có đuôi, được phục vụ dạng
- *  application/octet-stream + Content-Disposition: attachment → nhúng iframe
- *  trực tiếp sẽ khiến trình duyệt TẢI FILE VỀ thay vì xem. Phải fetch blob. */
+/** Cloudinary raw/upload: CV không đuôi, phục vụ octet-stream + Content-Disposition
+ *  attachment → nhúng trực tiếp sẽ TẢI VỀ thay vì xem. Phải fetch blob. */
 function isCloudinaryRaw(url: string) {
   return /\/raw\/upload\//i.test(url);
 }
 
-/** PDF render inline an toàn (có đuôi .pdf) — trình duyệt tự mở, không tải về. */
+/** PDF render inline an toàn (có đuôi .pdf) — trình duyệt tự mở. */
 function isInlinePdf(url: string, kind: ApplicationAttachment["kind"]) {
   if (isCloudinaryRaw(url)) return false;
   return kind === "pdf" || /\.pdf(\?|$)/i.test(url);
 }
 
-/**
- * Xem CV bị Cloudinary phục vụ dạng attachment: tải về blob, ép MIME
- * application/pdf rồi render qua object URL (blob URL không có
- * Content-Disposition nên hiển thị inline, KHÔNG auto-download).
- */
+function imageExt(url: string): string {
+  const m = /\.(jpe?g|png|gif|webp)(\?|$)/i.exec(url);
+  return (m?.[1] ?? "jpg").toLowerCase().replace("jpeg", "jpg");
+}
+
+/** Nút tải xuống — đúng vibe Soft UI, tải blob về đúng tên/đuôi. */
+function DownloadAction({ url, filename, label }: { url: string; filename: string; label: string }) {
+  const [downloading, setDownloading] = useState(false);
+  const download = async () => {
+    setDownloading(true);
+    try {
+      await downloadUrlAsFile(url, filename);
+    } catch {
+      window.open(url, "_blank", "noopener");
+    } finally {
+      setDownloading(false);
+    }
+  };
+  return (
+    <button type="button" onClick={download} disabled={downloading} className="ui-btn !h-10 !px-4 text-sm">
+      <Icon icon={downloading ? Loader2 : Download} size={15} className={downloading ? "animate-spin" : ""} />
+      {downloading ? "Đang tải..." : `Tải ${label}`}
+    </button>
+  );
+}
+
+/** Bọc preview: bấm vào để phóng to (overlay phủ cả iframe), hiện icon khi hover. */
+function ZoomableFrame({ onZoom, children }: { onZoom: () => void; children: ReactNode }) {
+  return (
+    <div className="group relative">
+      {children}
+      <button
+        type="button"
+        onClick={onZoom}
+        aria-label="Phóng to"
+        className="absolute inset-0 flex items-center justify-center rounded-2xl opacity-0 transition-opacity hover:bg-black/25 focus-visible:opacity-100 group-hover:opacity-100"
+      >
+        <span className="flex h-11 w-11 items-center justify-center rounded-full bg-black/55 text-white">
+          <Icon icon={Maximize2} size={18} />
+        </span>
+      </button>
+    </div>
+  );
+}
+
+/** CV bị Cloudinary phục vụ attachment: fetch blob, ép PDF, render iframe inline. */
 function BlobPdfPreview({ url, label }: { url: string; label: string }) {
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
@@ -43,10 +85,8 @@ function BlobPdfPreview({ url, label }: { url: string; label: string }) {
         return res.blob();
       })
       .then(async (blob) => {
-        // Kiểm tra magic bytes "%PDF" — tránh nhúng nhầm file không phải PDF
         const head = new Uint8Array(await blob.slice(0, 5).arrayBuffer());
-        const isPdf =
-          head[0] === 0x25 && head[1] === 0x50 && head[2] === 0x44 && head[3] === 0x46;
+        const isPdf = head[0] === 0x25 && head[1] === 0x50 && head[2] === 0x44 && head[3] === 0x46;
         if (!isPdf) throw new Error("not-pdf");
         objectUrl = URL.createObjectURL(
           blob.type === "application/pdf" ? blob : new Blob([blob], { type: "application/pdf" }),
@@ -68,94 +108,124 @@ function BlobPdfPreview({ url, label }: { url: string; label: string }) {
 
   if (state === "error") {
     return (
-      <a
-        href={url}
-        target="_blank"
-        rel="noreferrer"
-        className="neu-btn !h-12 w-full !justify-center !px-4 text-sm font-medium"
-      >
-        Tải {label} (không xem trước được)
-      </a>
+      <p className="rounded-2xl bg-background p-4 text-sm text-muted shadow-hairline">
+        Không xem trước được — dùng nút Tải xuống bên dưới.
+      </p>
     );
   }
-
+  if (state === "loading" || !blobUrl) {
+    return <div className="h-96 w-full animate-pulse rounded-2xl bg-background shadow-hairline" aria-busy="true" />;
+  }
   return (
-    <div className="space-y-2">
-      {state === "loading" || !blobUrl ? (
-        <div
-          className="h-96 w-full animate-pulse rounded-2xl bg-background shadow-inset-sm"
-          aria-busy="true"
-        />
-      ) : (
-        <iframe
-          src={`${blobUrl}#toolbar=0`}
-          title={label}
-          className="h-96 w-full rounded-2xl shadow-inset-sm bg-background"
-        />
-      )}
-      <a
-        href={url}
-        target="_blank"
-        rel="noreferrer"
-        className="inline-flex text-sm font-medium text-accent hover:underline"
-      >
-        Tải {label}
-      </a>
-    </div>
+    <iframe
+      src={`${blobUrl}#toolbar=0`}
+      title={label}
+      className="h-96 w-full rounded-2xl bg-background shadow-hairline"
+    />
   );
 }
 
-/** Xem trực tiếp tài liệu đính kèm ngay trong trang — ảnh render <img>, PDF nhúng inline */
-function AttachmentPreview({ attachment }: { attachment: ApplicationAttachment }) {
+/** Xem tài liệu đính kèm ngay trong trang; bấm để phóng to toàn màn hình. */
+function AttachmentPreview({
+  attachment,
+  ownerName,
+}: {
+  attachment: ApplicationAttachment;
+  ownerName?: string;
+}) {
   const { url, label, kind } = attachment;
+  const [lightbox, setLightbox] = useState(false);
+  const stem = ownerName ? `${safeFileStem(ownerName)}-` : "";
 
+  // Ảnh đại diện
   if (isImage(url, kind)) {
+    const filename = `${stem}${safeFileStem(label)}.${imageExt(url)}`;
     return (
-      <img
-        src={url}
-        alt={label}
-        className="max-h-72 w-full rounded-2xl object-contain shadow-inset-sm bg-background"
-        loading="lazy"
-      />
-    );
-  }
-
-  // PDF thật (đuôi .pdf) → nhúng iframe trực tiếp, trình duyệt render inline
-  if (isInlinePdf(url, kind)) {
-    return (
-      <div className="space-y-2">
-        <iframe
-          src={`${url}#toolbar=0`}
-          title={label}
-          className="h-96 w-full rounded-2xl shadow-inset-sm bg-background"
+      <div className="space-y-2.5">
+        <ZoomableFrame onZoom={() => setLightbox(true)}>
+          <img
+            src={url}
+            alt={label}
+            loading="lazy"
+            className="max-h-72 w-full rounded-2xl bg-background object-contain shadow-hairline"
+          />
+        </ZoomableFrame>
+        <DownloadAction url={url} filename={filename} label={label} />
+        <AttachmentLightbox
+          open={lightbox}
+          onClose={() => setLightbox(false)}
+          url={url}
+          label={label}
+          filename={filename}
+          variant="image"
         />
-        <a
-          href={url}
-          target="_blank"
-          rel="noreferrer"
-          className="inline-flex text-sm font-medium text-accent hover:underline"
-        >
-          Mở {label} ở tab mới
-        </a>
       </div>
     );
   }
 
-  // Cloudinary raw (CV không đuôi) hoặc kind=pdf bị phục vụ attachment → fetch blob
-  if (isCloudinaryRaw(url) || kind === "pdf") {
-    return <BlobPdfPreview url={url} label={label} />;
+  // PDF thật (đuôi .pdf) → nhúng iframe trực tiếp
+  if (isInlinePdf(url, kind)) {
+    const filename = `${stem}${safeFileStem(label)}.pdf`;
+    return (
+      <div className="space-y-2.5">
+        <ZoomableFrame onZoom={() => setLightbox(true)}>
+          <iframe
+            src={`${url}#toolbar=0`}
+            title={label}
+            className="h-96 w-full rounded-2xl bg-background shadow-hairline"
+          />
+        </ZoomableFrame>
+        <DownloadAction url={url} filename={filename} label={label} />
+        <AttachmentLightbox
+          open={lightbox}
+          onClose={() => setLightbox(false)}
+          url={url}
+          label={label}
+          filename={filename}
+          variant="pdf"
+        />
+      </div>
+    );
   }
 
-  // DOCX và định dạng khác trình duyệt không render được — đành mở tab mới
+  // CV Cloudinary raw / kind=pdf phục vụ attachment → blob preview
+  if (isCloudinaryRaw(url) || kind === "pdf") {
+    const filename = `${stem}${safeFileStem(label)}.pdf`;
+    return (
+      <div className="space-y-2.5">
+        <ZoomableFrame onZoom={() => setLightbox(true)}>
+          <BlobPdfPreview url={url} label={label} />
+        </ZoomableFrame>
+        <DownloadAction url={url} filename={filename} label={label} />
+        <AttachmentLightbox
+          open={lightbox}
+          onClose={() => setLightbox(false)}
+          url={url}
+          label={label}
+          filename={filename}
+          variant="pdf"
+        />
+      </div>
+    );
+  }
+
+  // DOCX và định dạng khác — chỉ tải xuống
+  const filename = `${stem}${safeFileStem(label)}`;
   return (
-    <a
-      href={url}
-      target="_blank"
-      rel="noreferrer"
-      className="neu-btn !h-12 w-full !justify-center !px-4 text-sm font-medium"
+    <button
+      type="button"
+      onClick={async () => {
+        try {
+          await downloadUrlAsFile(url, filename);
+        } catch {
+          window.open(url, "_blank", "noopener");
+        }
+      }}
+      className="ui-btn !h-12 w-full !justify-center !px-4 text-sm"
     >
-      Xem {label} (định dạng không nhúng được)
-    </a>
+      <Icon icon={Download} size={16} />
+      Tải {label} (định dạng không nhúng được)
+    </button>
   );
 }
 

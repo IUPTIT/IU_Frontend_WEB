@@ -22,7 +22,7 @@ type ShellProps = {
 /** Soft UI table shell — horizontal scroll on small screens. */
 export function DataTableShell({ minWidth = 800, children, className = "" }: ShellProps) {
   return (
-    <div className={`neu-card overflow-hidden !p-0 ${className}`}>
+    <div className={`ui-card overflow-hidden !p-0 ${className}`}>
       <div className="overflow-x-auto">
         <table className="data-table w-full border-collapse text-sm" style={{ minWidth, tableLayout: "fixed" }}>
           {children}

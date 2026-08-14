@@ -266,9 +266,9 @@ export default function AdminDepartmentsPage() {
       </div>
 
       {loading ? (
-        <div className="neu-card h-48 animate-pulse" aria-busy="true" />
+        <div className="ui-card h-48 animate-pulse" aria-busy="true" />
       ) : filtered.length === 0 ? (
-        <div className="neu-card !p-10 text-center text-sm text-muted">
+        <div className="ui-card !p-10 text-center text-sm text-muted">
           Chưa có Ban nào — bấm &quot;Tạo Ban mới&quot; để tạo Ban, chọn Leader và
           thành viên.
         </div>
@@ -277,7 +277,7 @@ export default function AdminDepartmentsPage() {
           {filtered.map((d) => {
             const vacant = vacancies.find((v) => v.id === d.id);
             return (
-              <article key={d.id} className="neu-card !p-5 space-y-3">
+              <article key={d.id} className="ui-card !p-5 space-y-3">
                 <div className="flex items-start justify-between gap-2">
                   <div>
                     <h3 className="font-display text-xl font-bold">{d.name}</h3>
@@ -297,11 +297,11 @@ export default function AdminDepartmentsPage() {
                   {d.description || "Chưa có mô tả."}
                 </p>
                 <dl className="grid grid-cols-2 gap-2 text-sm">
-                  <div className="rounded-xl bg-background px-3 py-2 shadow-inset-sm">
+                  <div className="rounded-xl bg-background px-3 py-2 shadow-hairline">
                     <dt className="text-[10px] uppercase text-muted">Thành viên</dt>
                     <dd className="font-semibold">{d.memberCount ?? 0}</dd>
                   </div>
-                  <div className="rounded-xl bg-background px-3 py-2 shadow-inset-sm">
+                  <div className="rounded-xl bg-background px-3 py-2 shadow-hairline">
                     <dt className="text-[10px] uppercase text-muted">Leader</dt>
                     <dd className="truncate font-semibold">
                       {d.headUserName ?? "—"}
@@ -366,39 +366,39 @@ export default function AdminDepartmentsPage() {
             aria-label="Đóng"
             onClick={() => setCreating(false)}
           />
-          <div className="relative z-10 max-h-[90vh] w-full max-w-4xl space-y-4 overflow-y-auto rounded-card bg-background p-5 shadow-extruded">
+          <div className="relative z-10 max-h-[90vh] w-full max-w-4xl space-y-4 overflow-y-auto rounded-card bg-background p-5 shadow-soft">
             <h2 className="font-display text-xl font-extrabold">
               {editing ? "Sửa Ban" : "Tạo Ban mới"}
             </h2>
             <label className="block space-y-1.5">
-              <span className="neu-field-label">Tên Ban *</span>
+              <span className="ui-field-label">Tên Ban *</span>
               <input
-                className="neu-input !h-11"
+                className="ui-input !h-11"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="VD: Ban Kỹ thuật"
               />
             </label>
             <label className="block space-y-1.5">
-              <span className="neu-field-label">Lĩnh vực phụ trách</span>
+              <span className="ui-field-label">Lĩnh vực phụ trách</span>
               <input
-                className="neu-input !h-11"
+                className="ui-input !h-11"
                 value={field}
                 onChange={(e) => setField(e.target.value)}
               />
             </label>
             <label className="block space-y-1.5">
-              <span className="neu-field-label">Mô tả</span>
+              <span className="ui-field-label">Mô tả</span>
               <textarea
-                className="neu-input min-h-[80px] !h-auto py-2"
+                className="ui-input min-h-[80px] !h-auto py-2"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
               />
             </label>
             <label className="block space-y-1.5">
-              <span className="neu-field-label">Chỉ tiêu nhân sự</span>
+              <span className="ui-field-label">Chỉ tiêu nhân sự</span>
               <input
-                className="neu-input !h-11"
+                className="ui-input !h-11"
                 type="number"
                 min={0}
                 value={headcountTarget}
@@ -421,7 +421,7 @@ export default function AdminDepartmentsPage() {
                       className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted"
                     />
                     <input
-                      className="neu-input !h-10 !pl-9"
+                      className="ui-input !h-10 !pl-9"
                       value={memberSearch}
                       onChange={(event) => setMemberSearch(event.target.value)}
                       placeholder="Tìm theo tên hoặc email..."
@@ -436,7 +436,7 @@ export default function AdminDepartmentsPage() {
                           className={`flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 ${
                             checked
                               ? "bg-accent/10 ring-1 ring-accent/25"
-                              : "bg-background shadow-inset-sm"
+                              : "bg-background shadow-hairline"
                           }`}
                         >
                           <input
@@ -497,7 +497,7 @@ export default function AdminDepartmentsPage() {
                       })),
                     ]}
                   />
-                  <div className="rounded-2xl bg-background p-4 shadow-inset-sm">
+                  <div className="rounded-2xl bg-background p-4 shadow-hairline">
                     <div className="flex items-center gap-2">
                       <Icon icon={UserRoundCheck} size={18} className="text-accent" />
                       <span className="text-sm font-semibold">
