@@ -46,8 +46,13 @@ function mapRole(r: BackendRole): Role {
 
 function toAuthUser(u: BackendUser): AuthUser {
   const roles = (u.roles?.length ? u.roles : [u.role]).map(mapRole);
+  const id =
+    u.id ||
+    (typeof (u as unknown as { _id?: string })._id === "string"
+      ? (u as unknown as { _id: string })._id
+      : "");
   return {
-    id: u.id,
+    id,
     name: u.name,
     email: u.email,
     role: mapRole(u.role),
@@ -56,7 +61,9 @@ function toAuthUser(u: BackendUser): AuthUser {
     bio: u.bio || undefined,
     avatarDataUrl: u.avatar || undefined,
     requirePasswordChange: u.requirePasswordChange ?? false,
-    sourceApplicationId: u.sourceApplicationId ?? undefined,
+    sourceApplicationId: u.sourceApplicationId
+      ? String(u.sourceApplicationId)
+      : undefined,
     isMentor: u.isMentor ?? false,
     memberStatus: u.memberStatus ?? null,
   };
@@ -72,10 +79,18 @@ export async function loginWithCredentials(email: string, password: string): Pro
     return toAuthUser(user);
   } catch (err) {
     if (err instanceof ApiRequestError && (err.status === 401 || err.status === 400)) {
+      // 400 Celebrate: email không hợp lệ / thiếu field
+      const msg = err.message || "";
+      if (msg.toLowerCase().includes("validation") || msg.toLowerCase().includes("email")) {
+        throw new Error(
+          "Email hoặc mật khẩu không hợp lệ — với ứng viên Pass vòng đơn, mật khẩu mặc định là ngày sinh DDMMYYYY",
+          { cause: err },
+        );
+      }
       throw new Error("Email hoặc mật khẩu không đúng", { cause: err });
     }
     if (err instanceof ApiRequestError && err.status === 403) {
-      throw new Error(err.message, { cause: err }); // tài khoản bị khoá / email chưa xác thực
+      throw new Error(err.message, { cause: err });
     }
     if (err instanceof TypeError) {
       throw new Error("Không kết nối được máy chủ — kiểm tra backend đã chạy chưa", { cause: err });

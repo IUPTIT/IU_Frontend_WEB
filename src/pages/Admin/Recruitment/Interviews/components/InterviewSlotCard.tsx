@@ -42,13 +42,14 @@ function InterviewSlotCard({
 
         <div className="min-w-[120px] flex-1 space-y-1">
           <p className="text-[10px] font-semibold uppercase tracking-wide text-muted">
-            Chỗ trong ca
+            Tên ca
           </p>
-          <p className="font-display text-2xl font-extrabold text-accent">
-            {booked}
-            <span className="text-base font-semibold text-muted">/{capacity}</span>
+          <p className="font-display text-base font-extrabold text-foreground line-clamp-2">
+            {slot.name || `${slot.startTime}`}
           </p>
-          <p className="text-xs text-muted">ứng viên đã đặt lịch</p>
+          <p className="text-xs text-muted">
+            {booked}/{capacity} chỗ đã đặt
+          </p>
         </div>
 
         <div className="min-w-[180px] flex-[1.4] space-y-1">

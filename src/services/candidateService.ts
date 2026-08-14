@@ -8,7 +8,9 @@ export type CandidateApplication = {
   fullName: string;
   email: string;
   departmentPreferences: { department: string; priority: number }[];
-  campaignId: { _id: string; name: string; openAt: string; closeAt: string; status: string } | string;
+  campaignId:
+    | { _id: string; name: string; openAt: string; closeAt: string; status: string }
+    | string;
   submittedAt: string | null;
 };
 
@@ -31,12 +33,47 @@ export type CandidateBooking = {
   bookedAt: string;
 };
 
-export function getMe(): Promise<{ application: CandidateApplication; booking: CandidateBooking | null }> {
-  return api.get("/candidate/me");
+/** Chuẩn hoá ISO → YYYY-MM-DD (khớp lịch tháng / filter ngày) */
+function toDateKey(iso: string): string {
+  return iso.slice(0, 10);
+}
+
+function mapSlot(s: CandidateSlot): CandidateSlot {
+  return {
+    ...s,
+    date: toDateKey(s.date),
+    availableSlots:
+      s.availableSlots ?? Math.max(0, (s.capacity ?? 0) - (s.bookedCount ?? 0)),
+  };
+}
+
+export function getMe(): Promise<{
+  application: CandidateApplication;
+  booking: CandidateBooking | null;
+}> {
+  return api
+    .get<{ application: CandidateApplication; booking: CandidateBooking | null }>(
+      "/candidate/me",
+    )
+    .then((data) => {
+      const booking = data.booking;
+      if (booking && booking.slotId && typeof booking.slotId === "object") {
+        return {
+          ...data,
+          booking: {
+            ...booking,
+            slotId: mapSlot(booking.slotId as CandidateSlot),
+          },
+        };
+      }
+      return data;
+    });
 }
 
 export function getAvailableSlots(): Promise<CandidateSlot[]> {
-  return api.get<{ slots: CandidateSlot[] }>("/candidate/slots").then((d) => d.slots);
+  return api
+    .get<{ slots: CandidateSlot[] }>("/candidate/slots")
+    .then((d) => (d.slots ?? []).map(mapSlot));
 }
 
 /** Giữ chỗ 150 giây — trả về hạn xác nhận */
@@ -48,13 +85,24 @@ export function holdSlot(slotId: string): Promise<{ expiresAt: string }> {
 
 export function confirmBooking(slotId: string): Promise<CandidateBooking> {
   return api
-    .post<{ booking: CandidateBooking }>("/candidate/bookings/confirm", { slotId })
+    .post<{ booking: CandidateBooking }>("/candidate/bookings/confirm", {
+      slotId,
+    })
     .then((d) => d.booking);
+}
+
+/** Huỷ giữ chỗ tạm (chọn ca khác) */
+export function releaseHold(slotId?: string): Promise<{ released: number }> {
+  return api.post<{ released: number }>("/candidate/bookings/release-hold", {
+    slotId: slotId || undefined,
+  });
 }
 
 /** Đổi ca — tối đa 1 lần, ca mới cách hiện tại >= 24h */
 export function changeSlot(newSlotId: string): Promise<CandidateBooking> {
   return api
-    .put<{ booking: CandidateBooking }>("/candidate/bookings/change-slot", { newSlotId })
+    .put<{ booking: CandidateBooking }>("/candidate/bookings/change-slot", {
+      newSlotId,
+    })
     .then((d) => d.booking);
 }

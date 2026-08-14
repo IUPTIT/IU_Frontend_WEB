@@ -211,6 +211,9 @@ function toApplication(a: BackendApplication): Application {
     id: a._id,
     campaignId: campaignIdOf(a),
     fullName: a.fullName,
+    studentId: a.studentId ?? "",
+    className: a.className ?? "",
+    faculty: a.faculty ?? "",
     email: a.email,
     phone: a.phone,
     dateOfBirth: a.dateOfBirth
@@ -330,17 +333,43 @@ export async function createCampaign(input: CreateCampaignInput): Promise<Recrui
     closeAt: input.closeAt,
     quotas: toQuotasBody(input.quotas),
   });
-  if (input.customQuestions?.length) {
-    await saveCustomQuestions(campaign._id, input.customQuestions);
+
+  const shouldPublish = input.status === "published" || input.isActive;
+
+  const rollback = async () => {
+    try {
+      await api.delete(`/recruitment/campaigns/${campaign._id}`);
+    } catch {
+      /* ignore — vẫn ném lỗi gốc cho user */
+    }
+  };
+
+  try {
+    if (input.customQuestions?.length) {
+      await saveCustomQuestions(campaign._id, input.customQuestions);
+    }
+  } catch (err) {
+    await rollback();
+    throw err;
   }
-  if (input.status === "published" || input.isActive) {
+
+  if (!shouldPublish) {
+    return toCampaign(campaign);
+  }
+
+  try {
     const { campaign: published } = await api.post<{ campaign: BackendCampaign }>(
       `/recruitment/campaigns/${campaign._id}/publish`,
       { notify: input.notifyOnPublish !== false },
     );
     return toCampaign(published);
+  } catch (err) {
+    // Xuất bản/kích hoạt fail → hủy toàn bộ, không để lại nháp
+    await rollback();
+    const base =
+      err instanceof Error ? err.message : "Không kích hoạt được đợt tuyển";
+    throw new Error(`${base} Đợt tuyển chưa được tạo.`);
   }
-  return toCampaign(campaign);
 }
 
 export type UpdateCampaignInput = {
@@ -694,6 +723,7 @@ export async function getInterviewers(
 type BackendSlot = {
   _id: string;
   campaignId: string;
+  name?: string;
   date: string;
   startTime: string;
   endTime: string;
@@ -744,6 +774,7 @@ function toUiSlot(s: BackendSlot, bookings: BackendBooking[] = []): InterviewSlo
   return {
     id: s._id,
     campaignId: s.campaignId,
+    name: (s.name ?? "").trim() || `${s.startTime}–${s.endTime}`,
     date: s.date.slice(0, 10),
     startTime: s.startTime,
     durationMinutes: Math.max(minutesBetween(s.startTime, s.endTime), 0),
@@ -802,6 +833,34 @@ export async function getInterviewDatesWithSlots(campaignId: string): Promise<st
   return [...new Set(rows.map((r) => r.date))];
 }
 
+export type CreateInterviewSlotInput = {
+  campaignId: string;
+  name: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  locationOrLink: string;
+  capacity: number;
+  interviewerIds?: string[];
+};
+
+/** Tạo đúng 1 ca phỏng vấn */
+export async function createInterviewSlot(
+  input: CreateInterviewSlotInput,
+): Promise<InterviewSlot> {
+  const { slot } = await api.post<{ slot: BackendSlot }>("/recruitment/slots", {
+    campaignId: input.campaignId,
+    name: input.name,
+    date: input.date,
+    startTime: input.startTime,
+    endTime: input.endTime,
+    location: input.locationOrLink,
+    capacity: input.capacity,
+    interviewerIds: input.interviewerIds ?? [],
+  });
+  return toUiSlot(slot, []);
+}
+
 export type BatchScheduleInput = {
   campaignId: string;
   date: string;
@@ -814,22 +873,27 @@ export type BatchScheduleInput = {
   interviewerIds?: string[];
 };
 
-/** Tạo tối đa 2 ca/ngày (sáng/chiều) + gắn panel interviewer */
+/** @deprecated Dùng createInterviewSlot — giữ tạm nếu script cũ còn gọi */
 export async function createBatchInterviewSlots(
   input: BatchScheduleInput,
 ): Promise<InterviewSlot[]> {
   const created: InterviewSlot[] = [];
   for (const session of input.sessions) {
-    const { slot } = await api.post<{ slot: BackendSlot }>("/recruitment/slots", {
-      campaignId: input.campaignId,
-      date: input.date,
-      startTime: session.startTime,
-      endTime: session.endTime,
-      location: input.locationOrLink,
-      capacity: input.capacity ?? 8,
-      interviewerIds: input.interviewerIds ?? [],
-    });
-    created.push(toUiSlot(slot, []));
+    created.push(
+      await createInterviewSlot({
+        campaignId: input.campaignId,
+        name:
+          session.label === "afternoon"
+            ? `Ca chiều ${session.startTime}–${session.endTime}`
+            : `Ca sáng ${session.startTime}–${session.endTime}`,
+        date: input.date,
+        startTime: session.startTime,
+        endTime: session.endTime,
+        locationOrLink: input.locationOrLink,
+        capacity: input.capacity ?? 8,
+        interviewerIds: input.interviewerIds ?? [],
+      }),
+    );
   }
   return created;
 }
@@ -846,6 +910,7 @@ export async function assignInterviewersToSlot(
 }
 
 export type EditSlotPatch = {
+  name?: string;
   date: string;
   startTime: string;
   durationMinutes?: number;
@@ -863,6 +928,7 @@ export async function rescheduleInterviewSlot(
     date: patch.date,
     startTime: patch.startTime,
   };
+  if (patch.name != null) body.name = patch.name;
   if (patch.durationMinutes != null) {
     body.endTime = addMinutes(patch.startTime, patch.durationMinutes);
   }

@@ -207,20 +207,26 @@ export async function getActiveCampaign(): Promise<PublicCampaign | null> {
   const c = campaigns[0];
   if (!c) return null;
 
-  const { form } = await api.get<{ form: { fields: BackendField[] } }>(
-    `/public/campaigns/${c._id}/form`,
-  );
-  const customQuestions = form.fields
-    .filter((f) => !f.isFixed)
-    .map((f) => ({
-      _id: f.fieldId,
-      label: f.label,
-      type: FIELD_TYPE_MAP[f.type],
-      options: f.options,
-      required: f.required,
-      order: f.order,
-    }))
-    .sort((a, b) => a.order - b.order);
+  let customQuestions: PublicQuestion[] = [];
+  try {
+    const { form } = await api.get<{ form: { fields: BackendField[] } }>(
+      `/public/campaigns/${c._id}/form`,
+    );
+    customQuestions = form.fields
+      .filter((f) => !f.isFixed)
+      .map((f) => ({
+        _id: f.fieldId,
+        label: f.label,
+        type: FIELD_TYPE_MAP[f.type],
+        options: f.options,
+        required: f.required,
+        order: f.order,
+      }))
+      .sort((a, b) => a.order - b.order);
+  } catch {
+    // Form thiếu / lỗi — vẫn hiện đợt (trường cố định đủ để nộp)
+    customQuestions = [];
+  }
 
   return {
     id: c._id,

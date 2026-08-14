@@ -86,7 +86,7 @@ function ApplicationFormStep({ campaign, value, onSubmit, onSaveDraft }: Props) 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [savingDraft, setSavingDraft] = useState(false);
 
-  const teams = campaign.quotas.map((q) => q.team);
+  const teams = campaign.quotas.map((q) => q.team).filter(Boolean);
   const questions = [...campaign.customQuestions].sort((a, b) => a.order - b.order);
 
   const set = <K extends keyof ApplicationForm>(field: K, fieldValue: ApplicationForm[K]) =>
@@ -98,6 +98,16 @@ function ApplicationFormStep({ campaign, value, onSubmit, onSaveDraft }: Props) 
       wishes[index] = team;
       return { ...f, wishes };
     });
+
+  /** Options từng NV: chỉ Ban của đợt, loại ban đã chọn ở NV khác */
+  const optionsForWish = (index: number) => {
+    const taken = new Set(
+      form.wishes
+        .map((w, i) => (i !== index && w ? w : null))
+        .filter(Boolean) as string[],
+    );
+    return teams.filter((t) => !taken.has(t) || form.wishes[index] === t);
+  };
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -183,30 +193,37 @@ function ApplicationFormStep({ campaign, value, onSubmit, onSaveDraft }: Props) 
         </div>
       </SectionCard>
 
-      {/* 3. Ban nguyện vọng */}
+      {/* 3. Ban nguyện vọng — options = Ban trong chỉ tiêu đợt tuyển */}
       <SectionCard step="03" eyebrow="Định hướng" title="Ban nguyện vọng" delay={0.26}>
         <p className="mb-5 -mt-2 text-sm text-[hsl(var(--landing-foreground)/0.6)]">
           Chọn tối đa {MAX_WISHES} ban theo thứ tự ưu tiên — nguyện vọng 1 là ban bạn mong muốn nhất.
+          Danh sách ban lấy từ chỉ tiêu đợt tuyển.
         </p>
-        <div className="space-y-3">
-          {Array.from({ length: MAX_WISHES }, (_, i) => (
-            <div
-              key={i}
-              className="flex flex-col gap-3 rounded-2xl bg-white/[0.03] p-3 sm:flex-row sm:items-center"
-            >
-              <span className="reg-wish-badge shrink-0">NV{i + 1}</span>
-              <div className="flex-1">
-                <LandingSelect
-                  options={teams}
-                  value={form.wishes[i] ?? ""}
-                  onChange={(team) => setWish(i, team)}
-                  placeholder={i === 0 ? "— Chọn ban mong muốn nhất —" : "— Không chọn —"}
-                  isClearable
-                />
+        {teams.length === 0 ? (
+          <p className="rounded-2xl border border-amber-400/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+            Đợt tuyển chưa cấu hình ban / chỉ tiêu — liên hệ Ban Chủ nhiệm.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {Array.from({ length: Math.min(MAX_WISHES, teams.length) }, (_, i) => (
+              <div
+                key={i}
+                className="flex flex-col gap-3 rounded-2xl bg-white/[0.03] p-3 sm:flex-row sm:items-center"
+              >
+                <span className="reg-wish-badge shrink-0">NV{i + 1}</span>
+                <div className="flex-1">
+                  <LandingSelect
+                    options={optionsForWish(i)}
+                    value={form.wishes[i] ?? ""}
+                    onChange={(team) => setWish(i, team)}
+                    placeholder={i === 0 ? "— Chọn ban mong muốn nhất —" : "— Không chọn —"}
+                    isClearable
+                  />
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
         <FieldError message={errors.wishes} />
       </SectionCard>
 
