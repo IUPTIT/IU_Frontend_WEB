@@ -7,6 +7,10 @@ type Props = {
   onBack: () => void;
   onSaveDraft: () => void;
   onPublish: () => void;
+  /** Lỗi trùng tên — chặn nút xuất bản */
+  nameConflict?: string | null;
+  /** Lỗi trùng thời gian/ban với đợt đang mở */
+  overlapConflict?: string | null;
 };
 
 const typeLabel: Record<CampaignDraft["questions"][number]["type"], string> = {
@@ -16,18 +20,32 @@ const typeLabel: Record<CampaignDraft["questions"][number]["type"], string> = {
   file_upload: "Tải tệp",
 };
 
-function CampaignPublishStep({ draft, onChange, onBack, onSaveDraft, onPublish }: Props) {
+function CampaignPublishStep({
+  draft,
+  onChange,
+  onBack,
+  onSaveDraft,
+  onPublish,
+  nameConflict = null,
+  overlapConflict = null,
+}: Props) {
   const totalQuota = draft.quotas.reduce((s, q) => s + q.quota, 0);
   const requiredCount = draft.questions.filter((q) => q.required).length;
+  const hasConflicts = Boolean(nameConflict || overlapConflict);
   const canSave =
     draft.name.trim().length > 0 &&
     Boolean(draft.openAt && draft.closeAt) &&
-    totalQuota > 0;
-  const canPublish = canSave && draft.questions.length > 0;
+    totalQuota > 0 &&
+    !hasConflicts;
 
   const checks = [
     { ok: Boolean(draft.name.trim()), label: "Đã đặt tên đợt tuyển" },
+    { ok: !nameConflict, label: nameConflict ?? "Tên đợt không trùng với đợt khác" },
     { ok: Boolean(draft.openAt && draft.closeAt), label: "Đã chọn thời gian mở / đóng đơn" },
+    {
+      ok: !overlapConflict,
+      label: overlapConflict ?? "Không trùng thời gian/ban với đợt đang mở",
+    },
     { ok: draft.questions.length > 0, label: `Form có ${draft.questions.length} câu hỏi` },
     {
       ok: totalQuota > 0,
@@ -45,6 +63,14 @@ function CampaignPublishStep({ draft, onChange, onBack, onSaveDraft, onPublish }
           Kiểm tra lại thông tin trước khi mở form công khai cho ứng viên.
         </p>
       </header>
+
+      {hasConflicts && (
+        <div className="rounded-2xl bg-red-500/10 px-4 py-3 text-sm text-red-600 space-y-1" role="alert">
+          <p className="font-semibold">Không thể lưu / xuất bản — cần sửa trước:</p>
+          {nameConflict && <p>• {nameConflict}</p>}
+          {overlapConflict && <p>• {overlapConflict}</p>}
+        </div>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
         {/* Tóm tắt trái */}
@@ -129,13 +155,15 @@ function CampaignPublishStep({ draft, onChange, onBack, onSaveDraft, onPublish }
                 <li key={c.label} className="flex items-start gap-3 text-sm">
                   <span
                     className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${
-                      c.ok ? "bg-accent-secondary/20 text-accent-secondary" : "bg-muted/20 text-muted"
+                      c.ok
+                        ? "bg-accent-secondary/20 text-accent-secondary"
+                        : "bg-red-500/15 text-red-600"
                     }`}
                     aria-hidden
                   >
                     {c.ok ? "✓" : "!"}
                   </span>
-                  <span className={c.ok ? "text-foreground" : "text-muted"}>{c.label}</span>
+                  <span className={c.ok ? "text-foreground" : "text-red-600"}>{c.label}</span>
                 </li>
               ))}
             </ul>
@@ -190,7 +218,9 @@ function CampaignPublishStep({ draft, onChange, onBack, onSaveDraft, onPublish }
             title={
               canSave
                 ? "Lưu nháp"
-                : "Cần tên, thời gian mở/đóng và ít nhất 1 chỉ tiêu ≥ 1"
+                : hasConflicts
+                  ? "Cần sửa xung đột tên/thời gian trước khi lưu"
+                  : "Cần tên, thời gian mở/đóng và ít nhất 1 chỉ tiêu ≥ 1"
             }
             onClick={onSaveDraft}
           >
@@ -198,20 +228,11 @@ function CampaignPublishStep({ draft, onChange, onBack, onSaveDraft, onPublish }
           </button>
           <button
             type="button"
-            disabled={!canPublish || !draft.activateOnPublish}
-            title={
-              !canPublish
-                ? "Thiếu thông tin bắt buộc để xuất bản"
-                : !draft.activateOnPublish
-                  ? "Bật \"Kích hoạt ngay\" để xuất bản, hoặc dùng Lưu nháp"
-                  : "Xuất bản đợt tuyển"
-            }
             onClick={onPublish}
             className="inline-flex h-12 items-center gap-2 rounded-2xl px-8 font-semibold text-white
               bg-accent shadow-soft-sm
               transition-all duration-300 hover:-translate-y-0.5 hover:bg-accent-light
-              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2
-              disabled:opacity-50 disabled:pointer-events-none disabled:translate-y-0"
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
           >
             Xuất bản đợt tuyển
             <span aria-hidden>↑</span>
