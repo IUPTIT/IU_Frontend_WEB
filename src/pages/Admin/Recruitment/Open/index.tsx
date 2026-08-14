@@ -218,6 +218,46 @@ function RecruitmentOpenPage() {
       order: index,
     }));
 
+    // Chặn sớm trước khi gọi API: trùng tên / trùng thời gian với đợt đang mở cùng ban
+    const name = draft.name.trim();
+    if (name) {
+      const dupName = campaigns.find(
+        (c) =>
+          c.id !== editing?.id &&
+          c.name.trim().toLowerCase() === name.toLowerCase(),
+      );
+      if (dupName) {
+        showToast(`Tên đợt đăng ký đã tồn tại: "${dupName.name}".`);
+        return;
+      }
+    }
+
+    if (saveMode === "publish") {
+      const openIso = toOpenIso(draft.openAt);
+      const closeIso = toCloseIso(draft.closeAt);
+      const deptNames = quotas.filter((q) => q.quota > 0).map((q) => q.departmentName);
+      if (openIso && closeIso && deptNames.length > 0) {
+        const open = new Date(openIso).getTime();
+        const close = new Date(closeIso).getTime();
+        const overlap = campaigns.find((c) => {
+          if (c.id === editing?.id) return false;
+          if (!c.isActive || !c.openAt || !c.closeAt) return false;
+          const cOpen = new Date(c.openAt).getTime();
+          const cClose = new Date(c.closeAt).getTime();
+          if (!(open < cClose && close > cOpen)) return false;
+          return c.quotas.some(
+            (q) => q.quota > 0 && deptNames.includes(q.departmentName),
+          );
+        });
+        if (overlap) {
+          showToast(
+            `Không kích hoạt được: đã có đợt đang mở trùng thời gian/ban ("${overlap.name}"). Đóng đợt đó hoặc đổi thời gian/ban trước.`,
+          );
+          return;
+        }
+      }
+    }
+
     try {
       if (editing) {
         // Đợt đã publish: backend chỉ cho sửa closeAt/chỉ tiêu/mô tả (+ câu hỏi khi chưa có hồ sơ)
@@ -250,7 +290,7 @@ function RecruitmentOpenPage() {
       }
     } catch (err) {
       showToast(err instanceof Error ? err.message : "Lưu đợt tuyển thất bại.");
-      return; // giữ nguyên wizard để sửa lại
+      return; // giữ wizard để sửa — đợt chưa được tạo (đã rollback nếu publish fail)
     }
 
     await load();
@@ -273,6 +313,8 @@ function RecruitmentOpenPage() {
           key={editing?.id ?? "new"}
           initialDraft={editDraft ?? undefined}
           locks={editing ? editLocks : undefined}
+          existingCampaigns={campaigns}
+          excludeCampaignId={editing?.id ?? null}
           onCancel={() => {
             setMode("list");
             setEditing(null);
