@@ -5,7 +5,10 @@ import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const SITE_URL = "https://portal.iuptit.com";
+// Build test (VD Netlify preview): set SITE_URL=https://xxx.netlify.app để mọi URL
+// tuyệt đối (og:image, canonical...) trỏ về đúng domain test — card share mới có ảnh.
+const PROD_URL = "https://portal.iuptit.com";
+const SITE_URL = (process.env.SITE_URL || PROD_URL).replace(/\/+$/, "");
 const dist = join(dirname(fileURLToPath(import.meta.url)), "..", "dist");
 
 const ROUTES = [
@@ -35,7 +38,12 @@ const ROUTES = [
   },
 ];
 
-const base = readFileSync(join(dist, "index.html"), "utf8");
+let base = readFileSync(join(dist, "index.html"), "utf8");
+if (SITE_URL !== PROD_URL) {
+  base = base.replaceAll(PROD_URL, SITE_URL);
+  writeFileSync(join(dist, "index.html"), base);
+  console.log(`prerender-meta: SITE_URL override -> ${SITE_URL}`);
+}
 
 const esc = (s) => s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
 

@@ -1,0 +1,11 @@
+[build]
+  base = "frontend"
+  command = "npm run build"
+  publish = "dist"
+
+# SPA fallback — Netlify tự ưu tiên file tĩnh có sẵn (các trang đã prerender
+# như /tuyen-thanh-vien/index.html) trước khi rơi vào rule này.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
