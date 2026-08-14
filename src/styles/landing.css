@@ -1,0 +1,1117 @@
+/* CSS riêng cho Landing page — dark theme marketing, tách khỏi theme airy khu quản trị */
+
+.landing-theme {
+  --landing-background: 260 87% 3%;
+  --landing-foreground: 40 6% 95%;
+  --landing-hero-sub: 40 6% 82%;
+  background-color: hsl(var(--landing-background));
+  color: hsl(var(--landing-foreground));
+  /* DM Sans hỗ trợ tiếng Việt đầy đủ — KHÔNG dùng Geist/General Sans cho body (thiếu glyph Việt) */
+  font-family: "DM Sans", sans-serif;
+}
+
+/* Heading có tiếng Việt — Plus Jakarta Sans hỗ trợ dấu đầy đủ */
+.landing-headline {
+  font-family: "Plus Jakarta Sans", "DM Sans", sans-serif;
+}
+
+/* Chỉ dùng cho chữ thuần Latin (VD: "IU Club") — General Sans KHÔNG có glyph tiếng Việt */
+.landing-display {
+  font-family: "General Sans", "Plus Jakarta Sans", sans-serif;
+}
+
+.text-hero-sub {
+  color: hsl(var(--landing-hero-sub));
+}
+
+.landing-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  font-weight: 500;
+  color: hsl(var(--landing-foreground));
+  transition: all 0.3s ease-out;
+}
+
+.landing-btn-secondary:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.landing-btn-secondary:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.6);
+}
+
+.landing-input {
+  width: 100%;
+  border-radius: 14px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  color: hsl(var(--landing-foreground));
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  transition: all 0.3s ease-out;
+}
+
+.landing-input::placeholder {
+  color: hsl(var(--landing-foreground) / 0.4);
+}
+
+.landing-input:focus {
+  outline: none;
+  border-color: rgba(168, 85, 247, 0.7);
+  box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.25);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.landing-input option {
+  background-color: hsl(var(--landing-background));
+  color: hsl(var(--landing-foreground));
+}
+
+.landing-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(to right, #6366f1, #a855f7);
+  box-shadow: 0 0 18px rgba(168, 85, 247, 0.45);
+  transition: all 0.3s ease-out;
+}
+
+.landing-btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 28px rgba(168, 85, 247, 0.65);
+  filter: brightness(1.08);
+}
+
+.landing-btn-primary:active {
+  transform: translateY(0);
+}
+
+.landing-btn-primary:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 18px rgba(168, 85, 247, 0.45),
+    0 0 0 2px rgba(255, 255, 255, 0.7);
+}
+
+/* Nền card đặc — nổi trên video nền, không trong suốt */
+.landing-card-solid {
+  background: linear-gradient(160deg, hsl(258 45% 11%) 0%, hsl(260 55% 7%) 100%) !important;
+}
+
+/* Card kính tối — frosted, làm mờ video nền mà vẫn đọc rõ (đồng bộ hero) */
+.landing-card-glass {
+  background: rgba(20, 13, 38, 0.48) !important;
+  backdrop-filter: blur(16px) saturate(1.2);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+}
+
+/* =====================================================================
+   LOGIN — glass tối trên nền fluid, đồng bộ vibe landing
+   ===================================================================== */
+.login-field {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 52px;
+  padding: 0 16px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.login-field:focus-within {
+  border-color: rgba(168, 85, 247, 0.6);
+  box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.18);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.login-field input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 15px;
+  color: hsl(var(--landing-foreground));
+}
+
+.login-field input::placeholder {
+  color: hsl(var(--landing-foreground) / 0.38);
+}
+
+/* Chrome autofill không phá nền kính tối */
+.login-field input:-webkit-autofill,
+.login-field input:-webkit-autofill:hover,
+.login-field input:-webkit-autofill:focus {
+  -webkit-text-fill-color: hsl(var(--landing-foreground));
+  -webkit-box-shadow: 0 0 0 1000px rgba(30, 20, 50, 0.9) inset;
+  caret-color: hsl(var(--landing-foreground));
+  transition: background-color 9999s ease-out;
+}
+
+.login-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 52px;
+  border-radius: 14px;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(120deg, #6e2ce6 0%, #a855f7 45%, #e0348c 100%);
+  box-shadow: 0 12px 32px rgba(168, 85, 247, 0.42);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.login-cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 40px rgba(168, 85, 247, 0.55);
+  filter: brightness(1.05);
+}
+
+.login-cta:active {
+  transform: translateY(0);
+}
+
+.login-cta:disabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* Con trỏ terminal — chữ ký gõ máy của login */
+.term-caret {
+  display: inline-block;
+  width: 7px;
+  height: 1em;
+  margin-left: 3px;
+  border-radius: 1px;
+  background: #c9a6ff;
+  vertical-align: -0.12em;
+  animation: hero-caret 1s steps(1) infinite;
+}
+
+/* =====================================================================
+   FLASH-SALE COUNTDOWN — "giá sập sàn", giục đăng ký, tinh nghịch
+   ===================================================================== */
+@keyframes flash-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 1px rgba(224, 52, 140, 0.35), 0 10px 32px rgba(224, 52, 140, 0.25);
+  }
+  50% {
+    box-shadow: 0 0 0 1px rgba(224, 52, 140, 0.65), 0 14px 44px rgba(224, 52, 140, 0.5);
+  }
+}
+
+.flash-sale {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 11px 14px 12px;
+  border-radius: 18px;
+  overflow: hidden;
+  background: linear-gradient(150deg, rgba(40, 24, 62, 0.72), rgba(22, 14, 38, 0.74));
+  backdrop-filter: blur(14px) saturate(1.15);
+  -webkit-backdrop-filter: blur(14px) saturate(1.15);
+  animation: flash-glow 1.7s ease-in-out infinite;
+}
+
+/* Bản đầy đủ (khu vực riêng): full-width + thanh tiến độ + CTA */
+.flash-sale.is-full {
+  display: flex;
+  width: 100%;
+  gap: 12px;
+  padding: 15px 16px 16px;
+}
+
+/* Viền kính đồng bộ với các card landing */
+.flash-sale::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.2px;
+  background: linear-gradient(
+    140deg,
+    rgba(255, 255, 255, 0.42),
+    rgba(224, 52, 140, 0.32) 60%,
+    rgba(255, 255, 255, 0.1)
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.flash-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+@keyframes flame-wiggle {
+  0%, 100% { transform: rotate(-8deg) scale(1); }
+  50% { transform: rotate(8deg) scale(1.15); }
+}
+
+.flash-flame {
+  color: #ffb020;
+  animation: flame-wiggle 0.65s ease-in-out infinite;
+  filter: drop-shadow(0 0 6px rgba(255, 150, 0, 0.65));
+}
+
+.flash-title {
+  font-family: "Plus Jakarta Sans", "DM Sans", sans-serif;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  background: linear-gradient(90deg, #ffb020, #e0348c);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@keyframes flash-blink {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.35; transform: scale(0.7); }
+}
+
+.flash-live {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #ff3b6b;
+  box-shadow: 0 0 8px #ff3b6b;
+  animation: flash-blink 1s ease-in-out infinite;
+}
+
+.flash-hurry {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 700;
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.flash-timer {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 5px;
+}
+
+/* Thanh tiến độ — % thời gian đợt đăng ký đã trôi qua */
+.flash-progress {
+  height: 6px;
+  width: 100%;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+
+.flash-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #6e2ce6, #e0348c);
+  box-shadow: 0 0 10px rgba(224, 52, 140, 0.6);
+  transition: width 0.6s ease;
+}
+
+/* CTA lấp đầy chiều ngang + giục hành động */
+.flash-cta {
+  display: flex;
+  width: 100%;
+  height: 42px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border-radius: 12px;
+  font-family: "Plus Jakarta Sans", "DM Sans", sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(120deg, #6e2ce6 0%, #a855f7 45%, #e0348c 100%);
+  box-shadow: 0 8px 22px rgba(168, 85, 247, 0.4);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.flash-cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 28px rgba(168, 85, 247, 0.55);
+  filter: brightness(1.06);
+}
+
+.flash-cta svg {
+  transition: transform 0.25s ease;
+}
+
+.flash-cta:hover svg {
+  transform: translateX(3px);
+}
+
+.is-urgent .flash-progress-fill {
+  background: linear-gradient(90deg, #a41bd6, #ff3b8b);
+  box-shadow: 0 0 12px rgba(255, 60, 140, 0.7);
+}
+
+.is-urgent .flash-cta {
+  background: linear-gradient(120deg, #a41bd6, #ff3b8b);
+  box-shadow: 0 8px 24px rgba(255, 60, 140, 0.5);
+}
+
+.flash-box {
+  display: flex;
+  min-width: 46px;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 8px 5px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #6e2ce6 0%, #e0348c 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 5px 14px rgba(224, 52, 140, 0.35);
+}
+
+.flash-num {
+  display: inline-block;
+  font-family: "Space Grotesk", "JetBrains Mono", monospace;
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes flash-pop {
+  0% { transform: scale(1.32); opacity: 0.35; }
+  60% { transform: scale(0.93); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.flash-pop {
+  animation: flash-pop 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.flash-unit {
+  margin-top: 3px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.flash-colon {
+  align-self: center;
+  margin-top: -6px;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 18px;
+  font-weight: 800;
+  color: #ff5c9a;
+  animation: flash-blink 1s ease-in-out infinite;
+}
+
+/* 24h cuối — "giờ chót": nóng hơn (magenta/pink/gold), pulse nhanh + phồng nhẹ */
+@keyframes flash-glow-urgent {
+  0%, 100% {
+    box-shadow: 0 0 0 1px rgba(255, 90, 160, 0.55), 0 12px 38px rgba(255, 60, 140, 0.45);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 0 1px rgba(255, 120, 190, 0.9), 0 18px 56px rgba(230, 52, 140, 0.68);
+    transform: scale(1.025);
+  }
+}
+
+.flash-sale.is-urgent {
+  background: linear-gradient(150deg, rgba(62, 20, 56, 0.8), rgba(34, 12, 40, 0.8));
+  animation: flash-glow-urgent 0.95s ease-in-out infinite;
+}
+
+.is-urgent::before {
+  background: linear-gradient(
+    140deg,
+    rgba(255, 207, 58, 0.5),
+    rgba(255, 79, 157, 0.5) 60%,
+    rgba(255, 255, 255, 0.15)
+  );
+}
+
+.is-urgent .flash-flame {
+  animation-duration: 0.42s;
+  filter: drop-shadow(0 0 9px rgba(255, 180, 32, 0.9));
+}
+
+.is-urgent .flash-title {
+  background: linear-gradient(90deg, #ffcf3a, #ff4f9d);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.is-urgent .flash-box {
+  background: linear-gradient(135deg, #a41bd6 0%, #ff3b8b 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 6px 18px rgba(255, 60, 140, 0.5);
+}
+
+.is-urgent .flash-colon {
+  color: #ff8ac0;
+}
+
+.is-urgent .flash-hurry {
+  color: #ffb3d4;
+  font-weight: 800;
+}
+
+/* Còn nhiều thời gian (>7 ngày) — "cổng đang mở": tím mát, nhịp chậm, mời gọi */
+@keyframes flash-glow-calm {
+  0%, 100% {
+    box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.28), 0 10px 30px rgba(99, 102, 241, 0.22);
+  }
+  50% {
+    box-shadow: 0 0 0 1px rgba(168, 85, 247, 0.45), 0 12px 38px rgba(168, 85, 247, 0.3);
+  }
+}
+
+.flash-sale.is-calm {
+  animation: flash-glow-calm 3s ease-in-out infinite;
+}
+
+.is-calm .flash-flame {
+  color: #c4a6ff;
+  animation-duration: 1.4s;
+  filter: drop-shadow(0 0 6px rgba(168, 85, 247, 0.5));
+}
+
+.is-calm .flash-title {
+  background: linear-gradient(90deg, #a855f7, #e0348c);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.is-calm .flash-colon {
+  color: #a855f7;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flash-sale,
+  .flash-sale.is-urgent,
+  .flash-sale.is-calm,
+  .flash-flame,
+  .flash-live,
+  .flash-colon,
+  .flash-pop {
+    animation: none !important;
+    transform: none !important;
+  }
+}
+
+/* Hover cho card trên landing — scale nhẹ + glow, mượt */
+.landing-card-hover {
+  transition:
+    transform 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.4s ease-out;
+  will-change: transform;
+}
+
+.landing-card-hover:hover {
+  transform: scale(1.03) translateY(-4px);
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.1),
+    0 12px 40px rgba(0, 0, 0, 0.45),
+    0 0 24px rgba(168, 85, 247, 0.18);
+}
+
+.liquid-glass {
+  background: rgba(255, 255, 255, 0.045);
+  backdrop-filter: blur(16px) saturate(1.2);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  border: none;
+  box-shadow: 0 10px 46px rgba(0, 0, 0, 0.34), inset 0 1px 1px rgba(255, 255, 255, 0.18);
+  position: relative;
+  overflow: hidden;
+}
+
+.liquid-glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.4px;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.45) 0%,
+    rgba(255, 255, 255, 0.15) 20%,
+    rgba(255, 255, 255, 0) 40%,
+    rgba(255, 255, 255, 0) 60%,
+    rgba(255, 255, 255, 0.15) 80%,
+    rgba(255, 255, 255, 0.45) 100%
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* =====================================================================
+   ĐĂNG KÝ ỨNG TUYỂN — step rail, section card đánh số, dropzone (vibe landing)
+   ===================================================================== */
+
+/* Entrance: từng khối trồi lên so le lúc vào trang */
+@keyframes reg-rise {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.reg-rise {
+  opacity: 0;
+  animation: reg-rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Thanh tiến trình 3 bước — vạch nối + phần gradient đã hoàn thành */
+.reg-rail-track {
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.reg-rail-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #6366f1, #a855f7, #e0348c);
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.55);
+  transition: width 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.reg-dot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: "Space Grotesk", "DM Sans", sans-serif;
+  background: hsl(258 45% 11%);
+  border: 1.5px solid rgba(255, 255, 255, 0.18);
+  color: hsl(var(--landing-foreground) / 0.5);
+  transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.reg-dot.is-active {
+  background: linear-gradient(135deg, #6e2ce6 0%, #e0348c 100%);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 0 0 4px rgba(168, 85, 247, 0.18), 0 6px 16px rgba(168, 85, 247, 0.4);
+}
+
+.reg-dot.is-done {
+  background: rgba(168, 85, 247, 0.18);
+  border-color: rgba(168, 85, 247, 0.55);
+  color: hsl(var(--landing-foreground));
+}
+
+/* Chip số thứ tự section — gradient, glow nhẹ */
+.reg-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 13px;
+  font-family: "Space Grotesk", "DM Sans", sans-serif;
+  font-weight: 700;
+  font-size: 17px;
+  color: #fff;
+  background: linear-gradient(135deg, #6e2ce6 0%, #e0348c 100%);
+  box-shadow: 0 8px 20px rgba(168, 85, 247, 0.35);
+}
+
+.reg-eyebrow {
+  font-family: "Plus Jakarta Sans", "DM Sans", sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: hsl(var(--landing-foreground) / 0.45);
+}
+
+/* Dropzone kính cho ảnh / CV */
+.reg-drop {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 22px 16px;
+  border-radius: 16px;
+  text-align: center;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1.5px dashed rgba(255, 255, 255, 0.18);
+  color: hsl(var(--landing-foreground) / 0.7);
+  transition: border-color 0.25s ease, background 0.25s ease, transform 0.25s ease;
+}
+
+.reg-drop:hover,
+.reg-drop.is-drag {
+  border-color: rgba(168, 85, 247, 0.7);
+  background: rgba(168, 85, 247, 0.09);
+}
+
+.reg-drop.has-file {
+  border-style: solid;
+  border-color: rgba(168, 85, 247, 0.5);
+  background: rgba(168, 85, 247, 0.07);
+}
+
+.reg-drop:focus-within {
+  border-color: rgba(168, 85, 247, 0.7);
+  box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.22);
+}
+
+/* Badge NV1/2/3 cho nguyện vọng */
+.reg-wish-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 24px;
+  padding: 0 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: #fff;
+  background: linear-gradient(135deg, #6366f1, #a855f7);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+}
+
+/* Menu dropdown (react-select) bung ra mềm khi mở */
+@keyframes reg-menu-in {
+  from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Dấu tích thành công — bung nhẹ */
+@keyframes reg-check-pop {
+  0% { transform: scale(0.3); opacity: 0; }
+  60% { transform: scale(1.12); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.reg-check {
+  animation: reg-check-pop 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reg-rise,
+  .reg-check {
+    animation: none !important;
+    opacity: 1;
+    transform: none;
+  }
+  .reg-rail-fill,
+  .reg-dot {
+    transition: none;
+  }
+}
+
+/* ---- react-datepicker: dark theme khớp landing ---- */
+.landing-datepicker.react-datepicker {
+  background: linear-gradient(160deg, hsl(258 45% 11%) 0%, hsl(260 55% 7%) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  font-family: "DM Sans", sans-serif;
+  color: hsl(var(--landing-foreground));
+  overflow: hidden;
+}
+
+.landing-datepicker .react-datepicker__header {
+  background: rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.landing-datepicker .react-datepicker__current-month,
+.landing-datepicker .react-datepicker__day-name,
+.landing-datepicker .react-datepicker__day {
+  color: hsl(var(--landing-foreground));
+}
+
+.landing-datepicker .react-datepicker__day:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+}
+
+.landing-datepicker .react-datepicker__day--selected,
+.landing-datepicker .react-datepicker__day--keyboard-selected {
+  background: linear-gradient(to right, #6366f1, #a855f7);
+  border-radius: 8px;
+  color: #fff;
+}
+
+.landing-datepicker .react-datepicker__day--outside-month,
+.landing-datepicker .react-datepicker__day--disabled {
+  color: hsl(var(--landing-foreground) / 0.3);
+}
+
+.landing-datepicker .react-datepicker__navigation-icon::before {
+  border-color: hsl(var(--landing-foreground) / 0.6);
+}
+
+.react-datepicker-popper {
+  z-index: 55;
+}
+
+#landing-datepicker-portal {
+  position: relative;
+  z-index: 55;
+}
+
+.react-datepicker__triangle {
+  display: none;
+}
+
+@keyframes landing-marquee {
+  from {
+    transform: translateX(0%);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-landing-marquee {
+  animation: landing-marquee 20s linear infinite;
+}
+
+/* =====================================================================
+   HERO — chữ chạy "viết ra" (mỗi lần một font) + bộ bài ảnh xòe ra
+   ===================================================================== */
+/* Ô chữ fix cứng — chừa đủ ~2 dòng cho chữ gõ ra, không co lại/nhảy layout */
+.hero-headline-box {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+}
+
+/* Tên CLB to — nhận diện thương hiệu, gradient khớp logo */
+.hero-brand {
+  margin: 0;
+  font-family: "Space Grotesk", "Plus Jakarta Sans", sans-serif;
+  font-weight: 800;
+  font-size: clamp(2.5rem, 5.4vw, 4.6rem);
+  line-height: 0.95;
+  letter-spacing: -0.02em;
+  /* Gradient chảy liên tục qua các chữ — có vệt vàng bling lướt qua */
+  background-image: linear-gradient(
+    100deg,
+    #6366f1,
+    #a855f7,
+    #e0348c,
+    #ffb020,
+    #e0348c,
+    #a855f7,
+    #6366f1
+  );
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: brand-flow 9s linear infinite;
+  filter: drop-shadow(0 6px 26px rgba(168, 85, 247, 0.4));
+}
+
+@keyframes brand-flow {
+  to { background-position: 300% 50%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-brand { animation: none; }
+}
+
+/* Tagline gõ máy — nhẹ hơn, xếp dưới tên CLB */
+.hero-headline {
+  margin: 0;
+  width: 100%;
+  min-height: 2.6em;
+  font-weight: 600;
+  line-height: 1.3;
+  font-size: clamp(0.95rem, 1.7vw, 1.25rem);
+  word-break: break-word;
+  color: hsl(var(--landing-foreground) / 0.92);
+}
+
+/* Con trỏ kiểu terminal */
+.hero-caret {
+  display: inline-block;
+  width: 0.5ch;
+  height: 1.02em;
+  margin-left: 3px;
+  border-radius: 2px;
+  background: #e0348c;
+  box-shadow: 0 0 10px rgba(224, 52, 140, 0.7);
+  vertical-align: -0.16em;
+}
+
+.hero-caret.is-blink { animation: hero-caret 1s steps(1) infinite; }
+
+@keyframes hero-caret { 50% { opacity: 0; } }
+
+/* Subtitle "Kết nối đam mê…" — vệt sáng chạy ngang + sao lấp lánh bling bling */
+.hero-sub-wrap {
+  position: relative;
+  display: inline-block;
+}
+
+.hero-sparkle {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  background: linear-gradient(120deg, #ffffff, #ffd76a);
+  clip-path: polygon(
+    50% 0%, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0% 50%, 39% 39%
+  );
+  filter: drop-shadow(0 0 5px rgba(255, 214, 110, 0.85));
+  opacity: 0;
+  animation: sparkle-twinkle 2.4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes sparkle-twinkle {
+  0%, 100% { opacity: 0; transform: scale(0.3) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1) rotate(45deg); }
+}
+
+.hero-sparkle-a { top: -9px; left: 6%; animation-delay: 0s; }
+.hero-sparkle-b { top: 58%; right: 4%; width: 10px; height: 10px; animation-delay: 0.9s; }
+.hero-sparkle-c { top: -6px; right: 26%; width: 8px; height: 8px; animation-delay: 1.7s; }
+
+/* Tấm nền kính lớn — vệt phản chiếu quét ngang như gương kính thật */
+.glass-shine::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: linear-gradient(
+    115deg,
+    transparent 32%,
+    rgba(255, 255, 255, 0.1) 44%,
+    rgba(255, 255, 255, 0.26) 50%,
+    rgba(255, 255, 255, 0.1) 56%,
+    transparent 68%
+  );
+  transform: translateX(-120%);
+  animation: glass-shine-sweep 7.5s ease-in-out infinite;
+  animation-delay: 2s;
+  pointer-events: none;
+}
+
+@keyframes glass-shine-sweep {
+  0% { transform: translateX(-120%); }
+  28% { transform: translateX(140%); }
+  100% { transform: translateX(140%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-sparkle,
+  .glass-shine::after {
+    animation: none !important;
+  }
+  .glass-shine::after { opacity: 0; }
+}
+
+/* Bộ bài ảnh — xòe ra như lá bài, card đang chọn nổi lên trước */
+.fan-deck {
+  position: relative;
+  width: 100%;
+  height: 280px;
+  perspective: 1200px;
+}
+
+.fan-card {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 172px;
+  height: 230px;
+  border-radius: 20px;
+  overflow: hidden;
+  /* Thẻ bài kính — trong suốt, làm mờ nền phía sau (glassmorphism) */
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(12px) saturate(1.15);
+  -webkit-backdrop-filter: blur(12px) saturate(1.15);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.4);
+  transform-origin: center bottom;
+  transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.5s ease,
+    filter 0.5s ease, opacity 0.5s ease;
+  filter: brightness(0.82);
+  opacity: 0.85;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Viền gradient kính giống .liquid-glass để đồng bộ với các card khác */
+.fan-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.2px;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.4) 0%,
+    rgba(255, 255, 255, 0.12) 22%,
+    rgba(255, 255, 255, 0) 45%,
+    rgba(255, 255, 255, 0) 60%,
+    rgba(168, 85, 247, 0.25) 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.fan-card.is-active {
+  filter: brightness(1);
+  opacity: 1;
+  box-shadow: 0 26px 64px rgba(0, 0, 0, 0.55), 0 0 40px rgba(168, 85, 247, 0.4);
+}
+
+.fan-card-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.fan-card-ph {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.02) 0,
+    rgba(255, 255, 255, 0.02) 10px,
+    transparent 10px,
+    transparent 20px
+  );
+}
+
+/* Caption chỉ hiện rõ ở card đang chọn — tránh rối */
+.fan-card-cap {
+  position: relative;
+  z-index: 2;
+  margin-top: auto;
+  padding: 28px 12px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.3;
+  text-align: center;
+  color: #fff;
+  background: linear-gradient(to top, rgba(10, 6, 22, 0.92) 30%, transparent 100%);
+  font-family: "Plus Jakarta Sans", "DM Sans", sans-serif;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.fan-card.is-active .fan-card-cap { opacity: 1; }
+
+.fan-glow {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 130%;
+  height: 115%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  filter: blur(70px);
+  opacity: 0.5;
+  background: radial-gradient(closest-side, #a855f7 0%, #6366f1 45%, transparent 100%);
+  pointer-events: none;
+}
+
+/* =====================================================================
+   ABOUT / feature cards — nâng cấp: chip icon gradient, viền sáng, hover glow
+   ===================================================================== */
+.about-card {
+  position: relative;
+  border-radius: 22px;
+  padding: 26px;
+  overflow: hidden;
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.4s ease,
+    border-color 0.4s ease;
+}
+
+.about-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(140deg, rgba(168, 85, 247, 0.5), rgba(224, 52, 140, 0) 60%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+
+.about-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.45), 0 0 34px rgba(168, 85, 247, 0.2);
+}
+
+.about-card:hover::after { opacity: 1; }
+
+.about-card-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 15px;
+  color: #fff;
+  background: linear-gradient(135deg, #6e2ce6 0%, #e0348c 100%);
+  box-shadow: 0 8px 20px rgba(168, 85, 247, 0.35);
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.about-card:hover .about-card-chip { transform: scale(1.08) rotate(-4deg); }
+
+.about-card-index {
+  position: absolute;
+  top: 18px;
+  right: 22px;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.08);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-letter { animation-duration: 0.01ms; opacity: 1; }
+  .hero-caret { animation: none; }
+  .fan-card { transition-duration: 0.01ms; }
+}

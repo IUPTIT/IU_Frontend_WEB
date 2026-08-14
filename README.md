@@ -1,0 +1,201 @@
+# IU-Club — Frontend
+
+Web frontend của IU-Club, xây dựng với **React 19 + TypeScript + Vite + TailwindCSS 3**, theme khu quản trị **IU Club Studio — Airy Card SaaS** (card trắng trên nền lavender, nhấn tím + gradient tím→magenta). Trang marketing (Landing/Lookup/Recruitment) dùng theme dark riêng.
+
+---
+
+## 1. Bắt đầu
+
+### Clone code
+
+```bash
+git clone <repo-url>
+cd frontend
+```
+
+### Cài thư viện
+
+```bash
+npm install
+```
+
+Script `prepare` tự trỏ git hooks về `.githooks/` sau bước này (xem mục 5).
+
+### Cấu hình môi trường
+
+```bash
+cp .env.example .env
+```
+
+Sửa `.env` cho đúng backend: `VITE_API_URL` (mặc định `http://localhost:3456/api/v1`), `DEV_PORT`, `WEB_PORT`. Chưa có `.env` thì frontend không gọi được API.
+
+### Chạy web (dev)
+
+```bash
+npm run dev
+```
+
+Mở địa chỉ Vite in ra (mặc định `http://localhost:5173`). Tailwind chạy qua PostCSS trong Vite — **không cần** build CSS thủ công, sửa class là HMR tự cập nhật.
+
+### Các lệnh khác
+
+| Lệnh | Mô tả |
+| --- | --- |
+| `npm run build` | Build production (chạy `tsc` type-check rồi `vite build` ra `dist/`) |
+| `npm run preview` | Xem thử bản build production |
+| `npm run lint` | Chạy ESLint |
+
+---
+
+## 2. Cấu trúc thư mục
+
+```
+src/
+├── api/          # client.ts — fetch wrapper dùng chung (KHÔNG phải axios)
+├── assets/       # Ảnh, icon, static files
+├── components/   # Component DÙNG CHUNG toàn app
+│   └── ui/       # Component nguyên tử theo theme: Button, Card, Input, Modal, Tabs...
+├── constants/    # Hằng số dùng chung (routes, navigation, enums, config)
+├── context/      # React Context (AuthContext, PortalUiContext, PreferencesContext, ToastContext)
+├── hooks/        # Custom hooks dùng chung (useCountUp...)
+├── layouts/      # Layout bọc page: AdminLayout (sidebar/header cho cả 4 role)
+├── pages/        # Mỗi TRANG là một thư mục — xem quy tắc bên dưới
+├── redux/        # Placeholder rỗng — state hiện dùng Context, chưa cài Redux
+├── services/     # Logic gọi API theo domain (userService, clubService...)
+├── types/        # TypeScript types/interfaces dùng chung
+├── utils/        # Hàm tiện ích thuần (formatDate, validate...)
+├── index.css     # Tailwind entry + component classes (ui-btn, ui-card...)
+├── App.tsx       # Root component, khai báo routes
+└── main.tsx      # Entry point
+```
+
+### Kiến trúc tổng quan (đọc trước khi thêm trang/gọi API)
+
+- **Điều hướng portal** — `App.tsx` chỉ có vài route công khai + **4 route wildcard** `/admin/*` · `/leader/*` · `/member/*` · `/candidate/*`, cả 4 dùng chung một `AdminPortal` + `AdminLayout`. Trang con thật do `renderPortalPage(path)` (`src/routes/portalRoutes.tsx`) tra từ `PAGE_MAP`, riêng trang chi tiết match bằng regex. **URL là nguồn điều hướng duy nhất.** Thêm trang mới = khai `ROUTES` (`constants/routes.ts`) → thêm mục `SIDEBAR_CONFIG` (`constants/navigation.ts`) → map vào `PAGE_MAP`.
+- **Xác thực** — mọi request đi qua object `api` trong `src/api/client.ts` (fetch wrapper, envelope `{ success, message, data }`). Access token ở `sessionStorage`, refresh token là cookie httpOnly; 401 sẽ tự refresh 1 lần rồi retry. `AuthContext` giữ user; role backend `bcn` map thành `admin`; cờ `roles[]`/`isMentor`/`requirePasswordChange` chi phối guard trong `AdminPortal`.
+- **Gọi API** — mỗi domain một file trong `src/services/`, map `BackendXxx` DTO → type frontend rồi gọi qua `api`. **Component không tự fetch.**
+- **State toàn cục** — React Context (`Auth`, `PortalUi`, `Preferences`, `Toast`), chưa dùng Redux.
+
+## 3. Quy tắc chia file trong `pages/` (BẮT BUỘC)
+
+Mỗi trang là **một thư mục**, bên trong có `index.tsx` là component chính và thư mục `components/` chứa các phần chỉ trang đó dùng:
+
+```
+pages/
+└── Admin/
+    ├── index.tsx              # Trang Admin chính: ghép layout, quản lý state cấp trang
+    └── components/            # Các phần CHỈ dùng trong trang Admin
+        ├── MemberTable.tsx    # Bảng danh sách thành viên
+        ├── MemberFormPopup.tsx# Popup thêm/sửa thành viên
+        ├── ConfirmDeletePopup.tsx
+        ├── StatsCards.tsx     # Khối thẻ thống kê
+        └── AdminTabs.tsx      # Thanh tab chuyển section trong trang
+```
+
+Quy luật base:
+
+- **`index.tsx`** chỉ làm 3 việc: gọi data (qua `services/`), giữ state cấp trang (tab đang mở, popup đang mở, item đang chọn), và ghép các component con lại. Không viết UI chi tiết dài trong `index.tsx`.
+- **Mỗi phần của trang = 1 file** trong `components/` của trang đó: mỗi section, mỗi popup/modal, mỗi tab content là một file riêng, đặt tên PascalCase mô tả đúng chức năng (`XxxPopup.tsx`, `XxxTable.tsx`, `XxxTab.tsx`).
+- **Popup/modal** nhận props `open`, `onClose` (+ data cần thiết); state mở/đóng do `index.tsx` giữ.
+- **Tab**: `index.tsx` giữ `activeTab`, mỗi nội dung tab là một component riêng; thanh tab dùng component `Tabs` chung từ `components/ui/`.
+- Component **dùng chung từ 2 trang trở lên** → chuyển lên `src/components/` (hoặc `components/ui/` nếu là nguyên tử giao diện). Không copy-paste giữa các trang.
+- Logic gọi API viết trong `src/services/`, **không** fetch trực tiếp trong component.
+- Types của riêng trang có thể để cùng file component; types dùng chung để ở `src/types/`.
+
+Trang mới (ví dụ `Events`) làm y hệt: `pages/Events/index.tsx` + `pages/Events/components/...`.
+
+## 4. Theme — Airy Card SaaS (cách dùng)
+
+Toàn bộ token đã khai báo trong `tailwind.config.js`, **không hard-code màu/bóng** trong component. Khu quản trị (`.portal-shell`) và các trang Login/Reset dùng hệ này; trang marketing có theme dark riêng ở `src/styles/landing.css`.
+
+### Màu — nền trang (canvas) TÁCH khỏi bề mặt (surface)
+
+| Class | Giá trị | Dùng cho |
+| --- | --- | --- |
+| `bg-canvas` | `#F4F4FB` | Nền trang (lavender airy) |
+| `bg-background` / `bg-surface` | `#FFFFFF` | Card / topbar / sidebar / modal (bề mặt trắng, khác canvas) |
+| `bg-surface-2` | `#F5F6FB` | Chip, header bảng, hover nhẹ |
+| `border-line` / `border-line-strong` | `#EBEBF3` / `#E2E3EF` | Hairline / divider |
+| `text-foreground` | `#191A2C` | Chữ chính |
+| `text-muted` / `text-faint` | `#6B7086` / `#9AA0B4` | Chữ phụ / caption |
+| `bg-accent` / `text-accent` | `#7C3AED` | CTA, highlight, focus ring |
+| `brand-from` → `brand-to` | `#6E2CE6 → #E0348C` | Gradient thương hiệu (nút primary, `bg-brand-gradient`) |
+| `accent-secondary` | `#38B2AC` | Trạng thái thành công |
+
+### Bóng (airy, một chiều)
+
+| Class | Dùng cho |
+| --- | --- |
+| `shadow-soft` | Trạng thái nổi mặc định (card) |
+| `shadow-soft-lg` | Hover (kèm `-translate-y-0.5`) |
+| `shadow-soft-sm` | Element nhỏ, button |
+| `shadow-hairline` | Viền mảnh 1px (input, well) — hoặc `border border-line` |
+
+### Component classes có sẵn (trong `src/index.css`)
+
+```html
+<button class="ui-btn">Secondary</button>
+<button class="ui-btn-primary">Primary</button>
+<div class="ui-card ui-card-hover">...</div>
+<input class="ui-input" placeholder="..." />
+<div class="ui-well h-16 w-16">icon</div>
+```
+
+Đã bao gồm sẵn hover lift, active press, focus ring, transition 200ms — cứ dùng, đừng tự viết lại bóng.
+
+### Quy tắc phải nhớ
+
+- **Tách bề mặt:** card = `bg-surface` (trắng), nền trang = `bg-canvas` (lavender). Không đảo ngược.
+- **Card luôn có bóng** (`ui-card`/`shadow-soft`); border hairline (`border-line`) được phép để tách bề mặt.
+- Không tái tạo bóng đôi lồi-lõm kiểu Neumorphism (đã gỡ).
+- Bo góc: card `rounded-card` (16px), button/input `rounded-xl` (12px). Không dùng `rounded-md` trở xuống cho card/button.
+- Font: heading `font-display` (Plus Jakarta Sans, tự áp cho `h1–h6`), body mặc định DM Sans; `.portal-shell` dùng Inter + Space Grotesk.
+- Mọi element tương tác phải có focus ring (`focus-visible:ring-2 ring-accent`) và touch target tối thiểu 44px (`h-12`).
+- Mobile-first: breakpoint `md:` (768px), `lg:` (1024px); grid 3 cột → 1 cột trên mobile.
+
+## 5. Quy tắc commit (Conventional Commits)
+
+Format: `<type>(<scope>): <mô tả ngắn>`
+
+| type | Dùng khi |
+| --- | --- |
+| `feat` | Thêm tính năng mới |
+| `fix` | Sửa bug |
+| `refactor` | Đổi cấu trúc code, không đổi hành vi |
+| `style` | CSS/theme, không đổi logic |
+| `docs` | Tài liệu (README, CLAUDE.md...) |
+| `chore` | Config, dependencies |
+| `perf` / `test` | Tối ưu hiệu năng / test |
+
+- **scope** = tên trang hoặc khu vực, viết thường: `admin`, `layouts`, `theme`, `types`, `config`... (bỏ nếu thay đổi rải rác).
+- Mô tả thì hiện tại, không viết hoa chữ đầu, không chấm cuối.
+
+```
+feat(admin): them trang tong quan voi mock data
+fix(layouts): sua sidebar dinh voi topbar
+docs: viet quy tac commit
+```
+
+Quy tắc thêm:
+
+- Mỗi commit một việc — không gộp feat + fix + format chung.
+- Build pass (`npm run build`) trước khi push.
+- Thay đổi lớn: viết body giải thích **lý do** (cách title một dòng trống).
+### Quy trình nhánh (bắt buộc)
+
+```
+feature/<ten>  ──merge──▶  development  ──PR──▶  main
+fix/<ten>      ──merge──▶
+```
+
+1. Tạo nhánh từ `development`: `git switch development && git switch -c feature/<ten-tinh-nang>`
+2. Commit trên nhánh feature/fix, push nhánh đó lên remote.
+3. Merge vào `development` (qua PR hoặc merge local rồi push `development`).
+4. Khi `development` ổn định → mở **PR từ `development` → `main`**. KHÔNG bao giờ push/commit thẳng lên `main`.
+
+> **Quy tắc được enforce tự động** bởi hooks trong `.githooks/` (tự kích hoạt sau `npm install` qua script `prepare`):
+> - `commit-msg` — chặn commit message sai format, in lỗi cụ thể.
+> - `pre-commit` — chặn commit trực tiếp trên `main`.
+> - `pre-push` — chặn push trực tiếp lên `main`.
+>
+> Trên GitHub nên bật thêm Branch protection cho `main` (require PR) để chặn cả người chưa cài hook.

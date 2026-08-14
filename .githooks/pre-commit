@@ -1,0 +1,15 @@
+#!/bin/sh
+# Chặn commit trực tiếp trên main — làm việc trên feature/* hoặc fix/*, merge qua development.
+
+branch=$(git symbolic-ref --short HEAD 2>/dev/null)
+
+if [ "$branch" = "main" ] || [ "$branch" = "master" ]; then
+  echo ""
+  echo "✖ CẤM commit trực tiếp trên main."
+  echo ""
+  echo "  Tạo nhánh mới rồi commit:"
+  echo "    git switch -c feature/<ten-tinh-nang>"
+  echo ""
+  exit 1
+fi
+exit 0

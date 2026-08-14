@@ -1,0 +1,183 @@
+import type { ReactNode } from "react";
+import { useNavigate } from "react-router-dom";
+import logoMark from "../assets/logo-mark.png";
+
+const CONTACTS = [
+  { icon: "phone", label: "098 981 14 24", href: "tel:0989811424" },
+  { icon: "mail", label: "iuptitclub@gmail.com", href: "mailto:iuptitclub@gmail.com" },
+  { icon: "globe", label: "https://iuptit.com", href: "https://iuptit.com" },
+] as const;
+
+const FANPAGE_URL = "https://www.facebook.com/profile.php?id=61564322655289";
+const YOUTUBE_URL = "https://www.youtube.com/@IUCLUB-hh4sv";
+
+type FooterLink = {
+  label: string;
+  href?: string; // link ngoài
+  to?: string; // route nội bộ
+  anchor?: string; // section trên trang chủ
+  comingSoon?: boolean; // chưa có trang — hiển thị mờ, không bấm được
+};
+
+const COLUMNS: { title: string; links: FooterLink[] }[] = [
+  {
+    title: "Về chúng tôi",
+    links: [
+      { label: "Fanpage", href: FANPAGE_URL },
+      { label: "Video giới thiệu", href: YOUTUBE_URL },
+      { label: "Q&A", comingSoon: true },
+    ],
+  },
+  {
+    title: "Trang chủ",
+    links: [
+      { label: "Giới thiệu", to: "/", anchor: "gioi-thieu" },
+      { label: "Cố vấn", to: "/", anchor: "co-van" },
+      { label: "Ban điều hành", to: "/", anchor: "ban-dieu-hanh" },
+    ],
+  },
+  {
+    title: "Trang khác",
+    links: [
+      { label: "Tin tức", to: "/" },
+      { label: "Tuyển thành viên", to: "/tuyen-thanh-vien" },
+      { label: "Tra cứu hồ sơ", to: "/tra-cuu" },
+      { label: "Sự kiện", to: "/" },
+    ],
+  },
+];
+
+const icons: Record<string, ReactNode> = {
+  phone: <path d="M4 3h4l2 5-2.5 1.5a11 11 0 0 0 5 5L14 12l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 2 5a2 2 0 0 1 2-2Z" />,
+  mail: <path d="M3 5h16v12H3V5Zm0 1 8 6 8-6" />,
+  globe: (
+    <g>
+      <circle cx="11" cy="11" r="8" />
+      <path d="M3 11h16M11 3c2.5 2.5 2.5 13.5 0 16M11 3c-2.5 2.5-2.5 13.5 0 16" />
+    </g>
+  ),
+  facebook: <path d="M13 9h3l-.5 3H13v8h-3v-8H8V9h2V7.5C10 5.5 11 4 13.5 4H16v3h-2c-.7 0-1 .3-1 1V9Z" />,
+  youtube: (
+    <g>
+      <rect x="3" y="6" width="16" height="11" rx="3" />
+      <path d="m10 9.5 4 2-4 2v-4Z" fill="currentColor" stroke="none" />
+    </g>
+  ),
+};
+
+function Icon({ name, className }: { name: string; className?: string }) {
+  return (
+    <svg
+      className={className ?? "h-4 w-4"}
+      viewBox="0 0 22 22"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      {icons[name]}
+    </svg>
+  );
+}
+
+function LandingFooter() {
+  const navigate = useNavigate();
+
+  const goTo = (link: FooterLink) => {
+    if (!link.to) return;
+    navigate(link.to);
+    window.setTimeout(() => {
+      if (link.anchor) document.getElementById(link.anchor)?.scrollIntoView({ behavior: "smooth" });
+      else window.scrollTo({ top: 0, behavior: "smooth" });
+    }, 100);
+  };
+
+  return (
+    <footer className="relative z-10 border-t border-white/10 bg-[hsl(var(--landing-background)/0.85)] backdrop-blur-md">
+      <div className="mx-auto grid max-w-6xl gap-10 px-8 py-14 md:grid-cols-[1.2fr_1fr_1fr_1fr]">
+        <div>
+          <div className="flex items-center gap-2.5">
+            <img src={logoMark} alt="" className="h-9 w-auto" aria-hidden />
+            <p className="landing-display text-2xl font-bold text-purple-400">IU CLUB</p>
+          </div>
+          <ul className="mt-5 space-y-3">
+            {CONTACTS.map((contact) => (
+              <li key={contact.label}>
+                <a
+                  href={contact.href}
+                  target={contact.icon === "globe" ? "_blank" : undefined}
+                  rel="noreferrer"
+                  className="flex items-center gap-2.5 text-sm text-[hsl(var(--landing-foreground)/0.7)] transition-colors hover:text-[hsl(var(--landing-foreground))]"
+                >
+                  <Icon name={contact.icon} />
+                  {contact.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {COLUMNS.map((column) => (
+          <div key={column.title}>
+            <h3 className="landing-headline text-lg font-semibold uppercase tracking-wide text-[hsl(var(--landing-foreground))]">
+              {column.title}
+            </h3>
+            <ul className="mt-5 space-y-3">
+              {column.links.map((link) => (
+                <li key={link.label}>
+                  {link.comingSoon ? (
+                    <span className="cursor-default text-sm text-[hsl(var(--landing-foreground)/0.35)]">
+                      {link.label}
+                    </span>
+                  ) : link.href ? (
+                    <a
+                      href={link.href}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-sm text-[hsl(var(--landing-foreground)/0.7)] transition-colors hover:text-purple-300"
+                    >
+                      {link.label}
+                    </a>
+                  ) : (
+                    <button
+                      onClick={() => goTo(link)}
+                      className="text-sm text-[hsl(var(--landing-foreground)/0.7)] transition-colors hover:text-purple-300"
+                    >
+                      {link.label}
+                    </button>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+
+      <div className="border-t border-white/10 py-6 text-center">
+        <p className="text-sm text-[hsl(var(--landing-foreground)/0.7)]">©2026 | Bản quyền thuộc IU Club</p>
+        <div className="mt-3 flex justify-center gap-4">
+          {[
+            { name: "facebook", href: "https://www.facebook.com/profile.php?id=61564322655289", label: "Facebook" },
+            { name: "youtube", href: YOUTUBE_URL, label: "YouTube" },
+            { name: "mail", href: "mailto:iuptitclub@gmail.com", label: "Email" },
+          ].map((social) => (
+            <a
+              key={social.name}
+              href={social.href}
+              target="_blank"
+              rel="noreferrer"
+              aria-label={social.label}
+              className="flex h-9 w-9 items-center justify-center rounded-full text-[hsl(var(--landing-foreground)/0.7)] transition-all duration-300 hover:bg-white/10 hover:text-[hsl(var(--landing-foreground))]"
+            >
+              <Icon name={social.name} className="h-5 w-5" />
+            </a>
+          ))}
+        </div>
+      </div>
+    </footer>
+  );
+}
+
+export default LandingFooter;

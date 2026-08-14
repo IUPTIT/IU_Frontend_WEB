@@ -1,0 +1,455 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Eye, Send, TestTube2 } from "lucide-react";
+import Button from "./Button";
+import Icon from "./Icon";
+import Modal from "./Modal";
+import Select from "./Select";
+import {
+  getEmailPlaceholders,
+  getEmailTemplate,
+  getEmailTemplates,
+  previewEmail,
+  sendEmails,
+  sendTestEmail,
+} from "../../services/emailService";
+import type {
+  EmailPlaceholder,
+  EmailRecipient,
+  EmailTemplate,
+  EmailTemplateCategory,
+} from "../../types/email";
+import { useToast } from "../../context/useToast";
+
+type Props = {
+  open: boolean;
+  onClose: () => void;
+  recipients: EmailRecipient[];
+  module: string;
+  /** Lọc template theo category */
+  category?: EmailTemplateCategory | "";
+  /** Prefill template id nếu biết */
+  preferredTemplateId?: string;
+  title?: string;
+  onSent?: (sent: number) => void;
+  /** Tự chạy preview khi template đã load (mặc định true) */
+  autoPreview?: boolean;
+};
+
+/**
+ * Màn gửi email động — chọn template, sửa subject/body lần gửi, preview, test, send.
+ * Không ghi đè template gốc.
+ */
+function SendEmailModal({
+  open,
+  onClose,
+  recipients,
+  module,
+  category = "",
+  preferredTemplateId,
+  title = "Gửi email",
+  onSent,
+  autoPreview = true,
+}: Props) {
+  const toastApi = useToast();
+  const bodyRef = useRef<HTMLTextAreaElement>(null);
+  const [templates, setTemplates] = useState<EmailTemplate[]>([]);
+  const [placeholders, setPlaceholders] = useState<EmailPlaceholder[]>([]);
+  const [templateId, setTemplateId] = useState("");
+  const [subject, setSubject] = useState("");
+  const [body, setBody] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+  const [previewHtml, setPreviewHtml] = useState<{
+    subject: string;
+    bodyHtml: string;
+  } | null>(null);
+  const [testEmail, setTestEmail] = useState("");
+  const [showTest, setShowTest] = useState(false);
+  const [showAllRecipients, setShowAllRecipients] = useState(false);
+
+  const sampleData = useMemo(() => {
+    const first = recipients[0];
+    return first?.data ?? {};
+  }, [recipients]);
+
+  const runPreview = useCallback(
+    async (subj: string, bod: string, data: Record<string, string>) => {
+      if (!subj.trim() && !bod.trim()) return;
+      try {
+        const res = await previewEmail({
+          subject: subj,
+          body: bod,
+          sampleData: data,
+        });
+        setPreviewHtml(res);
+      } catch {
+        /* preview lỗi không chặn gửi */
+      }
+    },
+    [],
+  );
+
+  const loadMeta = useCallback(async () => {
+    try {
+      const [tpls, ph] = await Promise.all([
+        getEmailTemplates(category || undefined),
+        getEmailPlaceholders(category || undefined),
+      ]);
+      const active = tpls.filter((t) => t.status === "active");
+      setTemplates(active.length ? active : tpls);
+      setPlaceholders(ph);
+      const preferred =
+        (preferredTemplateId &&
+          tpls.find(
+            (t) =>
+              t.id === preferredTemplateId || t.slug === preferredTemplateId,
+          )) ||
+        active[0] ||
+        tpls[0];
+      if (preferred) {
+        setTemplateId(preferred.id);
+        setSubject(preferred.subject);
+        setBody(preferred.body);
+        return {
+          subject: preferred.subject,
+          body: preferred.body,
+        };
+      }
+      setTemplateId("");
+      setSubject("");
+      setBody("");
+      return { subject: "", body: "" };
+    } finally {
+      setLoading(false);
+    }
+  }, [category, preferredTemplateId]);
+
+  // Reset trạng thái mỗi lần mở modal (adjust state during render)
+  const [prevOpen, setPrevOpen] = useState(open);
+  if (open !== prevOpen) {
+    setPrevOpen(open);
+    if (open) {
+      setError(null);
+      setToast(null);
+      setPreviewHtml(null);
+      setShowTest(false);
+      setShowAllRecipients(false);
+      setLoading(true);
+    }
+  }
+
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    void (async () => {
+      const loaded = await loadMeta();
+      if (cancelled || !loaded) return;
+      if (autoPreview && recipients.length > 0) {
+        await runPreview(
+          loaded.subject,
+          loaded.body,
+          recipients[0]?.data ?? {},
+        );
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [open, loadMeta, autoPreview, recipients, runPreview]);
+
+  const onPickTemplate = async (id: string) => {
+    setTemplateId(id);
+    if (!id) return;
+    const tpl = await getEmailTemplate(id);
+    if (tpl) {
+      setSubject(tpl.subject);
+      setBody(tpl.body);
+      if (autoPreview) {
+        await runPreview(tpl.subject, tpl.body, sampleData);
+      }
+    }
+  };
+
+  const insertPlaceholder = (key: string) => {
+    const token = `{{${key}}}`;
+    const el = bodyRef.current;
+    if (!el) {
+      setBody((b) => `${b}${token}`);
+      return;
+    }
+    const start = el.selectionStart ?? body.length;
+    const end = el.selectionEnd ?? body.length;
+    const next = body.slice(0, start) + token + body.slice(end);
+    setBody(next);
+    requestAnimationFrame(() => {
+      el.focus();
+      const pos = start + token.length;
+      el.setSelectionRange(pos, pos);
+    });
+  };
+
+  const handlePreview = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await previewEmail({ subject, body, sampleData });
+      setPreviewHtml(res);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Preview thất bại");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleTest = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await sendTestEmail({
+        to: testEmail,
+        subject,
+        body,
+        sampleData,
+      });
+      if (!res.ok) setError(res.message);
+      else {
+        setToast(res.message);
+        toastApi.success(res.message);
+        setShowTest(false);
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Gửi thử thất bại");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleSend = async () => {
+    if (recipients.length === 0) {
+      setError("Chưa có người nhận.");
+      return;
+    }
+    if (!subject.trim() || !body.trim()) {
+      setError("Subject và nội dung không được trống.");
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await sendEmails({
+        recipients,
+        templateId: templateId || null,
+        subject,
+        body,
+        module,
+      });
+      if (res.sent > 0) {
+        onSent?.(res.sent);
+        toastApi.sent(res.sent);
+      } else if (res.failed > 0) {
+        toastApi.error(`Gửi thất bại ${res.failed} email.`);
+      }
+      setToast(
+        `Đã gửi ${res.sent} email${res.failed ? `, thất bại ${res.failed}` : ""}.`,
+      );
+      window.setTimeout(() => {
+        onClose();
+      }, 900);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Gửi thất bại");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const visibleRecipients = showAllRecipients
+    ? recipients
+    : recipients.slice(0, 12);
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={title}
+      description={`${recipients.length} người nhận · chỉnh sửa chỉ áp dụng lần gửi này`}
+      size="lg"
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose} disabled={busy}>
+            Hủy
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={() => void handlePreview()}
+            disabled={busy || loading}
+            leftIcon={<Icon icon={Eye} size={16} />}
+          >
+            Xem trước
+          </Button>
+          <Button
+            variant="soft"
+            onClick={() => setShowTest((v) => !v)}
+            disabled={busy || loading}
+            leftIcon={<Icon icon={TestTube2} size={16} />}
+          >
+            Gửi thử
+          </Button>
+          <Button
+            variant="primary"
+            onClick={() => void handleSend()}
+            disabled={busy || loading}
+            leftIcon={<Icon icon={Send} size={16} />}
+          >
+            Gửi email
+          </Button>
+        </>
+      }
+    >
+      {loading ? (
+        <div
+          className="h-48 animate-pulse rounded-2xl bg-background shadow-hairline"
+          aria-busy
+        />
+      ) : (
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_240px]">
+          <div className="space-y-4 min-w-0">
+            <div>
+              <span className="ui-field-label">Loại email (Template)</span>
+              <Select
+                width="full"
+                value={templateId}
+                options={templates.map((t) => ({
+                  value: t.id,
+                  label: t.name,
+                }))}
+                onChange={(id) => void onPickTemplate(id)}
+                placeholder="Chọn template"
+              />
+            </div>
+
+            <label className="block space-y-1.5">
+              <span className="ui-field-label">Subject</span>
+              <input
+                className="ui-input !h-11"
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                placeholder="Tiêu đề email"
+              />
+            </label>
+
+            <label className="block space-y-1.5">
+              <span className="ui-field-label">Nội dung</span>
+              <textarea
+                ref={bodyRef}
+                className="ui-input !h-auto min-h-[180px] py-3 font-mono text-sm resize-y"
+                value={body}
+                onChange={(e) => setBody(e.target.value)}
+                placeholder="Nội dung email..."
+              />
+            </label>
+
+            {showTest && (
+              <div className="flex flex-wrap items-end gap-2 rounded-2xl bg-background p-3 shadow-hairline">
+                <label className="block min-w-[200px] flex-1 space-y-1">
+                  <span className="ui-field-label">Email nhận thử</span>
+                  <input
+                    type="email"
+                    className="ui-input !h-10"
+                    value={testEmail}
+                    onChange={(e) => setTestEmail(e.target.value)}
+                    placeholder="admin@gmail.com"
+                  />
+                </label>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  className="!h-10"
+                  disabled={busy || !testEmail.trim()}
+                  onClick={() => void handleTest()}
+                >
+                  Gửi test
+                </Button>
+              </div>
+            )}
+
+            {previewHtml && (
+              <div className="rounded-2xl border border-accent/20 bg-background p-4 shadow-hairline space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-wide text-accent">
+                  Xem trước
+                  {recipients[0]
+                    ? ` · mẫu: ${recipients[0].name}`
+                    : ""}
+                </p>
+                <p className="font-semibold text-foreground">
+                  {previewHtml.subject}
+                </p>
+                <div
+                  className="prose prose-sm max-w-none text-sm text-foreground [&_a]:text-accent"
+                  dangerouslySetInnerHTML={{ __html: previewHtml.bodyHtml }}
+                />
+              </div>
+            )}
+
+            {error && <p className="text-sm text-rose-500">{error}</p>}
+            {toast && (
+              <p className="text-sm text-accent" role="status">
+                {toast}
+              </p>
+            )}
+          </div>
+
+          <aside className="space-y-3">
+            <div className="rounded-2xl bg-accent/8 p-3 text-xs text-muted">
+              <p className="font-semibold text-foreground">
+                Người nhận ({recipients.length})
+              </p>
+              <ul className="mt-2 max-h-48 space-y-1.5 overflow-y-auto">
+                {visibleRecipients.map((r) => (
+                  <li key={r.id} className="leading-snug">
+                    <span className="block truncate font-medium text-foreground">
+                      {r.name}
+                    </span>
+                    <span className="block truncate">{r.email}</span>
+                  </li>
+                ))}
+              </ul>
+              {recipients.length > 12 && (
+                <button
+                  type="button"
+                  className="mt-2 text-accent font-medium hover:underline"
+                  onClick={() => setShowAllRecipients((v) => !v)}
+                >
+                  {showAllRecipients
+                    ? "Thu gọn"
+                    : `Xem thêm ${recipients.length - 12} người`}
+                </button>
+              )}
+            </div>
+
+            <p className="ui-field-label !mb-0">Placeholder</p>
+            <p className="text-xs text-muted">Click để chèn vào nội dung</p>
+            <ul className="max-h-[280px] space-y-1.5 overflow-y-auto rounded-2xl bg-background p-2 shadow-hairline">
+              {placeholders.map((p) => (
+                <li key={p.key}>
+                  <button
+                    type="button"
+                    onClick={() => insertPlaceholder(p.key)}
+                    className="w-full rounded-xl px-3 py-2 text-left transition-colors hover:bg-accent/10"
+                    title={p.description}
+                  >
+                    <span className="block font-mono text-xs text-accent">{`{{${p.key}}}`}</span>
+                    <span className="text-[11px] text-muted">{p.label}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </aside>
+        </div>
+      )}
+    </Modal>
+  );
+}
+
+export default SendEmailModal;

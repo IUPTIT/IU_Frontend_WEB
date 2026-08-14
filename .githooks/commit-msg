@@ -1,0 +1,3 @@
+#!/bin/sh
+# Chặn commit không đúng Conventional Commits (xem README.md mục 5)
+node "$(dirname "$0")/verify-commit-msg.js" "$1"
