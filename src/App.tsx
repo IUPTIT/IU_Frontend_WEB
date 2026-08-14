@@ -1,24 +1,17 @@
-import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
-import AdminLayout from "./layouts/AdminLayout";
-import LoginPage from "./pages/Login";
-import ResetPasswordPage from "./pages/ResetPassword";
+import { lazy, Suspense } from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import LandingPage from "./pages/Landing";
-import RecruitmentPage from "./pages/Recruitment";
-import LookupPage from "./pages/Lookup";
 import { getDefaultPath } from "./constants/navigation";
-import { ROUTES } from "./constants/routes";
-import { renderPortalPage } from "./routes/portalRoutes";
 import { useAuth } from "./context/useAuth";
-import ChangePasswordGate from "./components/ChangePasswordGate";
-import type { Role } from "./types/navigation";
 
-// Prefix URL theo role — dùng để chặn truy cập chéo portal
-const ROLE_PREFIX: Record<Role, string> = {
-  admin: "/admin",
-  leader: "/leader",
-  member: "/member",
-  candidate: "/candidate",
-};
+// Code-split: landing eager (vào trang chủ hiện ngay), phần còn lại tải khi cần —
+// đặc biệt AdminPortal (khu quản trị, nặng nhất) không đè lên khách vãng lai.
+const AdminPortal = lazy(() => import("./routes/PortalApp"));
+const LoginPage = lazy(() => import("./pages/Login"));
+const ResetPasswordPage = lazy(() => import("./pages/ResetPassword"));
+const RecruitmentPage = lazy(() => import("./pages/Recruitment"));
+const LookupPage = lazy(() => import("./pages/Lookup"));
+const ComingSoonPage = lazy(() => import("./pages/ComingSoon"));
 
 // Trang đăng nhập — đã đăng nhập rồi thì chuyển thẳng vào portal đúng role
 function LoginRoute() {
@@ -27,78 +20,46 @@ function LoginRoute() {
   return <LoginPage />;
 }
 
-// Khu quản trị: URL thật là nguồn điều hướng — mỗi trang con có route phụ riêng
-// (VD /admin/recruitment/interviews), reload/share link đều giữ đúng trang.
-function AdminPortal() {
-  const { user, isAuthenticated } = useAuth();
-  const location = useLocation();
-  const routerNavigate = useNavigate();
-
-  if (!isAuthenticated || !user) {
-    return <Navigate to="/login" replace />;
-  }
-
-  // Tài khoản sinh tự động (ứng viên) — bắt đổi mật khẩu trước khi vào portal
-  if (user.requirePasswordChange) {
-    return <ChangePasswordGate />;
-  }
-
-  const prefix = ROLE_PREFIX[user.role];
-  const activePath = location.pathname.replace(/\/+$/, "") || location.pathname;
-  const defaultPath = getDefaultPath(user.role);
-
-  // Vào sai portal (VD member mở /admin/...) hoặc đứng ở gốc chưa có trang → về trang mặc định
-  if (!activePath.startsWith(prefix) || (activePath === prefix && defaultPath !== prefix)) {
-    return <Navigate to={defaultPath} replace />;
-  }
-
-  // Mentor-only: Leader/Member không có isMentor không được vào URL mentor bằng tay
-  if (isMentorOnlyPath(activePath) && user.isMentor !== true) {
-    return <Navigate to={defaultPath} replace />;
-  }
-
-  return (
-    <AdminLayout
-      role={user.role}
-      activePath={activePath}
-      onNavigate={(path) => routerNavigate(path)}
-    >
-      {renderPortalPage(activePath)}
-    </AdminLayout>
-  );
-}
-
-/** Các route chỉ dành cho user.isMentor (nav đã ẩn; chặn deep-link) */
-function isMentorOnlyPath(path: string): boolean {
-  const mentorPaths = [
-    ROUTES.leader.training.programs,
-    ROUTES.leader.training.groups,
-    ROUTES.leader.training.tasks,
-    ROUTES.leader.training.evaluation,
-    ROUTES.member.mentorRoadmap,
-    ROUTES.member.mentorTasks,
-  ];
-  return mentorPaths.some(
-    (p) => path === p || path.startsWith(`${p}/`),
-  );
-}
-
 function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        {/* Khu công khai (landing) — sau này tách domain riêng */}
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/tuyen-thanh-vien" element={<RecruitmentPage />} />
-        <Route path="/tra-cuu" element={<LookupPage />} />
-        {/* Khu quản trị — mọi role dùng chung portal, URL phản ánh trang con */}
-        <Route path="/login" element={<LoginRoute />} />
-        <Route path="/reset-password" element={<ResetPasswordPage />} />
-        <Route path="/admin/*" element={<AdminPortal />} />
-        <Route path="/leader/*" element={<AdminPortal />} />
-        <Route path="/member/*" element={<AdminPortal />} />
-        <Route path="/candidate/*" element={<AdminPortal />} />
-      </Routes>
+      <Suspense fallback={<div className="min-h-screen bg-canvas" />}>
+        <Routes>
+          {/* Khu công khai (landing) — sau này tách domain riêng */}
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/tuyen-thanh-vien" element={<RecruitmentPage />} />
+          <Route path="/tra-cuu" element={<LookupPage />} />
+          <Route
+            path="/tin-tuc"
+            element={
+              <ComingSoonPage
+                title="Tin tức"
+                metaTitle="Tin tức | IU Club — IU PTIT"
+                metaDescription="Tin tức và hoạt động mới nhất của IU Club (IUPTIT) — câu lạc bộ CNTT định hướng ứng dụng."
+                path="/tin-tuc"
+              />
+            }
+          />
+          <Route
+            path="/su-kien"
+            element={
+              <ComingSoonPage
+                title="Sự kiện"
+                metaTitle="Sự kiện | IU Club — IU PTIT"
+                metaDescription="Các sự kiện sắp diễn ra của IU Club (IUPTIT) — workshop, talkshow và hoạt động dành cho sinh viên."
+                path="/su-kien"
+              />
+            }
+          />
+          {/* Khu quản trị — mọi role dùng chung portal, URL phản ánh trang con */}
+          <Route path="/login" element={<LoginRoute />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/admin/*" element={<AdminPortal />} />
+          <Route path="/leader/*" element={<AdminPortal />} />
+          <Route path="/member/*" element={<AdminPortal />} />
+          <Route path="/candidate/*" element={<AdminPortal />} />
+        </Routes>
+      </Suspense>
     </BrowserRouter>
   );
 }

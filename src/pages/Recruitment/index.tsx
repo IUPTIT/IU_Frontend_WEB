@@ -20,9 +20,16 @@ import { EMPTY_APPLICATION } from "./types";
 import type { ApplicationForm } from "./types";
 import "../../styles/landing.css";
 
+import { usePageMeta } from "../../hooks/usePageMeta";
+
 type Step = "form" | "review" | "done";
 
 function RecruitmentPage() {
+  usePageMeta(
+    "Tuyển thành viên IU Club | IU PTIT — Câu lạc bộ CNTT",
+    "Đăng ký ứng tuyển thành viên IU Club (IUPTIT) — câu lạc bộ CNTT định hướng ứng dụng. Nộp đơn trực tuyến, theo dõi trạng thái hồ sơ dễ dàng.",
+    "/tuyen-thanh-vien"
+  );
   const [campaign, setCampaign] = useState<PublicCampaign | null>(null);
   const [loading, setLoading] = useState(true);
   const [step, setStep] = useState<Step>("form");
