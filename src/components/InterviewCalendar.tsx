@@ -7,6 +7,8 @@ type Props = {
   markedDates: Set<string>;
   onSelectDate: (iso: string) => void;
   onMonthChange: (year: number, month: number) => void;
+  /** Flat 2D (candidate) — mặc định Soft UI cho admin */
+  flat?: boolean;
 };
 
 function pad(n: number) {
@@ -26,6 +28,7 @@ function InterviewCalendar({
   markedDates,
   onSelectDate,
   onMonthChange,
+  flat,
 }: Props) {
   const firstDow = new Date(year, month, 1).getDay(); // 0 Sun
   const startOffset = firstDow === 0 ? 6 : firstDow - 1;
@@ -40,39 +43,93 @@ function InterviewCalendar({
     ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
   ];
 
+  const navBtn = flat
+    ? "inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[#E4E8F0] bg-white text-[#3D4458] transition-colors hover:border-[#7C3AED]/40 hover:text-[#7C3AED]"
+    : undefined;
+
   return (
-    <section className="ui-card !p-5 space-y-4">
+    <section
+      className={
+        flat
+          ? "space-y-4 rounded-2xl border border-[#E8EAF2] bg-white p-5"
+          : "ui-card !p-5 space-y-4"
+      }
+    >
       <div className="flex items-center justify-between gap-2">
-        <Button
-          variant="icon"
-          size="sm"
-          aria-label="Tháng trước"
-          onClick={() => {
-            const d = new Date(year, month - 1, 1);
-            onMonthChange(d.getFullYear(), d.getMonth());
-          }}
+        {flat ? (
+          <button
+            type="button"
+            className={navBtn}
+            aria-label="Tháng trước"
+            onClick={() => {
+              const d = new Date(year, month - 1, 1);
+              onMonthChange(d.getFullYear(), d.getMonth());
+            }}
+          >
+            <svg className="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 5 7 10l5 5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+        ) : (
+          <Button
+            variant="icon"
+            size="sm"
+            aria-label="Tháng trước"
+            onClick={() => {
+              const d = new Date(year, month - 1, 1);
+              onMonthChange(d.getFullYear(), d.getMonth());
+            }}
+          >
+            <svg className="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 5 7 10l5 5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </Button>
+        )}
+        <h3
+          className={
+            flat
+              ? "font-grotesk text-base font-bold capitalize text-[#191A2C]"
+              : "font-display text-base font-bold capitalize"
+          }
         >
-          <svg className="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M12 5 7 10l5 5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </Button>
-        <h3 className="font-display text-base font-bold capitalize">{title}</h3>
-        <Button
-          variant="icon"
-          size="sm"
-          aria-label="Tháng sau"
-          onClick={() => {
-            const d = new Date(year, month + 1, 1);
-            onMonthChange(d.getFullYear(), d.getMonth());
-          }}
-        >
-          <svg className="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="m8 5 5 5-5 5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </Button>
+          {title}
+        </h3>
+        {flat ? (
+          <button
+            type="button"
+            className={navBtn}
+            aria-label="Tháng sau"
+            onClick={() => {
+              const d = new Date(year, month + 1, 1);
+              onMonthChange(d.getFullYear(), d.getMonth());
+            }}
+          >
+            <svg className="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="m8 5 5 5-5 5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+        ) : (
+          <Button
+            variant="icon"
+            size="sm"
+            aria-label="Tháng sau"
+            onClick={() => {
+              const d = new Date(year, month + 1, 1);
+              onMonthChange(d.getFullYear(), d.getMonth());
+            }}
+          >
+            <svg className="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="m8 5 5 5-5 5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </Button>
+        )}
       </div>
 
-      <div className="grid grid-cols-7 gap-1 text-center text-[11px] font-semibold text-muted">
+      <div
+        className={`grid grid-cols-7 gap-1 text-center text-[11px] font-semibold ${
+          flat ? "text-[#9AA0B4]" : "text-muted"
+        }`}
+      >
         {WEEKDAYS.map((d) => (
           <span key={d} className="py-1">
             {d}
@@ -93,13 +150,20 @@ function InterviewCalendar({
               onClick={() => onSelectDate(iso)}
               className={`relative flex h-9 flex-col items-center justify-center rounded-xl text-sm transition-all duration-200 ${
                 selected
-                  ? "bg-accent text-white font-bold shadow-soft-sm"
-                  : "text-foreground hover:bg-accent/10"
+                  ? flat
+                    ? "bg-[#7C3AED] font-bold text-white"
+                    : "bg-accent text-white font-bold shadow-soft-sm"
+                  : flat
+                    ? "text-[#191A2C] hover:bg-[#F1E9FE]"
+                    : "text-foreground hover:bg-accent/10"
               }`}
             >
               {day}
               {marked && !selected && (
-                <span className="absolute bottom-1 h-1 w-1 rounded-full bg-emerald-500" aria-hidden />
+                <span
+                  className="absolute bottom-1 h-1 w-1 rounded-full bg-emerald-500"
+                  aria-hidden
+                />
               )}
             </button>
           );

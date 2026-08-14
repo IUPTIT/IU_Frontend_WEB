@@ -68,6 +68,9 @@ export type Application = {
   id: string;
   campaignId: string;
   fullName: string;
+  studentId?: string;
+  className?: string;
+  faculty?: string;
   email: string;
   phone?: string;
   /** ISO date — dùng tạo MK mặc định DDMMYYYY khi gửi email Pass */
@@ -154,6 +157,8 @@ export type InterviewSlot = {
   /** ID booking backend (chỉ khi view flatten theo ứng viên — legacy) */
   bookingId?: string;
   campaignId: string;
+  /** Tên ca phỏng vấn */
+  name: string;
   date: string; // YYYY-MM-DD
   startTime: string; // HH:mm
   durationMinutes: number;

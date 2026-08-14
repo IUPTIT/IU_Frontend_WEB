@@ -133,4 +133,8 @@ export type SendEmailResult = {
   failed: number;
   logged?: number;
   historyIds: string[];
+  /** Chi tiết thất bại / bỏ qua (email + lý do) */
+  errors: { to: string; message: string }[];
+  /** Email bỏ qua vì format sai trước khi gọi API */
+  skipped: { to: string; message: string }[];
 };

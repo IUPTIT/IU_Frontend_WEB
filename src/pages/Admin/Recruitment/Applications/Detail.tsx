@@ -285,6 +285,38 @@ function ApplicationDetailPage({ applicationId }: Props) {
             </div>
 
             <ul className="w-full space-y-3 text-left text-sm text-muted pt-2">
+              {app.studentId && (
+                <li className="flex items-start gap-2.5">
+                  <span className="neu-well-sm h-8 w-8 shrink-0 text-accent" aria-hidden>
+                    <svg className="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
+                      <rect x="3.5" y="4" width="13" height="12" rx="2" />
+                      <path d="M7 8h6M7 11h4" strokeLinecap="round" />
+                    </svg>
+                  </span>
+                  <span className="pt-1.5">
+                    <span className="text-xs text-muted/80 block">MSSV</span>
+                    {app.studentId}
+                  </span>
+                </li>
+              )}
+              {app.dateOfBirth && (
+                <li className="flex items-start gap-2.5">
+                  <span className="neu-well-sm h-8 w-8 shrink-0 text-accent" aria-hidden>
+                    <svg className="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
+                      <rect x="3" y="5" width="14" height="12" rx="2" />
+                      <path d="M3 9h14M7 3v3M13 3v3" strokeLinecap="round" />
+                    </svg>
+                  </span>
+                  <span className="pt-1.5">
+                    <span className="text-xs text-muted/80 block">Ngày sinh</span>
+                    {new Date(app.dateOfBirth).toLocaleDateString("vi-VN", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                    })}
+                  </span>
+                </li>
+              )}
               <li className="flex items-start gap-2.5">
                 <span className="ui-well-sm h-8 w-8 shrink-0 text-accent" aria-hidden>
                   <svg className="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
@@ -307,7 +339,7 @@ function ApplicationDetailPage({ applicationId }: Props) {
                   <span className="pt-1.5">{app.phone}</span>
                 </li>
               )}
-              {app.education && (
+              {(app.className || app.faculty || app.education) && (
                 <li className="flex items-start gap-2.5">
                   <span className="ui-well-sm h-8 w-8 shrink-0 text-accent" aria-hidden>
                     <svg className="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
@@ -315,7 +347,11 @@ function ApplicationDetailPage({ applicationId }: Props) {
                       <path d="M5.5 10v3.5c0 1 2 2 4.5 2s4.5-1 4.5-2V10M17.5 8v5" strokeLinecap="round" />
                     </svg>
                   </span>
-                  <span className="pt-1.5">{app.education}</span>
+                  <span className="pt-1.5">
+                    {app.className || app.faculty
+                      ? [app.className, app.faculty].filter(Boolean).join(" — ")
+                      : app.education}
+                  </span>
                 </li>
               )}
             </ul>

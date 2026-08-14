@@ -7,6 +7,7 @@ import {
   restoreSession,
   type AuthUser,
 } from "../services/authService";
+import { getAccessToken } from "../api/client";
 
 import { AuthContext } from "./auth-context";
 
@@ -33,16 +34,23 @@ function persist(user: AuthUser | null) {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(() => readStoredUser());
 
-  // Mở lại tab: xác thực lại phiên với server (refresh cookie còn hạn thì giữ đăng nhập).
-  // Ref chặn StrictMode (dev) chạy effect 2 lần → tránh gọi refresh trùng.
+  // Mở lại tab: refresh cookie → access token. Không xoá session nếu vẫn còn access token
+  // (tránh race StrictMode / refresh fail làm login lần đầu bị đá ra ngay).
   const restoredRef = useRef(false);
   useEffect(() => {
     if (restoredRef.current) return;
     restoredRef.current = true;
     if (!readStoredUser()) return;
     restoreSession().then((restored) => {
-      persist(restored);
-      setUser(restored);
+      if (restored) {
+        persist(restored);
+        setUser(restored);
+        return;
+      }
+      if (!getAccessToken()) {
+        persist(null);
+        setUser(null);
+      }
     });
   }, []);
 

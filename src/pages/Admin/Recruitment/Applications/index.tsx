@@ -29,7 +29,6 @@ import ApplicationFilterBar, {
   type ApplicationFilterDraft,
 } from "./components/ApplicationFilterBar";
 import ApplicationTable from "./components/ApplicationTable";
-import { getApplicationStatusLabel } from "./components/applicationStatus";
 
 const PAGE_SIZE = 5;
 
@@ -51,7 +50,19 @@ function buildApplicationExportColumns(
   campaignName: string,
   departments: { id: string; name: string }[],
   questions: FormQuestion[],
+  applications: Application[] = [],
 ): ExportColumnDef<Application>[] {
+  const formatDob = (iso?: string | null) => {
+    if (!iso) return "";
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return "";
+    return d.toLocaleDateString("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  };
+
   const profile: ExportColumnDef<Application>[] = [
     {
       id: "fullName",
@@ -59,6 +70,27 @@ function buildApplicationExportColumns(
       getValue: (r) => r.fullName,
       defaultSelected: true,
       serverKey: { type: "profile", key: "fullName" },
+    },
+    {
+      id: "studentId",
+      label: "MSSV",
+      getValue: (r) => r.studentId ?? "",
+      defaultSelected: true,
+      serverKey: { type: "profile", key: "studentId" },
+    },
+    {
+      id: "className",
+      label: "Lớp",
+      getValue: (r) => r.className ?? "",
+      defaultSelected: true,
+      serverKey: { type: "profile", key: "className" },
+    },
+    {
+      id: "faculty",
+      label: "Khoa/Ngành",
+      getValue: (r) => r.faculty ?? "",
+      defaultSelected: true,
+      serverKey: { type: "profile", key: "faculty" },
     },
     {
       id: "email",
@@ -75,6 +107,13 @@ function buildApplicationExportColumns(
       serverKey: { type: "profile", key: "phone" },
     },
     {
+      id: "dateOfBirth",
+      label: "Ngày sinh",
+      getValue: (r) => formatDob(r.dateOfBirth),
+      defaultSelected: true,
+      serverKey: { type: "profile", key: "dateOfBirth" },
+    },
+    {
       id: "department",
       label: "Ban nguyện vọng",
       getValue: (r) => r.preferredDepartmentName,
@@ -82,6 +121,17 @@ function buildApplicationExportColumns(
       filterOptions: departments.map((d) => ({ value: d.id, label: d.name })),
       defaultSelected: true,
       serverKey: { type: "profile", key: "department" },
+    },
+    {
+      id: "departmentPreferences",
+      label: "Nguyện vọng (đủ)",
+      getValue: (r) =>
+        [...(r.departmentPreferences ?? [])]
+          .sort((a, b) => a.priority - b.priority)
+          .map((p, i) => `NV${i + 1}: ${p.department}`)
+          .join(" · ") || r.preferredDepartmentName,
+      defaultSelected: true,
+      serverKey: { type: "profile", key: "departmentPreferences" },
     },
     {
       id: "campaign",
@@ -99,36 +149,61 @@ function buildApplicationExportColumns(
     },
     {
       id: "totalScore",
-      label: "Điểm ĐG",
+      label: "Điểm vòng đơn",
       getValue: (r) => (r.totalScore != null ? String(r.totalScore) : ""),
       defaultSelected: true,
       serverKey: { type: "profile", key: "totalScore" },
     },
     {
-      id: "status",
-      label: "Trạng thái",
-      getValue: (r) => getApplicationStatusLabel(r.status),
-      getFilterKey: (r) => r.status,
+      id: "screeningStatus",
+      label: "Kết quả vòng đơn",
+      getValue: (r) => {
+        if (r.screeningResult === "fail" || r.status === "cv_failed") {
+          return "Không đạt vòng đơn";
+        }
+        if (r.screeningResult === "pending" || r.status === "submitted" || r.status === "screening") {
+          return "Chờ xét duyệt";
+        }
+        return "Đạt vòng đơn";
+      },
+      getFilterKey: (r) => {
+        if (r.screeningResult === "fail" || r.status === "cv_failed") return "fail";
+        if (r.screeningResult === "pending" || r.status === "submitted" || r.status === "screening") {
+          return "pending";
+        }
+        return "pass";
+      },
       filterOptions: [
-        { value: "submitted", label: "Chờ xét duyệt" },
-        { value: "interview", label: "Đạt vòng đơn" },
-        { value: "cv_failed", label: "Không đạt vòng đơn" },
-        { value: "interview_passed", label: "Đạt phỏng vấn" },
-        { value: "interview_failed", label: "Không đạt phỏng vấn" },
-        { value: "accepted", label: "Trúng tuyển" },
-        { value: "rejected", label: "Không trúng tuyển" },
+        { value: "pending", label: "Chờ xét duyệt" },
+        { value: "pass", label: "Đạt vòng đơn" },
+        { value: "fail", label: "Không đạt vòng đơn" },
       ],
       defaultSelected: true,
-      serverKey: { type: "profile", key: "status" },
+      serverKey: { type: "profile", key: "screeningStatus" },
     },
   ];
 
+  const knownQuestionIds = new Set(questions.map((q) => q.id));
+  const FIXED_ANSWER_IDS = new Set([
+    "full_name",
+    "student_id",
+    "class_name",
+    "faculty",
+    "email",
+    "phone",
+    "date_of_birth",
+    "avatar",
+    "cv",
+    "department_preferences",
+  ]);
+
+  // Câu hỏi custom trên form — mặc định chọn hết để xuất đủ đáp án SV
   const answerCols: ExportColumnDef<Application>[] = questions.map((q) => ({
     id: `q:${q.id}`,
     label: q.content,
     group: "Câu trả lời form",
-    defaultSelected: false,
-    serverKey: { type: "question", key: q.id },
+    defaultSelected: true,
+    serverKey: { type: "question" as const, key: q.id },
     getValue: (r) => {
       const v = r.answers[q.id];
       if (v == null) return "";
@@ -144,6 +219,29 @@ function buildApplicationExportColumns(
         }
       : {}),
   }));
+
+  // Fallback: fieldId có trong answers nhưng không còn / chưa có trên form
+  const orphanIds = new Set<string>();
+  for (const app of applications) {
+    for (const fieldId of Object.keys(app.answers ?? {})) {
+      if (FIXED_ANSWER_IDS.has(fieldId) || knownQuestionIds.has(fieldId)) continue;
+      orphanIds.add(fieldId);
+    }
+  }
+  for (const fieldId of orphanIds) {
+    answerCols.push({
+      id: `q:${fieldId}`,
+      label: fieldId,
+      group: "Câu trả lời form",
+      defaultSelected: true,
+      serverKey: { type: "question", key: fieldId },
+      getValue: (r) => {
+        const v = r.answers[fieldId];
+        if (v == null) return "";
+        return Array.isArray(v) ? v.join(", ") : String(v);
+      },
+    });
+  }
 
   return [...profile, ...answerCols];
 }
@@ -296,10 +394,41 @@ function RecruitmentApplicationsPage() {
   }));
 
   const campaignName = campaigns.find((c) => c.id === campaignId)?.name ?? "";
+  /** Câu hỏi dùng cho modal xuất — set ngay trước khi mở để không bị stale */
+  const [exportQuestions, setExportQuestions] = useState<FormQuestion[]>([]);
+  const [exportLoading, setExportLoading] = useState(false);
+
   const exportColumns = useMemo(
-    () => buildApplicationExportColumns(campaignName, departmentOptions, questions),
-    [campaignName, departmentOptions, questions],
+    () =>
+      buildApplicationExportColumns(
+        campaignName,
+        departmentOptions,
+        exportQuestions.length > 0 ? exportQuestions : questions,
+        applications,
+      ),
+    [campaignName, departmentOptions, exportQuestions, questions, applications],
   );
+
+  const openExportModal = async () => {
+    if (!campaignId) {
+      showToast("Chọn đợt tuyển trước khi xuất.");
+      return;
+    }
+    setExportLoading(true);
+    try {
+      const qs = await getFormQuestions(campaignId);
+      setQuestions(qs);
+      setExportQuestions(qs);
+      if (qs.length === 0) {
+        showToast("Đợt này chưa có câu hỏi form tùy chỉnh — vẫn xuất được thông tin cá nhân.");
+      }
+      setExportOpen(true);
+    } catch {
+      showToast("Không tải được câu hỏi form — thử lại.");
+    } finally {
+      setExportLoading(false);
+    }
+  };
 
   const activeFilterCount = countActiveFilters(appliedFilter);
 
@@ -445,14 +574,15 @@ function RecruitmentApplicationsPage() {
             variant="soft"
             size="sm"
             className="!h-11"
-            onClick={() => setExportOpen(true)}
+            disabled={exportLoading || !campaignId}
+            onClick={() => void openExportModal()}
             leftIcon={
               <svg className="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
                 <path d="M10 3v9m0 0 3.5-3.5M10 12 6.5 8.5M4 16h12" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             }
           >
-            Xuất danh sách
+            {exportLoading ? "Đang tải…" : "Xuất danh sách"}
           </Button>
         </div>
       </section>
@@ -478,7 +608,7 @@ function RecruitmentApplicationsPage() {
         open={exportOpen}
         onClose={() => setExportOpen(false)}
         title="Xuất danh sách hồ sơ"
-        description="Chọn cột cần xuất. Với cột trạng thái / ban, chọn giá trị muốn giữ lại:"
+        description="Thông tin cá nhân + toàn bộ câu trả lời form đăng ký. Có thể bỏ chọn cột không cần:"
         columns={exportColumns}
         rows={filtered}
         filenameBase={`ho_so_${campaignId || "dot"}`}
