@@ -13,10 +13,10 @@ const NAV_ITEMS: NavItem[] = [
       { label: "Ban điều hành", to: "/", anchor: "ban-dieu-hanh" },
     ],
   },
-  { label: "Tin tức", to: "/" },
+  { label: "Tin tức", to: "/tin-tuc" },
   { label: "Tuyển thành viên", to: "/tuyen-thanh-vien" },
   { label: "Tra cứu hồ sơ", to: "/tra-cuu" },
-  { label: "Sự kiện", to: "/" },
+  { label: "Sự kiện", to: "/su-kien" },
 ];
 
 function ChevronDown() {

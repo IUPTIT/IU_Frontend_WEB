@@ -5,6 +5,7 @@ import ResetPasswordPage from "./pages/ResetPassword";
 import LandingPage from "./pages/Landing";
 import RecruitmentPage from "./pages/Recruitment";
 import LookupPage from "./pages/Lookup";
+import ComingSoonPage from "./pages/ComingSoon";
 import { getDefaultPath } from "./constants/navigation";
 import { ROUTES } from "./constants/routes";
 import { renderPortalPage } from "./routes/portalRoutes";
@@ -91,6 +92,28 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/tuyen-thanh-vien" element={<RecruitmentPage />} />
         <Route path="/tra-cuu" element={<LookupPage />} />
+        <Route
+          path="/tin-tuc"
+          element={
+            <ComingSoonPage
+              title="Tin tức"
+              metaTitle="Tin tức | IU Club — IU PTIT"
+              metaDescription="Tin tức và hoạt động mới nhất của IU Club (IUPTIT) — câu lạc bộ CNTT định hướng ứng dụng."
+              path="/tin-tuc"
+            />
+          }
+        />
+        <Route
+          path="/su-kien"
+          element={
+            <ComingSoonPage
+              title="Sự kiện"
+              metaTitle="Sự kiện | IU Club — IU PTIT"
+              metaDescription="Các sự kiện sắp diễn ra của IU Club (IUPTIT) — workshop, talkshow và hoạt động dành cho sinh viên."
+              path="/su-kien"
+            />
+          }
+        />
         {/* Khu quản trị — mọi role dùng chung portal, URL phản ánh trang con */}
         <Route path="/login" element={<LoginRoute />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />

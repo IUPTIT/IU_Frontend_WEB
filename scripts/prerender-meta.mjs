@@ -21,9 +21,18 @@ const ROUTES = [
     description:
       "Tra cứu trạng thái hồ sơ ứng tuyển thành viên IU Club (IUPTIT) bằng mã hồ sơ hoặc email.",
   },
-  // Chưa có route trong app — bỏ comment khi trang được thêm vào App.tsx:
-  // { path: "/tin-tuc", title: "Tin tức | IU Club — IU PTIT", description: "Tin tức và hoạt động mới nhất của IU Club (IUPTIT)." },
-  // { path: "/su-kien", title: "Sự kiện | IU Club — IU PTIT", description: "Các sự kiện sắp diễn ra của IU Club (IUPTIT)." },
+  {
+    path: "/tin-tuc",
+    title: "Tin tức | IU Club — IU PTIT",
+    description:
+      "Tin tức và hoạt động mới nhất của IU Club (IUPTIT) — câu lạc bộ CNTT định hướng ứng dụng.",
+  },
+  {
+    path: "/su-kien",
+    title: "Sự kiện | IU Club — IU PTIT",
+    description:
+      "Các sự kiện sắp diễn ra của IU Club (IUPTIT) — workshop, talkshow và hoạt động dành cho sinh viên.",
+  },
 ];
 
 const base = readFileSync(join(dist, "index.html"), "utf8");
