@@ -15,7 +15,7 @@ function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between gap-6 border-b border-white/10 py-2.5 text-sm last:border-0">
       <span className="shrink-0 text-[hsl(var(--landing-foreground)/0.55)]">{label}</span>
-      <span className="text-right font-medium text-[hsl(var(--landing-foreground))]">{value || "—"}</span>
+      <span className="min-w-0 break-words text-right font-medium text-[hsl(var(--landing-foreground))]">{value || "—"}</span>
     </div>
   );
 }

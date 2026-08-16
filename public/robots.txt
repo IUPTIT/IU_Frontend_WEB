@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /login
+Disallow: /reset-password
+Disallow: /admin
+Disallow: /leader
+Disallow: /member
+Disallow: /candidate
+
+Sitemap: https://iuptit.com/sitemap.xml

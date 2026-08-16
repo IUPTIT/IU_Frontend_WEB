@@ -1,6 +1,8 @@
 import { useAuth } from "../../context/useAuth";
 import LoginForm from "./components/LoginForm";
-import logoMark from "../../assets/logo-mark.png";
+import logoMark from "../../assets/logo-mark.webp";
+import { loadStudioFonts } from "../../seo/loadStudioFonts";
+import { useEffect } from "react";
 
 const JOURNEY = ["Hồ sơ", "Phỏng vấn", "Tân binh", "Thành viên"];
 
@@ -10,10 +12,13 @@ const JOURNEY = ["Hồ sơ", "Phỏng vấn", "Tân binh", "Thành viên"];
  */
 function LoginPage() {
   const { login } = useAuth();
+  useEffect(() => {
+    loadStudioFonts();
+  }, []);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#F4F4FB] p-4 sm:p-6 animate-fade-in">
-      <div className="relative w-full max-w-md">
+    <div className="flex min-h-screen items-center justify-center overflow-x-clip bg-[#F4F4FB] p-4 sm:p-6 animate-fade-in">
+      <main id="main" className="relative w-full max-w-md">
         <div
           className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-[#A855F7]/18 blur-3xl"
           aria-hidden
@@ -37,7 +42,7 @@ function LoginPage() {
               </span>
               <div className="leading-tight">
                 <p className="font-grotesk text-lg font-bold text-[#191A2C]">IU Club</p>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#9AA0B4]">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#6B7086]">
                   Không gian quản lý
                 </p>
               </div>
@@ -53,7 +58,7 @@ function LoginPage() {
             <LoginForm onSubmit={login} />
 
             <div className="mt-8 flex flex-wrap items-center gap-x-2 gap-y-2 border-t border-[#EBEBF3] pt-5">
-              <span className="text-[11px] font-semibold uppercase tracking-wide text-[#9AA0B4]">
+              <span className="text-xs font-semibold uppercase tracking-wide text-[#6B7086]">
                 Hành trình
               </span>
               {JOURNEY.map((chip, i) => (
@@ -67,7 +72,7 @@ function LoginPage() {
             </div>
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

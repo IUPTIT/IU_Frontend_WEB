@@ -1,8 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../../api/client";
-import LoginIllustration from "../Login/components/LoginIllustration";
+import { loadStudioFonts } from "../../seo/loadStudioFonts";
 
 /**
  * Trang công khai: đặt lại mật khẩu từ link email (?token=...).
@@ -12,6 +12,9 @@ function ResetPasswordPage() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const token = useMemo(() => (params.get("token") || "").trim(), [params]);
+  useEffect(() => {
+    loadStudioFonts();
+  }, []);
 
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -60,19 +63,15 @@ function ResetPasswordPage() {
   };
 
   return (
-    <div className="login-shell flex min-h-screen items-center justify-center bg-[#E8EEF8] p-4 sm:p-6 lg:p-10 animate-fade-in">
-      <div className="login-card flex w-full max-w-5xl overflow-hidden rounded-[28px] bg-white shadow-[0_20px_60px_rgba(80,100,140,0.18)] animate-fade-up">
-        <section className="relative hidden w-[48%] overflow-hidden bg-[#DDE2FF] lg:block">
-          <LoginIllustration />
-        </section>
-
-        <section className="login-panel flex w-full flex-col justify-center bg-white px-8 py-12 sm:px-12 lg:w-[52%] lg:px-14 xl:px-16">
+    <div className="flex min-h-screen items-center justify-center bg-[#F4F4FB] p-4 sm:p-6 animate-fade-in">
+      <main id="main" className="w-full max-w-md overflow-hidden rounded-[28px] bg-white shadow-[0_20px_60px_rgba(26,26,80,0.12)] animate-fade-up">
+        <section className="flex w-full flex-col justify-center px-8 py-12 sm:px-10">
           {done ? (
             <div className="w-full max-w-sm space-y-4">
               <h1 className="login-title font-display text-4xl font-extrabold tracking-tight text-[#2C3340]">
                 Đã đổi mật khẩu
               </h1>
-              <p className="login-label text-sm leading-relaxed text-[#8A94A6]">
+              <p className="login-label text-sm leading-relaxed text-[#6B7086]">
                 Đang chuyển về trang đăng nhập…
               </p>
               <Link
@@ -96,7 +95,7 @@ function ResetPasswordPage() {
                 Đặt lại mật khẩu
               </h1>
               <p
-                className="login-label mt-3 text-sm leading-relaxed text-[#8A94A6] animate-fade-up"
+                className="login-label mt-3 text-sm leading-relaxed text-[#6B7086] animate-fade-up"
                 style={{ animationDelay: "80ms" }}
               >
                 {token
@@ -109,7 +108,7 @@ function ResetPasswordPage() {
                   className="block animate-fade-up"
                   style={{ animationDelay: "120ms" }}
                 >
-                  <span className="login-label text-sm text-[#8A94A6]">
+                  <span className="login-label text-sm text-[#6B7086]">
                     Mật khẩu mới
                   </span>
                   <input
@@ -128,7 +127,7 @@ function ResetPasswordPage() {
                   className="block animate-fade-up"
                   style={{ animationDelay: "200ms" }}
                 >
-                  <span className="login-label text-sm text-[#8A94A6]">
+                  <span className="login-label text-sm text-[#6B7086]">
                     Xác nhận mật khẩu
                   </span>
                   <input
@@ -185,7 +184,7 @@ function ResetPasswordPage() {
 
                 <Link
                   to="/login"
-                  className="login-forgot text-sm text-[#8A94A6] transition-all duration-300 hover:text-[#4A90E2] hover:underline underline-offset-4"
+                  className="login-forgot text-sm text-[#6B7086] transition-all duration-300 hover:text-[#4A90E2] hover:underline underline-offset-4"
                 >
                   Quay lại đăng nhập
                 </Link>
@@ -193,7 +192,7 @@ function ResetPasswordPage() {
             </form>
           )}
         </section>
-      </div>
+      </main>
     </div>
   );
 }

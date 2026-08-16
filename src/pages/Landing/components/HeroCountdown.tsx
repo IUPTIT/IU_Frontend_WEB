@@ -51,17 +51,30 @@ function phaseInfo(days: number): {
   return { tier: "open", title: "Cổng đăng ký đang mở", hurry: "tham gia ngay" };
 }
 
-function useCountdown() {
+export function useCountdown() {
   const [campaign, setCampaign] = useState<PublicCampaign | null>(null);
   const [state, setState] = useState<CountdownState>({ kind: "loading" });
 
   useEffect(() => {
-    getActiveCampaign()
-      .then((c) => {
-        setCampaign(c);
-        setState(computeState(c));
-      })
-      .catch(() => setState({ kind: "none" }));
+    let cancelled = false;
+    const load = () => {
+      getActiveCampaign()
+        .then((c) => {
+          if (cancelled) return;
+          setCampaign(c);
+          setState(computeState(c));
+        })
+        .catch(() => {
+          if (!cancelled) setState({ kind: "none" });
+        });
+    };
+    const idle = window.requestIdleCallback?.(load, { timeout: 2500 });
+    const timer = idle == null ? window.setTimeout(load, 400) : 0;
+    return () => {
+      cancelled = true;
+      if (idle != null && window.cancelIdleCallback) window.cancelIdleCallback(idle);
+      if (timer) window.clearTimeout(timer);
+    };
   }, []);
 
   useEffect(() => {
@@ -95,7 +108,7 @@ function TimeBox({ value, unit, pop }: { value: number; unit: string; pop?: bool
   );
 }
 
-function CountdownCard({
+export function CountdownCard({
   state,
   campaign,
   variant,

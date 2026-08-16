@@ -67,16 +67,16 @@ function LandingDatePicker({ value, onChange, placeholder, maxDate }: Props) {
       // Header tự dựng: chọn NĂM trước rồi THÁNG (đặt năm sinh trước, tránh
       // trạng thái tháng-đổi-trước-năm rơi ra ngoài maxDate) rồi bấm ngày ở lưới.
       renderCustomHeader={({ date, changeYear, changeMonth, decreaseMonth, increaseMonth }) => (
-        <div className="flex items-center gap-1.5 px-2 pb-1 pt-2">
+        <div className="flex items-center gap-1 px-1.5 pb-1 pt-1.5">
           <button
             type="button"
             onClick={decreaseMonth}
             aria-label="Tháng trước"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-2xl leading-none text-[hsl(var(--landing-foreground)/0.8)] transition-colors hover:bg-white/10 hover:text-[hsl(var(--landing-foreground))]"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-lg leading-none text-white/70 transition-colors hover:bg-white/10 hover:text-white"
           >
             ‹
           </button>
-          <div className="w-[96px]">
+          <div className="grid min-w-0 flex-1 grid-cols-2 gap-1">
             <LandingSelect
               compact
               isSearchable
@@ -84,8 +84,6 @@ function LandingDatePicker({ value, onChange, placeholder, maxDate }: Props) {
               value={String(date.getFullYear())}
               onChange={(y) => y && changeYear(Number(y))}
             />
-          </div>
-          <div className="w-[104px]">
             <LandingSelect
               compact
               options={MONTHS}
@@ -97,7 +95,7 @@ function LandingDatePicker({ value, onChange, placeholder, maxDate }: Props) {
             type="button"
             onClick={increaseMonth}
             aria-label="Tháng sau"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-2xl leading-none text-[hsl(var(--landing-foreground)/0.8)] transition-colors hover:bg-white/10 hover:text-[hsl(var(--landing-foreground))]"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-lg leading-none text-white/70 transition-colors hover:bg-white/10 hover:text-white"
           >
             ›
           </button>

@@ -71,7 +71,7 @@ function LoginForm({ onSubmit }: Props) {
         <label className="block">
           <span className="text-sm font-semibold text-[#3D4458]">Email</span>
           <div className={fieldWrap}>
-            <Mail className="h-5 w-5 shrink-0 text-[#A6AEC0]" strokeWidth={1.8} />
+            <Mail className="h-5 w-5 shrink-0 text-[#A6AEC0]" strokeWidth={1.8} aria-hidden />
             <input
               type="email"
               name="email"
@@ -96,7 +96,7 @@ function LoginForm({ onSubmit }: Props) {
             </button>
           </span>
           <div className={fieldWrap}>
-            <Lock className="h-5 w-5 shrink-0 text-[#A6AEC0]" strokeWidth={1.8} />
+            <Lock className="h-5 w-5 shrink-0 text-[#A6AEC0]" strokeWidth={1.8} aria-hidden />
             <input
               type={showPw ? "text" : "password"}
               name="password"

@@ -58,9 +58,9 @@ function LookupPage() {
       <div className="relative z-10">
         <LandingNavBar />
 
-        <main className="mx-auto max-w-3xl px-4 py-12 md:px-8">
+        <main id="main" className="mx-auto max-w-3xl px-4 py-12 md:px-8">
           <div className="mx-auto max-w-2xl text-center">
-            <h1 className="landing-headline text-4xl font-semibold text-[hsl(var(--landing-foreground))] md:text-5xl">
+            <h1 className="landing-headline text-3xl font-semibold text-[hsl(var(--landing-foreground))] sm:text-4xl md:text-5xl">
               Tra cứu hồ sơ
             </h1>
             <p className="mt-4 text-[hsl(var(--landing-foreground)/0.7)]">

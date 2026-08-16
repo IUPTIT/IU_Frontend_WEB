@@ -145,13 +145,13 @@ function RecruitmentPage() {
       <div className="relative z-10">
         <LandingNavBar />
 
-        <main className="mx-auto max-w-3xl px-4 py-12 md:px-8">
+        <main id="main" className="mx-auto max-w-3xl px-4 py-12 md:px-8">
           {loading ? (
             <p className="py-20 text-center text-[hsl(var(--landing-foreground)/0.6)]">
               Đang tải đợt tuyển...
             </p>
           ) : !campaign ? (
-            <div className="liquid-glass landing-card-glass mx-auto max-w-xl rounded-3xl p-10 text-center">
+            <div className="liquid-glass landing-card-glass mx-auto max-w-xl rounded-3xl p-6 text-center sm:p-10">
               <h1 className="landing-headline text-3xl font-semibold text-[hsl(var(--landing-foreground))]">
                 Chưa có đợt tuyển nào đang mở
               </h1>
@@ -175,7 +175,7 @@ function RecruitmentPage() {
 
               <div className="mt-10">
                 {step === "form" && pageLoadedAt < new Date(campaign.openAt).getTime() ? (
-                  <div className="liquid-glass landing-card-glass mx-auto max-w-xl rounded-3xl p-8 text-center">
+                  <div className="liquid-glass landing-card-glass mx-auto max-w-xl rounded-3xl p-6 text-center sm:p-8">
                     <p className="text-[hsl(var(--landing-foreground)/0.75)]">
                       Đợt tuyển chưa mở đơn — quay lại khi đến thời gian mở đơn nhé!
                     </p>

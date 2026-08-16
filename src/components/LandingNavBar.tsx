@@ -1,103 +1,157 @@
-import { Link, useNavigate } from "react-router-dom";
-import logo from "../assets/logo-mark.png";
+import { useEffect, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Menu, X } from "lucide-react";
+import logoMark from "../assets/logo-mark.webp";
+import { NAV_ITEMS } from "../pages/Landing/content";
+import "../styles/landing-home.css";
 
-type NavItem = { label: string; to: string; anchor?: string; children?: NavItem[] };
+type NavItem = (typeof NAV_ITEMS)[number];
 
-const NAV_ITEMS: NavItem[] = [
-  {
-    label: "Giới thiệu",
-    to: "/",
-    children: [
-      { label: "Về IU Club", to: "/", anchor: "gioi-thieu" },
-      { label: "Cố vấn", to: "/", anchor: "co-van" },
-      { label: "Ban điều hành", to: "/", anchor: "ban-dieu-hanh" },
-    ],
-  },
-  { label: "Tin tức", to: "/" },
-  { label: "Tuyển thành viên", to: "/tuyen-thanh-vien" },
-  { label: "Tra cứu hồ sơ", to: "/tra-cuu" },
-  { label: "Sự kiện", to: "/" },
-];
+function isNavActive(item: NavItem, pathname: string) {
+  if (item.to !== "/" && pathname === item.to) return true;
+  if (pathname === "/" && "anchor" in item && item.anchor === "hero") return true;
+  return false;
+}
 
-function ChevronDown() {
-  return (
-    <svg
-      className="h-4 w-4 transition-transform duration-300 ease-out group-hover:rotate-180"
-      viewBox="0 0 20 20"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      aria-hidden
-    >
-      <path d="m6 8 4 4 4-4" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
+function itemHref(item: NavItem) {
+  if ("anchor" in item && item.anchor) return `${item.to}#${item.anchor}`;
+  return item.to;
+}
+
+function goTo(
+  navigate: ReturnType<typeof useNavigate>,
+  pathname: string,
+  item: { to: string; anchor?: string },
+) {
+  const samePage = pathname === item.to || (item.to === "/" && pathname === "/");
+  if (item.anchor) {
+    const anchor = item.anchor;
+    if (samePage && pathname === "/") {
+      document.getElementById(anchor)?.scrollIntoView({ behavior: "smooth" });
+      return;
+    }
+    navigate({ pathname: item.to, hash: anchor });
+    window.setTimeout(() => {
+      document.getElementById(anchor)?.scrollIntoView({ behavior: "smooth" });
+    }, 120);
+    return;
+  }
+  navigate(item.to);
+  window.setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 80);
 }
 
 function LandingNavBar() {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const overlay =
+    pathname === "/" ||
+    pathname === "/ve-iu-club" ||
+    pathname === "/dao-tao" ||
+    pathname === "/su-kien";
 
-  const goTo = (item: NavItem) => {
-    navigate(item.to);
-    const anchor = item.anchor;
-    if (anchor) {
-      // Đợi trang đích render xong rồi mới cuộn tới section
-      window.setTimeout(() => {
-        document.getElementById(anchor)?.scrollIntoView({ behavior: "smooth" });
-      }, 100);
-    } else {
-      // Không có anchor → về đầu trang
-      window.setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 100);
+  useEffect(() => {
+    if (!overlay) {
+      setScrolled(false);
+      return;
     }
+
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [overlay]);
+
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  useEffect(() => {
+    const onResize = () => {
+      if (window.matchMedia("(min-width: 1280px)").matches) setOpen(false);
+    };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
+
+  const onItem = (item: NavItem) => {
+    goTo(navigate, pathname, item);
+    setOpen(false);
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-[hsl(var(--landing-background)/0.75)] backdrop-blur-md">
-      <div className="grid w-full grid-cols-[1fr_auto_1fr] items-center px-8 py-5">
-        <Link to="/" className="flex items-center gap-2.5 justify-self-start">
-          <img src={logo} alt="IU-Club" className="h-12 w-auto" />
-          <span className="landing-display text-2xl font-semibold leading-none">IU Club</span>
+    <header
+      className={`lp-header ${overlay ? "is-overlay" : ""} ${scrolled ? "is-scrolled" : ""} ${open ? "is-open" : ""}`}
+    >
+      <div className="lp-header-inner">
+        <Link to="/" className="lp-brand" onClick={() => setOpen(false)}>
+          <img src={logoMark} alt="" className="lp-brand-mark" width={40} height={40} decoding="async" />
+          <span className="lp-brand-text">
+            <span className="lp-brand-name">IU CLUB</span>
+            <span className="lp-brand-tag">SHINE AND THRIVE</span>
+          </span>
         </Link>
 
-        <nav className="hidden items-center gap-2 md:flex">
+        <nav className="lp-nav-desktop" aria-label="Điều hướng chính">
           {NAV_ITEMS.map((item) => (
-            <div key={item.label} className="group relative">
-              <button
-                onClick={() => goTo(item)}
-                aria-haspopup={item.children ? "menu" : undefined}
-                className="landing-btn-secondary gap-1 px-4 py-2 text-[hsl(var(--landing-foreground)/0.9)]"
-              >
-                {item.label}
-                {item.children && <ChevronDown />}
-              </button>
-
-              {item.children && (
-                <div className="invisible absolute left-0 top-full pt-2 opacity-0 transition-all duration-300 ease-out group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
-                  <div className="liquid-glass landing-card-solid min-w-44 rounded-2xl p-2">
-                    {item.children.map((child) => (
-                      <button
-                        key={child.label}
-                        onClick={() => goTo(child)}
-                        className="block w-full rounded-xl px-4 py-2.5 text-left text-sm text-[hsl(var(--landing-foreground)/0.8)] transition-colors duration-200 hover:bg-white/10 hover:text-[hsl(var(--landing-foreground))]"
-                      >
-                        {child.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+            <Link
+              key={item.label}
+              to={itemHref(item)}
+              className={`lp-nav-link ${isNavActive(item, pathname) ? "is-active" : ""}`}
+              aria-current={isNavActive(item, pathname) ? "page" : undefined}
+              onClick={(event) => {
+                event.preventDefault();
+                onItem(item);
+              }}
+            >
+              {item.label}
+            </Link>
           ))}
         </nav>
 
         <button
-          onClick={() => navigate("/tuyen-thanh-vien")}
-          className="landing-btn-primary justify-self-end px-5 py-2.5"
+          type="button"
+          className="lp-nav-toggle"
+          aria-label={open ? "Đóng menu" : "Mở menu"}
+          aria-expanded={open}
+          aria-controls="lp-mobile-nav"
+          onClick={() => setOpen((value) => !value)}
         >
-          Tham gia câu lạc bộ
+          {open ? <X size={20} /> : <Menu size={20} />}
         </button>
       </div>
-      <div className="mt-[3px] h-px bg-gradient-to-r from-transparent via-[hsl(var(--landing-foreground)/0.2)] to-transparent" />
+
+      {open ? (
+        <nav id="lp-mobile-nav" className="lp-nav-mobile" aria-label="Menu điện thoại">
+          {NAV_ITEMS.map((item) => (
+            <Link
+              key={item.label}
+              to={itemHref(item)}
+              onClick={(event) => {
+                event.preventDefault();
+                onItem(item);
+              }}
+            >
+              {item.label}
+            </Link>
+          ))}
+        </nav>
+      ) : null}
     </header>
   );
 }
