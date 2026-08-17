@@ -7,29 +7,11 @@ import "../styles/landing-home.css";
 
 type NavItem = (typeof NAV_ITEMS)[number];
 
-<<<<<<< HEAD
-const NAV_ITEMS: NavItem[] = [
-  {
-    label: "Giới thiệu",
-    to: "/",
-    children: [
-      { label: "Về IU Club", to: "/", anchor: "gioi-thieu" },
-      { label: "Cố vấn", to: "/", anchor: "co-van" },
-      { label: "Ban điều hành", to: "/", anchor: "ban-dieu-hanh" },
-    ],
-  },
-  { label: "Tin tức", to: "/tin-tuc" },
-  { label: "Tuyển thành viên", to: "/tuyen-thanh-vien" },
-  { label: "Tra cứu hồ sơ", to: "/tra-cuu" },
-  { label: "Sự kiện", to: "/su-kien" },
-];
-=======
 function isNavActive(item: NavItem, pathname: string) {
   if (item.to !== "/" && pathname === item.to) return true;
   if (pathname === "/" && "anchor" in item && item.anchor === "hero") return true;
   return false;
 }
->>>>>>> 75e632fc91b6e6020967105ffc0c842c74b0d58d
 
 function itemHref(item: NavItem) {
   if ("anchor" in item && item.anchor) return `${item.to}#${item.anchor}`;
