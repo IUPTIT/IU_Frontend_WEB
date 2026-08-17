@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
-import { useNavigate } from "react-router-dom";
-import logoMark from "../assets/logo-mark.png";
+import { Link, useNavigate } from "react-router-dom";
+import logo from "../assets/logo.png";
+import { NAV_ITEMS } from "../pages/Landing/content";
+import "../styles/landing-home.css";
 
 const CONTACTS = [
   { icon: "phone", label: "098 981 14 24", href: "tel:0989811424" },
@@ -13,38 +15,19 @@ const YOUTUBE_URL = "https://www.youtube.com/@IUCLUB-hh4sv";
 
 type FooterLink = {
   label: string;
-  href?: string; // link ngoài
-  to?: string; // route nội bộ
-  anchor?: string; // section trên trang chủ
-  comingSoon?: boolean; // chưa có trang — hiển thị mờ, không bấm được
+  href?: string;
+  to?: string;
+  anchor?: string;
 };
 
-const COLUMNS: { title: string; links: FooterLink[] }[] = [
-  {
-    title: "Về chúng tôi",
-    links: [
-      { label: "Fanpage", href: FANPAGE_URL },
-      { label: "Video giới thiệu", href: YOUTUBE_URL },
-      { label: "Q&A", comingSoon: true },
-    ],
-  },
-  {
-    title: "Trang chủ",
-    links: [
-      { label: "Giới thiệu", to: "/", anchor: "gioi-thieu" },
-      { label: "Cố vấn", to: "/", anchor: "co-van" },
-      { label: "Ban điều hành", to: "/", anchor: "ban-dieu-hanh" },
-    ],
-  },
-  {
-    title: "Trang khác",
-    links: [
-      { label: "Tin tức", to: "/" },
-      { label: "Tuyển thành viên", to: "/tuyen-thanh-vien" },
-      { label: "Tra cứu hồ sơ", to: "/tra-cuu" },
-      { label: "Sự kiện", to: "/" },
-    ],
-  },
+const RECRUIT_LINKS: FooterLink[] = [
+  { label: "Tuyển thành viên", to: "/tuyen-thanh-vien" },
+  { label: "Tra cứu hồ sơ", to: "/tra-cuu" },
+];
+
+const SOCIAL_LINKS = [
+  { name: "facebook", href: FANPAGE_URL, label: "Facebook" },
+  { name: "youtube", href: YOUTUBE_URL, label: "YouTube" },
 ];
 
 const icons: Record<string, ReactNode> = {
@@ -95,20 +78,86 @@ function LandingFooter() {
   };
 
   return (
-    <footer className="relative z-10 border-t border-white/10 bg-[hsl(var(--landing-background)/0.85)] backdrop-blur-md">
-      <div className="mx-auto grid max-w-6xl gap-10 px-8 py-14 md:grid-cols-[1.2fr_1fr_1fr_1fr]">
+    <footer className="relative z-10 border-t border-white/10 bg-[hsl(var(--landing-background)/0.92)]">
+      <div className="mx-auto grid max-w-6xl gap-10 px-5 py-12 sm:px-8 sm:py-14 md:grid-cols-2 lg:grid-cols-5">
         <div>
           <div className="flex items-center gap-2.5">
-            <img src={logoMark} alt="" className="h-9 w-auto" aria-hidden />
+            <img src={logo} alt="" className="h-9 w-auto" width={36} height={36} decoding="async" aria-hidden />
             <p className="landing-display text-2xl font-bold text-purple-400">IU CLUB</p>
           </div>
+          <p className="landing-display mt-4 text-sm tracking-[0.14em] text-white/70">SHINE AND THRIVE</p>
+          <p className="mt-2 text-sm text-[hsl(var(--landing-foreground)/0.65)]">
+            Cùng nhau tỏa sáng. Cùng nhau trưởng thành.
+          </p>
+        </div>
+
+        <div>
+          <h3 className="landing-headline text-sm font-semibold uppercase tracking-wide">Điều hướng</h3>
+          <ul className="mt-5 space-y-3">
+            {NAV_ITEMS.map((item) => (
+              <li key={item.label}>
+                <Link
+                  to={"anchor" in item && item.anchor ? `${item.to}#${item.anchor}` : item.to}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    goTo(item);
+                  }}
+                  className="text-sm text-[hsl(var(--landing-foreground)/0.7)] transition-colors hover:text-purple-300"
+                >
+                  {item.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div>
+          <h3 className="landing-headline text-sm font-semibold uppercase tracking-wide">Tuyển thành viên</h3>
+          <ul className="mt-5 space-y-3">
+            {RECRUIT_LINKS.map((link) => (
+              <li key={link.label}>
+                <Link
+                  to={link.to ?? "/"}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    goTo(link);
+                  }}
+                  className="text-sm text-[hsl(var(--landing-foreground)/0.7)] transition-colors hover:text-purple-300"
+                >
+                  {link.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div>
+          <h3 className="landing-headline text-sm font-semibold uppercase tracking-wide">Mạng xã hội</h3>
+          <ul className="mt-5 space-y-3">
+            {SOCIAL_LINKS.map((social) => (
+              <li key={social.name}>
+                <a
+                  href={social.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-[hsl(var(--landing-foreground)/0.7)] transition-colors hover:text-purple-300"
+                >
+                  {social.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div>
+          <h3 className="landing-headline text-sm font-semibold uppercase tracking-wide">Liên hệ</h3>
           <ul className="mt-5 space-y-3">
             {CONTACTS.map((contact) => (
               <li key={contact.label}>
                 <a
                   href={contact.href}
                   target={contact.icon === "globe" ? "_blank" : undefined}
-                  rel="noreferrer"
+                  rel="noopener noreferrer"
                   className="flex items-center gap-2.5 text-sm text-[hsl(var(--landing-foreground)/0.7)] transition-colors hover:text-[hsl(var(--landing-foreground))]"
                 >
                   <Icon name={contact.icon} />
@@ -118,58 +167,19 @@ function LandingFooter() {
             ))}
           </ul>
         </div>
-
-        {COLUMNS.map((column) => (
-          <div key={column.title}>
-            <h3 className="landing-headline text-lg font-semibold uppercase tracking-wide text-[hsl(var(--landing-foreground))]">
-              {column.title}
-            </h3>
-            <ul className="mt-5 space-y-3">
-              {column.links.map((link) => (
-                <li key={link.label}>
-                  {link.comingSoon ? (
-                    <span className="cursor-default text-sm text-[hsl(var(--landing-foreground)/0.35)]">
-                      {link.label}
-                    </span>
-                  ) : link.href ? (
-                    <a
-                      href={link.href}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-sm text-[hsl(var(--landing-foreground)/0.7)] transition-colors hover:text-purple-300"
-                    >
-                      {link.label}
-                    </a>
-                  ) : (
-                    <button
-                      onClick={() => goTo(link)}
-                      className="text-sm text-[hsl(var(--landing-foreground)/0.7)] transition-colors hover:text-purple-300"
-                    >
-                      {link.label}
-                    </button>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
       </div>
 
       <div className="border-t border-white/10 py-6 text-center">
         <p className="text-sm text-[hsl(var(--landing-foreground)/0.7)]">©2026 | Bản quyền thuộc IU Club</p>
         <div className="mt-3 flex justify-center gap-4">
-          {[
-            { name: "facebook", href: "https://www.facebook.com/profile.php?id=61564322655289", label: "Facebook" },
-            { name: "youtube", href: YOUTUBE_URL, label: "YouTube" },
-            { name: "mail", href: "mailto:iuptitclub@gmail.com", label: "Email" },
-          ].map((social) => (
+          {SOCIAL_LINKS.map((social) => (
             <a
               key={social.name}
               href={social.href}
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
               aria-label={social.label}
-              className="flex h-9 w-9 items-center justify-center rounded-full text-[hsl(var(--landing-foreground)/0.7)] transition-all duration-300 hover:bg-white/10 hover:text-[hsl(var(--landing-foreground))]"
+              className="flex h-11 w-11 items-center justify-center rounded-full text-[hsl(var(--landing-foreground)/0.78)] transition-all duration-300 hover:bg-white/10 hover:text-[hsl(var(--landing-foreground))]"
             >
               <Icon name={social.name} className="h-5 w-5" />
             </a>

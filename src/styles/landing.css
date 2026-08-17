@@ -4,15 +4,17 @@
   --landing-background: 260 87% 3%;
   --landing-foreground: 40 6% 95%;
   --landing-hero-sub: 40 6% 82%;
+  --lp-gutter: clamp(16px, 4.2vw, 2cm);
   background-color: hsl(var(--landing-background));
   color: hsl(var(--landing-foreground));
-  /* DM Sans hỗ trợ tiếng Việt đầy đủ — KHÔNG dùng Geist/General Sans cho body (thiếu glyph Việt) */
-  font-family: "DM Sans", sans-serif;
+  /* Be Vietnam Pro + DM Sans: đủ glyph tiếng Việt. General Sans chỉ dùng cho chữ Latin. */
+  font-family: "Be Vietnam Pro", "DM Sans", sans-serif;
+  font-synthesis: none;
 }
 
-/* Heading có tiếng Việt — Plus Jakarta Sans hỗ trợ dấu đầy đủ */
+/* Heading có tiếng Việt */
 .landing-headline {
-  font-family: "Plus Jakarta Sans", "DM Sans", sans-serif;
+  font-family: "Be Vietnam Pro", "DM Sans", sans-serif;
 }
 
 /* Chỉ dùng cho chữ thuần Latin (VD: "IU Club") — General Sans KHÔNG có glyph tiếng Việt */
@@ -217,6 +219,8 @@
   padding: 11px 14px 12px;
   border-radius: 18px;
   overflow: hidden;
+  max-width: 100%;
+  box-sizing: border-box;
   background: linear-gradient(150deg, rgba(40, 24, 62, 0.72), rgba(22, 14, 38, 0.74));
   backdrop-filter: blur(14px) saturate(1.15);
   -webkit-backdrop-filter: blur(14px) saturate(1.15);
@@ -252,6 +256,7 @@
 
 .flash-head {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 7px;
 }
@@ -268,11 +273,13 @@
 }
 
 .flash-title {
-  font-family: "Plus Jakarta Sans", "DM Sans", sans-serif;
+  font-family: "Be Vietnam Pro", "DM Sans", sans-serif;
   font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.12em;
   text-transform: uppercase;
+  min-width: 0;
+  flex: 1 1 8rem;
   background: linear-gradient(90deg, #ffb020, #e0348c);
   -webkit-background-clip: text;
   background-clip: text;
@@ -294,7 +301,7 @@
 }
 
 .flash-hurry {
-  margin-left: auto;
+  margin-left: 0;
   font-size: 11px;
   font-weight: 700;
   font-style: italic;
@@ -303,6 +310,7 @@
 
 .flash-timer {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
   justify-content: center;
   gap: 5px;
@@ -334,7 +342,7 @@
   justify-content: center;
   gap: 7px;
   border-radius: 12px;
-  font-family: "Plus Jakarta Sans", "DM Sans", sans-serif;
+  font-family: "Be Vietnam Pro", "DM Sans", sans-serif;
   font-size: 14px;
   font-weight: 700;
   color: #fff;
@@ -498,6 +506,26 @@
   color: #a855f7;
 }
 
+@media (max-width: 479px) {
+  .flash-title {
+    font-size: 11px;
+    letter-spacing: 0.06em;
+  }
+
+  .flash-box {
+    min-width: 40px;
+    padding: 5px 6px 4px;
+  }
+
+  .flash-num {
+    font-size: 18px;
+  }
+
+  .flash-sale.is-urgent {
+    animation: flash-glow 1.7s ease-in-out infinite;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .flash-sale,
   .flash-sale.is-urgent,
@@ -637,7 +665,7 @@
 }
 
 .reg-eyebrow {
-  font-family: "Plus Jakarta Sans", "DM Sans", sans-serif;
+  font-family: "Be Vietnam Pro", "DM Sans", sans-serif;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.16em;
@@ -729,29 +757,51 @@
 
 /* ---- react-datepicker: dark theme khớp landing ---- */
 .landing-datepicker.react-datepicker {
-  background: linear-gradient(160deg, hsl(258 45% 11%) 0%, hsl(260 55% 7%) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 16px;
+  background: linear-gradient(160deg, #1a1028 0%, #12081c 100%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
-  font-family: "DM Sans", sans-serif;
-  color: hsl(var(--landing-foreground));
+  font-family: "Be Vietnam Pro", "DM Sans", sans-serif;
+  color: #f4f0ea;
   overflow: hidden;
 }
 
 .landing-datepicker .react-datepicker__header {
   background: rgba(255, 255, 255, 0.04);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 6px;
 }
 
-.landing-datepicker .react-datepicker__current-month,
+.landing-datepicker .react-datepicker__month {
+  margin: 8px 10px 10px;
+}
+
 .landing-datepicker .react-datepicker__day-name,
+.landing-datepicker .react-datepicker__day,
+.landing-datepicker .react-datepicker__time-name {
+  width: 2rem;
+  line-height: 2rem;
+  margin: 0.12rem;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.landing-datepicker .react-datepicker__day-name {
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 .landing-datepicker .react-datepicker__day {
-  color: hsl(var(--landing-foreground));
+  color: #f4f0ea;
 }
 
 .landing-datepicker .react-datepicker__day:hover {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.14);
   border-radius: 8px;
+  color: #fff;
 }
 
 .landing-datepicker .react-datepicker__day--selected,
@@ -761,13 +811,16 @@
   color: #fff;
 }
 
-.landing-datepicker .react-datepicker__day--outside-month,
+.landing-datepicker .react-datepicker__day--outside-month {
+  color: rgba(255, 255, 255, 0.32);
+}
+
 .landing-datepicker .react-datepicker__day--disabled {
-  color: hsl(var(--landing-foreground) / 0.3);
+  color: rgba(255, 255, 255, 0.22);
 }
 
 .landing-datepicker .react-datepicker__navigation-icon::before {
-  border-color: hsl(var(--landing-foreground) / 0.6);
+  border-color: rgba(255, 255, 255, 0.65);
 }
 
 .react-datepicker-popper {
@@ -1029,7 +1082,7 @@
   text-align: center;
   color: #fff;
   background: linear-gradient(to top, rgba(10, 6, 22, 0.92) 30%, transparent 100%);
-  font-family: "Plus Jakarta Sans", "DM Sans", sans-serif;
+  font-family: "Be Vietnam Pro", "DM Sans", sans-serif;
   opacity: 0;
   transition: opacity 0.4s ease;
 }

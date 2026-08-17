@@ -3,7 +3,7 @@ import type { FormEvent } from "react";
 import { Lock, Eye, EyeOff, ArrowRight, KeyRound } from "lucide-react";
 import { changePassword } from "../services/authService";
 import { useAuth } from "../context/useAuth";
-import logoMark from "../assets/logo-mark.png";
+import logoMark from "../assets/logo-mark.webp";
 
 /**
  * Chặn toàn portal khi user.requirePasswordChange = true (tài khoản ứng viên

@@ -23,7 +23,7 @@ import { SIDEBAR_CONFIG } from "../constants/navigation";
 import { usePortalUi } from "../context/usePortalUi";
 import { useAuth } from "../context/useAuth";
 import Icon from "../components/ui/Icon";
-import logoMark from "../assets/logo-mark.png";
+import logoMark from "../assets/logo-mark.webp";
 
 const icons: Record<NavIcon, LucideIcon> = {
   dashboard: LayoutDashboard,

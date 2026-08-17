@@ -4,6 +4,7 @@ import TopBar from "./TopBar";
 import type { Role } from "../types/navigation";
 import { PortalUiProvider } from "../context/PortalUiContext";
 import { usePortalUi } from "../context/usePortalUi";
+import { loadStudioFonts } from "../seo/loadStudioFonts";
 
 type Props = {
   role: Role;
@@ -93,7 +94,7 @@ function LayoutInner({ role, children }: { role: Role; children: ReactNode }) {
               searchPlaceholder={searchPlaceholderForPath(activePath)}
             />
           </div>
-          <main className="space-y-6 pb-8 sm:space-y-8">{children}</main>
+          <main id="main" className="space-y-6 pb-8 sm:space-y-8">{children}</main>
         </div>
       </div>
     </div>
@@ -101,6 +102,10 @@ function LayoutInner({ role, children }: { role: Role; children: ReactNode }) {
 }
 
 function AdminLayout({ role, children, activePath, onNavigate }: Props) {
+  useEffect(() => {
+    loadStudioFonts();
+  }, []);
+
   return (
     <PortalUiProvider activePath={activePath} onNavigate={onNavigate}>
       <LayoutInner role={role}>{children}</LayoutInner>
