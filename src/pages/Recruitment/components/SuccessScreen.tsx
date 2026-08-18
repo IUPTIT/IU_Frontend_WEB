@@ -8,7 +8,7 @@ type Props = {
 
 function SuccessScreen({ applicationCode, email }: Props) {
   return (
-    <div className="reg-rise liquid-glass landing-card-glass glass-shine mx-auto max-w-xl rounded-3xl p-8 text-center md:p-10">
+    <div className="reg-rise liquid-glass landing-card-glass glass-shine mx-auto max-w-xl rounded-3xl p-6 text-center sm:p-8 md:p-10">
       <div className="landing-btn-primary reg-check mx-auto mb-5 flex h-16 w-16 cursor-default items-center justify-center rounded-full">
         <Check size={32} strokeWidth={3} />
       </div>

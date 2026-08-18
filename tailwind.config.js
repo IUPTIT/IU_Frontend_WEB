@@ -37,7 +37,7 @@ export default {
         // IU Club Studio — chữ tiêu đề & số liệu KPI khu quản lý
         grotesk: ['"Space Grotesk"', '"Plus Jakarta Sans"', "sans-serif"],
         // Data / mã / ngày / điểm — instrument face
-        mono: ['"Geist Mono"', "ui-monospace", "SFMono-Regular", "monospace"],
+        mono: ["ui-monospace", "SFMono-Regular", "monospace"],
       },
       borderRadius: {
         card: "16px",

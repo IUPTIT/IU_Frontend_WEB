@@ -48,7 +48,7 @@ function FileDropzone({ label, hint, accept, file, onChange }: Props) {
           <span className="max-w-full truncate text-sm font-medium text-[hsl(var(--landing-foreground))]">
             {file.name}
           </span>
-          <span className="text-xs text-[hsl(var(--landing-foreground)/0.5)]">
+          <span className="text-xs text-[hsl(var(--landing-foreground)/0.78)]">
             {formatSize(file.size)} · bấm để đổi
           </span>
           <button
@@ -59,7 +59,7 @@ function FileDropzone({ label, hint, accept, file, onChange }: Props) {
               onChange(null);
               if (inputRef.current) inputRef.current.value = "";
             }}
-            className="absolute right-2.5 top-2.5 flex h-7 w-7 items-center justify-center rounded-full text-[hsl(var(--landing-foreground)/0.6)] transition-colors hover:bg-white/10 hover:text-[hsl(var(--landing-foreground))]"
+            className="absolute right-1.5 top-1.5 flex h-11 w-11 items-center justify-center rounded-full text-[hsl(var(--landing-foreground)/0.78)] transition-colors hover:bg-white/10 hover:text-[hsl(var(--landing-foreground))]"
           >
             <X size={15} />
           </button>
@@ -70,7 +70,7 @@ function FileDropzone({ label, hint, accept, file, onChange }: Props) {
           <span className="text-sm font-medium text-[hsl(var(--landing-foreground)/0.85)]">
             {label}
           </span>
-          <span className="text-xs text-[hsl(var(--landing-foreground)/0.5)]">{hint}</span>
+          <span className="text-xs text-[hsl(var(--landing-foreground)/0.78)]">{hint}</span>
         </>
       )}
     </label>

@@ -126,33 +126,33 @@ function ApplicationFormStep({ campaign, value, onSubmit, onSaveDraft }: Props) 
       <SectionCard step="01" eyebrow="Về bạn" title="Thông tin cá nhân" delay={0.1}>
         <div className="grid gap-4 md:grid-cols-2">
           <div>
-            <label className={labelClass}>Họ và tên *</label>
-            <input className="landing-input" value={form.fullName} onChange={(e) => set("fullName", e.target.value)} />
+            <label className={labelClass} htmlFor="fullName">Họ và tên *</label>
+            <input id="fullName" name="fullName" autoComplete="name" className="landing-input" value={form.fullName} onChange={(e) => set("fullName", e.target.value)} />
             <FieldError message={errors.fullName} />
           </div>
           <div>
-            <label className={labelClass}>MSSV *</label>
-            <input className="landing-input" value={form.studentId} onChange={(e) => set("studentId", e.target.value)} />
+            <label className={labelClass} htmlFor="studentId">MSSV *</label>
+            <input id="studentId" name="studentId" autoComplete="off" className="landing-input" value={form.studentId} onChange={(e) => set("studentId", e.target.value)} />
             <FieldError message={errors.studentId} />
           </div>
           <div>
-            <label className={labelClass}>Lớp *</label>
-            <input className="landing-input" value={form.className} onChange={(e) => set("className", e.target.value)} />
+            <label className={labelClass} htmlFor="className">Lớp *</label>
+            <input id="className" name="className" autoComplete="off" className="landing-input" value={form.className} onChange={(e) => set("className", e.target.value)} />
             <FieldError message={errors.className} />
           </div>
           <div>
-            <label className={labelClass}>Khoa/Ngành *</label>
-            <input className="landing-input" value={form.faculty} onChange={(e) => set("faculty", e.target.value)} />
+            <label className={labelClass} htmlFor="faculty">Khoa/Ngành *</label>
+            <input id="faculty" name="faculty" autoComplete="organization" className="landing-input" value={form.faculty} onChange={(e) => set("faculty", e.target.value)} />
             <FieldError message={errors.faculty} />
           </div>
           <div>
-            <label className={labelClass}>Email *</label>
-            <input className="landing-input" type="email" value={form.email} onChange={(e) => set("email", e.target.value)} />
+            <label className={labelClass} htmlFor="email">Email *</label>
+            <input id="email" name="email" autoComplete="email" className="landing-input" type="email" value={form.email} onChange={(e) => set("email", e.target.value)} />
             <FieldError message={errors.email} />
           </div>
           <div>
-            <label className={labelClass}>Số điện thoại *</label>
-            <input className="landing-input" type="tel" value={form.phone} onChange={(e) => set("phone", e.target.value)} />
+            <label className={labelClass} htmlFor="phone">Số điện thoại *</label>
+            <input id="phone" name="phone" autoComplete="tel" className="landing-input" type="tel" value={form.phone} onChange={(e) => set("phone", e.target.value)} />
             <FieldError message={errors.phone} />
           </div>
           <div>
@@ -195,7 +195,7 @@ function ApplicationFormStep({ campaign, value, onSubmit, onSaveDraft }: Props) 
 
       {/* 3. Ban nguyện vọng — options = Ban trong chỉ tiêu đợt tuyển */}
       <SectionCard step="03" eyebrow="Định hướng" title="Ban nguyện vọng" delay={0.26}>
-        <p className="mb-5 -mt-2 text-sm text-[hsl(var(--landing-foreground)/0.6)]">
+        <p className="mb-5 -mt-2 text-sm text-[hsl(var(--landing-foreground)/0.78)]">
           Chọn tối đa {MAX_WISHES} ban theo thứ tự ưu tiên — nguyện vọng 1 là ban bạn mong muốn nhất.
           Danh sách ban lấy từ chỉ tiêu đợt tuyển.
         </p>
@@ -233,11 +233,12 @@ function ApplicationFormStep({ campaign, value, onSubmit, onSaveDraft }: Props) 
           <div className="space-y-5">
             {questions.map((q) => (
               <div key={q._id}>
-                <label className={labelClass}>
+                <label className={labelClass} htmlFor={`q-${q._id}`}>
                   {q.label} {q.required && "*"}
                 </label>
                 {q.type === "short_text" && (
                   <input
+                    id={`q-${q._id}`}
                     className="landing-input"
                     value={(form.answers[q._id] as string) ?? ""}
                     onChange={(e) => set("answers", { ...form.answers, [q._id]: e.target.value })}
@@ -245,6 +246,7 @@ function ApplicationFormStep({ campaign, value, onSubmit, onSaveDraft }: Props) 
                 )}
                 {q.type === "long_text" && (
                   <textarea
+                    id={`q-${q._id}`}
                     className="landing-input min-h-28 resize-y"
                     value={(form.answers[q._id] as string) ?? ""}
                     onChange={(e) => set("answers", { ...form.answers, [q._id]: e.target.value })}
@@ -325,7 +327,7 @@ function ApplicationFormStep({ campaign, value, onSubmit, onSaveDraft }: Props) 
               setSavingDraft(false);
             }
           }}
-          className="landing-btn-secondary liquid-glass inline-flex items-center justify-center gap-2 rounded-full px-6 py-3.5 disabled:opacity-50 md:w-auto"
+          className="landing-btn-secondary liquid-glass inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-3.5 disabled:opacity-50 md:w-auto"
         >
           <Save size={17} />
           {savingDraft ? "Đang lưu nháp..." : "Lưu nháp — nhận link qua email"}

@@ -9,4 +9,4 @@ services:
     container_name: iu_club_web
     restart: unless-stopped
     ports:
-      - "${WEB_PORT:-6666}:6666"
+      - "${WEB_PORT:-4173}:4173"

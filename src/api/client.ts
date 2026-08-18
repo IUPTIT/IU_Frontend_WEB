@@ -30,15 +30,18 @@ export class ApiRequestError extends Error {
 
 async function rawRequest<T>(path: string, options: RequestInit): Promise<ApiEnvelope<T>> {
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
     ...(options.headers as Record<string, string>),
   };
+  if (options.body && !headers["Content-Type"] && !headers["content-type"]) {
+    headers["Content-Type"] = "application/json";
+  }
   if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
 
+  const isPublic = path.startsWith("/public/");
   const res = await fetch(`${BASE_URL}${path}`, {
     ...options,
     headers,
-    credentials: "include", // gửi/nhận cookie refresh token
+    credentials: isPublic ? "omit" : "include",
   });
 
   const body = (await res.json().catch(() => null)) as ApiEnvelope<T> | null;

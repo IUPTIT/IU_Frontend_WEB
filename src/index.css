@@ -30,6 +30,26 @@
     scroll-behavior: smooth;
   }
 
+  .skip-link {
+    position: absolute;
+    left: 12px;
+    top: -48px;
+    z-index: 10000;
+    padding: 8px 14px;
+    border-radius: 8px;
+    background: #fff;
+    color: #191a2c;
+    font-weight: 600;
+    text-decoration: none;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  }
+
+  .skip-link:focus {
+    top: 12px;
+    outline: 2px solid #7c3aed;
+    outline-offset: 2px;
+  }
+
   body {
     @apply bg-canvas text-foreground font-sans antialiased;
   }
