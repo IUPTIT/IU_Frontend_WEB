@@ -5,7 +5,8 @@ const VIDEO_URL =
 
 const FADE_SECONDS = 0.5;
 const REPLAY_DELAY_MS = 100;
-const START_AFTER_MS = 1100;
+// Tăng delay — chờ LCP image load xong trước, sau đó mới bắt đầu load video
+const START_AFTER_MS = 2800;
 
 function applyFade(video: HTMLVideoElement) {
   if (!video.duration || video.ended) return;
@@ -21,10 +22,16 @@ function BackgroundVideo() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [active, setActive] = useState(false);
 
+  // Không load video trên mobile — tiết kiệm bandwidth + GPU (cải thiện Performance score)
+  const skipVideo =
+    typeof window !== "undefined" &&
+    !window.matchMedia("(min-width: 900px)").matches;
+
   useEffect(() => {
+    if (skipVideo) return;
     const timer = window.setTimeout(() => setActive(true), START_AFTER_MS);
     return () => window.clearTimeout(timer);
-  }, []);
+  }, [skipVideo]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -52,7 +59,7 @@ function BackgroundVideo() {
     };
   }, [active]);
 
-  if (!active) return null;
+  if (skipVideo || !active) return null;
 
   return (
     <video

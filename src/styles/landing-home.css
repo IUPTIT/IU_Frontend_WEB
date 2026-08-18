@@ -703,10 +703,17 @@ html:has(.lp-home) {
 .lp-hero-copy-wrap {
   position: relative;
   z-index: 3;
-  width: min(620px, 100%);
+  width: 100%;
   max-width: 100%;
+  min-width: 0;
   box-sizing: border-box;
   padding: 96px var(--lp-gutter) 48px;
+}
+
+@media (min-width: 900px) {
+  .lp-hero-copy-wrap {
+    width: min(620px, 52%);
+  }
 }
 
 @media (min-width: 900px) {
@@ -716,8 +723,15 @@ html:has(.lp-home) {
 }
 
 .lp-hero-copy {
-  max-width: 540px;
   width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+@media (min-width: 900px) {
+  .lp-hero-copy {
+    max-width: 540px;
+  }
 }
 
 .lp-hero-fx {
@@ -835,20 +849,36 @@ html:has(.lp-home) {
 
 .lp-hero-actions {
   display: flex;
-  flex-direction: row;
-  flex-wrap: nowrap;
-  align-items: center;
+  flex-direction: column;
+  flex-wrap: wrap;
+  align-items: flex-start;
   gap: 10px;
   margin-top: 28px;
-  width: max-content;
-  max-width: calc(100% - 8px);
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .lp-hero-actions .lp-btn {
-  width: auto;
-  flex: 0 1 auto;
+  width: 100%;
+  flex: 0 0 auto;
   white-space: nowrap;
   box-sizing: border-box;
+  max-width: 320px;
+}
+
+@media (min-width: 480px) {
+  .lp-hero-actions {
+    flex-direction: row;
+    width: auto;
+    max-width: 100%;
+    align-items: center;
+  }
+
+  .lp-hero-actions .lp-btn {
+    width: auto;
+    max-width: none;
+  }
 }
 
 .lp-hero-cd {
@@ -1694,7 +1724,7 @@ html:has(.lp-home) {
 @media (min-width: 900px) {
   .lp-acts {
     grid-template-columns: 1.4fr 1fr 1fr;
-    grid-template-rows: 240px 240px;
+    grid-auto-rows: 240px;
   }
 
   .lp-acts > :nth-child(1) {
@@ -1817,10 +1847,10 @@ html:has(.lp-home) {
 }
 
 .lp-news-rail {
-  overflow: hidden;
+  overflow-x: clip;
+  overflow-y: visible;
   width: 100%;
-  margin-inline: calc(var(--lp-gutter) * -1);
-  padding-inline: var(--lp-gutter);
+  /* Xóa negative margin — đây là nguyên nhân gây horizontal scroll trên mobile */
   mask-image: linear-gradient(90deg, transparent, #000 3%, #000 97%, transparent);
 }
 
@@ -2081,12 +2111,13 @@ html:has(.lp-home) {
     padding-block: 28px;
   }
 
+  /* translateY nhỏ hơn để không gây horizontal overflow do stacking context */
   .lp-moments-shot:nth-child(odd) {
-    transform: translateY(-12px);
+    transform: translateY(-8px);
   }
 
   .lp-moments-shot:nth-child(even) {
-    transform: translateY(16px);
+    transform: translateY(10px);
   }
 
   .lp-moments-shot:last-child {
@@ -2115,11 +2146,11 @@ html:has(.lp-home) {
   }
 
   .lp-moments-shot:nth-child(odd) {
-    transform: translateY(-40px);
+    transform: translateY(-32px);
   }
 
   .lp-moments-shot:nth-child(even) {
-    transform: translateY(48px);
+    transform: translateY(36px);
   }
 }
 
@@ -2374,5 +2405,161 @@ html:has(.lp-home) {
     to {
       transform: scale(1.04);
     }
+  }
+}
+
+/* =============================================================
+   MOBILE RESPONSIVE FIX — ngăn horizontal overflow, fix layout
+   ============================================================= */
+
+/* Root container ngăn mọi overflow ngang toàn trang */
+.landing-theme.lp-home {
+  overflow-x: clip;
+}
+
+/* Mọi section đều không được overflow ngang */
+.lp-section,
+.lp-moments,
+.lp-hero {
+  overflow-x: clip;
+}
+
+/* Moments row phải có overflow clip để translateY không tạo scrollbar ngang */
+.lp-moments-row {
+  overflow-x: clip;
+}
+
+/* Mobile nhỏ (< 480px): act card không quá cao */
+@media (max-width: 479px) {
+  .lp-act {
+    min-height: 180px;
+  }
+
+  /* Hero countdown không tràn ngang */
+  .lp-hero-cd {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .lp-hero-cd .flash-sale {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* Đảm bảo lp-container không tạo horizontal scroll */
+  .lp-container {
+    box-sizing: border-box;
+    overflow-x: clip;
+  }
+}
+
+/* Tablet (640–899px): acts dùng 2 cột, không lock row height */
+@media (min-width: 640px) and (max-width: 899px) {
+  .lp-acts {
+    grid-auto-rows: auto;
+  }
+
+  .lp-acts > :nth-child(1) {
+    grid-row: auto;
+  }
+}
+
+/* ================================================================
+   PERFORMANCE OPTIMIZATION — Mobile GPU & Animation Reduction
+   Mục tiêu: giảm backdrop-filter + animation → tăng FPS + Lighthouse
+   ================================================================ */
+
+@media (max-width: 899px) {
+
+  /* ── 1. XÓA backdrop-filter (đắt nhất trên mobile GPU) ── */
+
+  /* Cards — dùng background đậm hơn thay cho blur */
+  .lp-card {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: rgba(14, 9, 26, 0.92);
+  }
+
+  .lp-panel {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: rgba(8, 6, 18, 0.94);
+  }
+
+  /* Nav mobile */
+  .lp-nav-mobile {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: rgba(5, 5, 12, 0.99);
+  }
+
+  /* Header — GIỮ backdrop-filter vì sticky, nhưng giảm nhẹ */
+  .lp-header {
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  /* ── 2. TẮT continuous animation không ảnh hưởng UX ── */
+
+  /* Pulse icon số liệu */
+  .lp-num-orb {
+    animation: none;
+  }
+
+  /* Drift animation ảnh story/chapter */
+  .lp-story-shot img,
+  .pg-chapter-shot img {
+    animation: none;
+  }
+
+  /* Hero title gradient shift — giữ lp-fade-up nhưng bỏ title-shift */
+  .lp-hero-title {
+    animation: lp-fade-up 0.75s ease 0.08s both !important;
+    background-size: 140% 140%;
+  }
+
+  /* Eyebrow gradient text-run animation */
+  .lp-sec-head .lp-eyebrow,
+  .ab-hero-copy .lp-eyebrow,
+  .lp-story-copy .lp-eyebrow,
+  .ab-join-copy .lp-eyebrow {
+    animation: none;
+    background-image: none;
+    -webkit-background-clip: unset;
+    background-clip: unset;
+    color: #a855f7;
+    -webkit-text-fill-color: #a855f7;
+  }
+
+  /* ── 3. XÓA will-change thừa (mỗi cái tạo 1 GPU layer) ── */
+  .lp-btn,
+  .lp-btn-primary,
+  .lp-btn-ghost,
+  .lp-card,
+  .lp-value-card,
+  .lp-zigzag-card,
+  .lp-pillar-row {
+    will-change: auto;
+  }
+
+  /* ── 4. GIẢM box-shadow phức tạp ── */
+  .lp-card:hover,
+  .lp-value-card:hover {
+    transform: none;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  }
+
+  /* ── 5. News marquee — chạy chậm hơn trên mobile ── */
+  .lp-news-track {
+    animation-duration: 60s;
+  }
+}
+
+/* Rất nhỏ (<480px): dừng marquee hoàn toàn để tránh GPU drain */
+@media (max-width: 479px) {
+  .lp-news-track {
+    animation-play-state: paused;
   }
 }
