@@ -20,10 +20,12 @@ export default defineConfig(({ mode }) => {
     server: {
       host: true,
       port: devPort,
+      allowedHosts: ["portal.iuptit.com"],
     },
     preview: {
       host: true,
       port: webPort,
+      allowedHosts: ["portal.iuptit.com"],
     },
     build: {
       cssCodeSplit: true,

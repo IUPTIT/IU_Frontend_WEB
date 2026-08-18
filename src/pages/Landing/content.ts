@@ -31,8 +31,8 @@ export const STORY = {
   headlineLead: "MỘT HÀNH TRÌNH BẮT ĐẦU TỪ",
   headlineAccent: "03/01/2024",
   paragraphs: [
-    "IU Club (IUC) là câu lạc bộ CNTT định hướng ứng dụng thuộc UDU, được thành lập ngày 03/01/2024.",
-    "Từ những bước đi đầu tiên, IU CLUB từng bước trở thành một cộng đồng nơi kiến thức được sẻ chia, ý tưởng được khuyến khích và con người được phát triển.",
+    "IU CLUB là câu lạc bộ trực thuộc Viện Khoa học Kỹ thuật Bưu điện (PTIT), dành cho sinh viên Học viện Công nghệ Bưu chính Viễn thông, được thành lập vào 03/01/2024.",
+    "Với tinh thần \"Shine and Thrive\", IU CLUB là môi trường để sinh viên kết nối, học hỏi, thử sức và phát triển thông qua các hoạt động học thuật, dự án, sự kiện và trải nghiệm thực tế.",
   ],
   stats: [
     { value: "03/01/2024", label: "Ngày thành lập" },
@@ -262,7 +262,7 @@ export const FAQ = {
   items: [
     {
       q: "01. IU CLUB được thành lập từ khi nào?",
-      a: "IU CLUB được thành lập ngày 03/01/2024, là câu lạc bộ CNTT định hướng ứng dụng thuộc UDU.",
+      a: "IU CLUB được thành lập ngày 03/01/2024, là câu lạc bộ trực thuộc Viện Khoa học Kỹ thuật Bưu điện (PTIT), dành cho sinh viên Học viện Công nghệ Bưu chính Viễn thông.",
     },
     {
       q: "02. IU CLUB dành cho những ai?",
