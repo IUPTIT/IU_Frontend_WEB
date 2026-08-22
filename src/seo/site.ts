@@ -1,8 +1,8 @@
 export const SITE_NAME = "IU CLUB";
-export const SITE_URL = (import.meta.env.VITE_SITE_URL as string | undefined)?.replace(/\/+$/, "") || "https://iuptit.com";
+export const SITE_URL = (import.meta.env.VITE_SITE_URL as string | undefined)?.replace(/\/+$/, "") || "https://portal.iuptit.com";
 export const SITE_TAGLINE = "Shine and Thrive";
 export const DEFAULT_DESCRIPTION =
-  "IU CLUB là cộng đồng Công nghệ Thông tin dành cho sinh viên Viện Khoa học Kỹ thuật Bưu điện (RIPT) và Học viện Công nghệ Bưu chính Viễn thông (PTIT).";
+  "Câu lạc bộ IU CLUB là cộng đồng dành cho sinh viên PTIT, nơi kết nối những bạn trẻ cùng học hỏi, khám phá và phát triển bản thân. Thông qua các hoạt động, dự án, workshop và sự kiện, IU CLUB tạo môi trường để sinh viên rèn luyện kỹ năng, tích lũy trải nghiệm và cùng nhau tạo nên những giá trị ý nghĩa với tinh thần \"Shine and Thrive\".";
 
 export const OG_IMAGE_PATH = "/og.jpg";
 

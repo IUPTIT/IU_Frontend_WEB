@@ -32,7 +32,7 @@ function AchievementsSection() {
       </div>
 
       <div className="lp-sec-cta">
-        <LpButton href="#achievements">{ACHIEVEMENTS.cta}</LpButton>
+        <LpButton to="/su-kien">{ACHIEVEMENTS.cta}</LpButton>
       </div>
     </LpSection>
   );

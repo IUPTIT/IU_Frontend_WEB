@@ -15,6 +15,7 @@ const LookupPage = lazy(() => import("./pages/Lookup"));
 const AboutClubPage = lazy(() => import("./pages/AboutClub"));
 const DaoTaoPage = lazy(() => import("./pages/DaoTao"));
 const SuKienPage = lazy(() => import("./pages/SuKien"));
+const MentorDetailPage = lazy(() => import("./pages/MentorDetail"));
 
 function PageFallback() {
   return <div className="min-h-svh bg-[#05050c]" role="status" aria-label="Đang tải trang" />;
@@ -40,6 +41,8 @@ function App() {
           <Route path="/ve-iu-club" element={<AboutClubPage />} />
           <Route path="/dao-tao" element={<DaoTaoPage />} />
           <Route path="/su-kien" element={<SuKienPage />} />
+          <Route path="/co-van/ts-phan-ly-huynh" element={<MentorDetailPage />} />
+          <Route path="/giang-vien/phan-ly-huynh" element={<MentorDetailPage />} />
           <Route path="/tuyen-thanh-vien" element={<RecruitmentPage />} />
           <Route path="/tra-cuu" element={<LookupPage />} />
           <Route path="/login" element={<LoginRoute />} />

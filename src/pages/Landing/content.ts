@@ -4,9 +4,9 @@ export const HERO = {
   kicker: "IU CLUB",
   headline: "SHINE AND THRIVE",
   subheadline:
-    "Hơn cả một câu lạc bộ — một cộng đồng cùng học hỏi, cùng sáng tạo và cùng trưởng thành.",
+    "Hơn cả một câu lạc bộ — nơi sinh viên PTIT kết nối, khám phá và tỏa sáng.",
   paragraphs: [
-    "IU CLUB là cộng đồng Công nghệ Thông tin dành cho sinh viên Viện Khoa học Kỹ thuật Bưu điện (RIPT) nói riêng và Học viện Công nghệ Bưu chính Viễn thông (PTIT) nói chung.",
+    "IU CLUB là nơi những sinh viên PTIT mang trong mình đam mê công nghệ gặp gỡ, cùng học hỏi, cùng thử sức và biến những ý tưởng táo bạo thành trải nghiệm thực tế. Mỗi người một điểm xuất phát, cùng nhau tạo nên một hành trình để bứt phá và trưởng thành.",
   ],
   ctaPrimary: "KHÁM PHÁ IU CLUB",
   ctaSecondary: "THAM GIA CÙNG CHÚNG TÔI",
@@ -31,8 +31,8 @@ export const STORY = {
   headlineLead: "MỘT HÀNH TRÌNH BẮT ĐẦU TỪ",
   headlineAccent: "03/01/2024",
   paragraphs: [
-    "IU Club (IUC) là câu lạc bộ CNTT định hướng ứng dụng thuộc UDU, được thành lập ngày 03/01/2024.",
-    "Từ những bước đi đầu tiên, IU CLUB từng bước trở thành một cộng đồng nơi kiến thức được sẻ chia, ý tưởng được khuyến khích và con người được phát triển.",
+    "IU CLUB là cộng đồng dành cho sinh viên PTIT, đặc biệt là những bạn trẻ yêu thích công nghệ, lập trình và tinh thần khám phá. Được thành lập vào 03/01/2024, IU CLUB hướng đến việc tạo nên một môi trường năng động để các thành viên kết nối, học hỏi và cùng nhau phát triển.",
+    "Với tinh thần \"Shine and Thrive\", mỗi hoạt động, dự án và trải nghiệm tại IU CLUB là một cơ hội để bạn thử sức, phát huy thế mạnh và biến đam mê thành những giá trị thực tế.",
   ],
   stats: [
     { value: "03/01/2024", label: "Ngày thành lập" },
@@ -214,7 +214,7 @@ export const ACHIEVEMENTS = {
       line2: "Nguyễn Thị Hà, Nguyễn Minh Quang, Nguyễn Đình Đạt được vinh danh nhờ những đóng góp nổi bật.",
     },
   ],
-  cta: "XEM THÀNH TÍCH",
+  cta: "XEM SỰ KIỆN & THÀNH TÍCH",
 } as const;
 
 export const NEWS = {
@@ -262,7 +262,7 @@ export const FAQ = {
   items: [
     {
       q: "01. IU CLUB được thành lập từ khi nào?",
-      a: "IU CLUB được thành lập ngày 03/01/2024, là câu lạc bộ CNTT định hướng ứng dụng thuộc UDU.",
+      a: "IU CLUB được thành lập ngày 03/01/2024.",
     },
     {
       q: "02. IU CLUB dành cho những ai?",
@@ -293,7 +293,7 @@ export const FAQ = {
       a: "Tìm hiểu → Ứng tuyển → Đánh giá / Phỏng vấn → Training → Trở thành thành viên.",
     },
   ],
-  cta: "XEM FAQ",
+  cta: "ĐĂNG KÝ THAM GIA",
 } as const;
 
 export const MOMENTS = {

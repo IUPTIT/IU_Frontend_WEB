@@ -28,7 +28,7 @@ function NewsCard({
           {post.date}
         </p>
         <h3 className="lp-h3">{post.title}</h3>
-        <a className="lp-news-more" href="#news" tabIndex={hidden ? -1 : undefined}>
+        <a className="lp-news-more" href="/su-kien" tabIndex={hidden ? -1 : undefined}>
           {NEWS.readMore}
           <span aria-hidden> →</span>
         </a>
