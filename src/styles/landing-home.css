@@ -1974,21 +1974,24 @@ html:has(.lp-home) {
   display: flex;
   flex-direction: column;
   align-items: center;
+  width: 100%;
 }
 
 .lp-mentors-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 22px;
+  gap: 24px;
   width: 100%;
-  max-width: 880px;
-  margin-top: 40px;
+  max-width: 820px;
+  margin: 40px auto 0;
+  align-items: stretch;
+  justify-content: center;
 }
 
 @media (min-width: 768px) {
   .lp-mentors-grid {
     grid-template-columns: 1fr 1fr;
-    gap: 28px;
+    gap: 32px;
   }
 }
 
@@ -2012,11 +2015,19 @@ html:has(.lp-home) {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
-  gap: 8px;
-  min-height: 108px;
-  padding: 20px 18px 22px;
+  justify-content: center;
+  gap: 12px;
+  flex: 1;
+  padding: 24px 20px;
   text-align: center;
+}
+
+.lp-mentor-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
 }
 
 .lp-mentor-meta .lp-h3,
@@ -2563,3 +2574,796 @@ html:has(.lp-home) {
     animation-play-state: paused;
   }
 }
+
+/* =============================================================
+   RESPONSIVE TOÀN DIỆN — Landing Page
+   ============================================================= */
+
+/* ── Hero CTA buttons: stack dọc trên mobile nhỏ, ngang trên >=480px ── */
+@media (max-width: 479px) {
+  .lp-hero-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .lp-hero-actions .lp-btn {
+    width: 100%;
+    max-width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+
+  /* Hero title font nhỏ hơn chút trên mobile nhỏ */
+  .lp-hero-title {
+    font-size: clamp(1.25rem, 7vw, 1.6rem);
+    line-height: 1.28;
+  }
+
+  .lp-hero-sub {
+    font-size: clamp(0.95rem, 4.2vw, 1.1rem);
+    text-align: left;
+  }
+
+  .lp-hero-desc {
+    font-size: 0.93rem;
+    text-align: left;
+  }
+
+  /* H2 sections */
+  .lp-h2 {
+    font-size: clamp(1.1rem, 5.5vw, 1.4rem);
+  }
+
+  /* Story facts — stack dọc trên mobile */
+  .lp-story-facts {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  /* Values grid — 1 cột trên mobile nhỏ */
+  .lp-values {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  /* Timeline — 1 cột trên mobile nhỏ */
+  .lp-timeline {
+    grid-template-columns: 1fr;
+  }
+
+  /* Panel padding nhỏ hơn */
+  .lp-panel {
+    padding: 20px 16px;
+  }
+
+  /* Director section */
+  .lp-dir article {
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px 14px;
+  }
+
+  /* Moments photos */
+  .lp-moments-shot {
+    aspect-ratio: 4 / 3;
+  }
+}
+
+/* ── Tablet nhỏ (480–767px) ── */
+@media (min-width: 480px) and (max-width: 767px) {
+  .lp-hero-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .lp-hero-actions .lp-btn {
+    flex: 1 1 auto;
+    min-width: 160px;
+    max-width: none;
+    justify-content: center;
+  }
+
+  /* Values — 2 cột */
+  .lp-values {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* Story facts 3 cột */
+  .lp-story-facts {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* ── Tablet lớn (768–899px) ── */
+@media (min-width: 768px) and (max-width: 899px) {
+  /* About grid — 2 cột */
+  .lp-about-grid {
+    gap: 20px;
+  }
+
+  /* Acts 2 cột */
+  .lp-acts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-rows: auto;
+  }
+
+  .lp-acts > :nth-child(1) {
+    grid-row: auto;
+  }
+}
+
+/* ── Các section sections cần padding nhỏ hơn trên mobile ── */
+@media (max-width: 639px) {
+  .lp-section {
+    padding-block: 32px;
+  }
+
+  .lp-sec-head {
+    gap: 10px;
+  }
+
+  .lp-sec-cta {
+    margin-top: 28px;
+  }
+
+  /* Numbers panel 2 cột thay 2 rows stagger */
+  .lp-num-panel {
+    grid-template-columns: 1fr 1fr;
+    gap: 20px 12px;
+  }
+
+  .lp-num-cell:nth-child(5) {
+    grid-column: 1 / -1;
+  }
+}
+
+/* ── Fix board section cards trên mobile ── */
+@media (max-width: 599px) {
+  /* Ensures board cards don't overflow */
+  .pg-board-card,
+  .lp-achieve-card,
+  .lp-mentor-card {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  /* FAQ items padding */
+  .lp-faq-item button {
+    padding: 16px 40px 16px 0;
+    font-size: 0.95rem;
+  }
+
+  /* Section head h2 */
+  .lp-sec-head .lp-h2 {
+    font-size: clamp(1.05rem, 5vw, 1.4rem);
+  }
+}
+
+/* ── Zigzag timeline mobile: tất cả căn trái ── */
+@media (max-width: 767px) {
+  .lp-zigzag-item.is-left .lp-zigzag-card,
+  .lp-zigzag-item.is-right .lp-zigzag-card {
+    text-align: left;
+    max-width: none;
+    justify-self: stretch;
+    grid-column: 1;
+  }
+
+  .lp-zigzag-item.is-left .lp-zigzag-card .lp-body {
+    text-align: left;
+    text-align-last: left;
+  }
+}
+
+/* ── Story section mobile: image before text ── */
+@media (max-width: 959px) {
+  .lp-story {
+    grid-template-columns: 1fr;
+  }
+
+  .lp-story-shot {
+    aspect-ratio: 16 / 9;
+  }
+}
+
+/* ── Prevent text overflow on very small screens ── */
+@media (max-width: 360px) {
+  :root {
+    font-size: 14px;
+  }
+
+  .lp-hero-title {
+    font-size: 1.2rem;
+  }
+
+  .lp-hero-kicker {
+    font-size: 0.9rem;
+  }
+
+  .lp-hero-actions .lp-btn {
+    font-size: 11px;
+    padding: 0 14px;
+  }
+}
+
+/* ── Safe area insets cho iPhone notch/home bar ── */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .lp-hero-copy-wrap {
+    padding-bottom: max(48px, env(safe-area-inset-bottom));
+  }
+}
+
+/* =============================================================
+   MENTOR PROFILE CARD — TS. Phan Lý Huỳnh
+   ============================================================= */
+
+.lp-mentor-profile {
+  width: 100%;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 24px;
+}
+
+/* ── Profile hero: photo + identity ── */
+.lp-mentor-profile-hero {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+
+@media (min-width: 768px) {
+  .lp-mentor-profile-hero {
+    grid-template-columns: 280px 1fr;
+  }
+}
+
+@media (min-width: 1024px) {
+  .lp-mentor-profile-hero {
+    grid-template-columns: 320px 1fr;
+  }
+}
+
+/* Photo wrapper */
+.lp-mentor-profile-photo-wrap {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 4 / 3;
+  background: #0b0814;
+}
+
+@media (min-width: 768px) {
+  .lp-mentor-profile-photo-wrap {
+    aspect-ratio: auto;
+    min-height: 420px;
+  }
+}
+
+.lp-mentor-profile-photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+}
+
+.lp-mentor-profile-glow {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    transparent 40%,
+    rgba(10, 6, 22, 0.7) 100%
+  );
+  pointer-events: none;
+}
+
+@media (min-width: 768px) {
+  .lp-mentor-profile-glow {
+    background: linear-gradient(
+      270deg,
+      transparent 50%,
+      rgba(10, 6, 22, 0.55) 100%
+    );
+  }
+}
+
+/* Identity panel */
+.lp-mentor-profile-identity {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 28px 24px 32px;
+}
+
+@media (min-width: 768px) {
+  .lp-mentor-profile-identity {
+    padding: 36px 36px 36px 32px;
+    gap: 12px;
+  }
+}
+
+.lp-mentor-profile-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #a855f7;
+  margin: 0;
+}
+
+.lp-mentor-profile-name {
+  font-family: "Be Vietnam Pro", "DM Sans", sans-serif;
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+  color: #fff;
+  margin: 0;
+}
+
+.lp-mentor-profile-role {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #d8b4fe;
+  margin: 0;
+  line-height: 1.45;
+}
+
+.lp-mentor-profile-institute {
+  font-size: 0.88rem;
+  color: rgba(255, 255, 255, 0.62);
+  margin: 0;
+}
+
+.lp-mentor-profile-email {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #c084fc;
+  text-decoration: none;
+  margin: 2px 0;
+  transition: color 0.2s ease;
+}
+
+.lp-mentor-profile-email:hover {
+  color: #e9d5ff;
+}
+
+.lp-mentor-profile-bio {
+  font-size: 0.92rem;
+  line-height: 1.75;
+  color: rgba(255, 255, 255, 0.82);
+  margin: 4px 0 0;
+  text-align: justify;
+  text-align-last: left;
+}
+
+/* Expertise tags */
+.lp-mentor-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.lp-mentor-tag {
+  display: inline-block;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: #e9d5ff;
+  background: rgba(168, 85, 247, 0.16);
+  border: 1px solid rgba(168, 85, 247, 0.32);
+}
+
+/* Divider */
+.lp-mentor-divider {
+  height: 1px;
+  margin: 0 24px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(168, 85, 247, 0.4) 20%,
+    rgba(224, 52, 140, 0.4) 80%,
+    transparent
+  );
+}
+
+/* ── Profile body: 3 columns ── */
+.lp-mentor-profile-body {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+
+@media (min-width: 768px) {
+  .lp-mentor-profile-body {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* Each block */
+.lp-mentor-block {
+  padding: 28px 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+@media (min-width: 768px) {
+  .lp-mentor-block {
+    border-top: none;
+    border-left: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 32px 28px;
+  }
+
+  .lp-mentor-block:first-child {
+    border-left: none;
+  }
+}
+
+.lp-mentor-block-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.lp-mentor-block-title {
+  font-family: "Be Vietnam Pro", "DM Sans", sans-serif;
+  font-size: 0.88rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #d8b4fe;
+  margin: 0;
+}
+
+/* Education list */
+.lp-mentor-edu-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.lp-mentor-edu-item {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: 10px;
+  align-items: start;
+}
+
+.lp-mentor-edu-year {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #a855f7;
+  padding-top: 2px;
+  white-space: nowrap;
+}
+
+.lp-mentor-edu-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.lp-mentor-edu-info strong {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.4;
+}
+
+.lp-mentor-edu-info span {
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.58);
+  line-height: 1.4;
+}
+
+/* Publications list */
+.lp-mentor-pub-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.lp-mentor-pub-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.lp-mentor-pub-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.lp-mentor-pub-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  width: fit-content;
+}
+
+.lp-mentor-pub-badge.is-journal {
+  background: rgba(99, 102, 241, 0.2);
+  color: #a5b4fc;
+  border: 1px solid rgba(99, 102, 241, 0.35);
+}
+
+.lp-mentor-pub-badge.is-conf {
+  background: rgba(168, 85, 247, 0.15);
+  color: #d8b4fe;
+  border: 1px solid rgba(168, 85, 247, 0.3);
+}
+
+.lp-mentor-pub-title {
+  font-size: 0.87rem;
+  font-weight: 600;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0;
+}
+
+.lp-mentor-pub-venue {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0;
+}
+
+/* Projects list */
+.lp-mentor-proj-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.lp-mentor-proj-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.87rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.lp-mentor-proj-icon {
+  flex-shrink: 0;
+  margin-top: 3px;
+  color: #a855f7;
+}
+
+/* ── Compact card row (Thầy Đại) ── */
+.lp-mentor-compact-row {
+  display: flex;
+  justify-content: center;
+  margin-top: 28px;
+}
+
+.lp-mentor-compact-card {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 20px;
+  padding: 20px 24px;
+  max-width: 480px;
+  width: 100%;
+}
+
+.lp-mentor-compact-photo {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: center top;
+  flex-shrink: 0;
+  border: 2px solid rgba(168, 85, 247, 0.4);
+}
+
+.lp-mentor-compact-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.lp-mentor-compact-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #a855f7;
+}
+
+/* ── Mobile responsive for mentor profile ── */
+@media (max-width: 767px) {
+  .lp-mentor-profile-body {
+    grid-template-columns: 1fr;
+  }
+
+  .lp-mentor-block {
+    border-left: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 22px 20px;
+  }
+
+  .lp-mentor-compact-card {
+    flex-direction: column;
+    text-align: center;
+    align-items: center;
+    padding: 22px 20px;
+  }
+
+  .lp-mentor-compact-meta {
+    align-items: center;
+  }
+
+  .lp-mentor-compact-label {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 479px) {
+  .lp-mentor-profile-identity {
+    padding: 20px 16px 24px;
+  }
+
+  .lp-mentor-profile-name {
+    font-size: 1.35rem;
+  }
+
+  .lp-mentor-divider {
+    margin: 0 16px;
+  }
+
+  .lp-mentor-block {
+    padding: 18px 16px;
+  }
+
+  .lp-mentor-edu-item {
+    grid-template-columns: 60px 1fr;
+  }
+}
+
+/* =============================================================
+   MENTOR EXPAND BUTTON & ACCORDION DETAIL PANEL
+   ============================================================= */
+
+/* Expand button trong mentor card */
+.lp-mentor-expand-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #e9d5ff;
+  background: rgba(168, 85, 247, 0.16);
+  border: 1px solid rgba(168, 85, 247, 0.35);
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+}
+
+.lp-mentor-expand-btn:hover {
+  background: rgba(168, 85, 247, 0.28);
+  border-color: rgba(168, 85, 247, 0.6);
+  transform: translateY(-1px);
+}
+
+.lp-mentor-expand-btn:active {
+  transform: translateY(0);
+}
+
+/* Accordion wrapper — ẩn khi đóng, hiện khi mở */
+.lp-mentor-detail-wrap {
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  margin-top: 0;
+  transition:
+    max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.35s ease,
+    margin-top 0.35s ease;
+}
+
+.lp-mentor-detail-wrap.is-open {
+  max-height: 2400px;
+  opacity: 1;
+  margin-top: 28px;
+}
+
+/* Panel container */
+.lp-mentor-detail-panel {
+  border-radius: 20px;
+  border: 1px solid rgba(168, 85, 247, 0.25);
+  background: rgba(10, 6, 22, 0.72);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  overflow: hidden;
+}
+
+/* Top area: bio + expertise */
+.lp-mentor-detail-top {
+  padding: 28px 24px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.lp-mentor-detail-bio {
+  font-size: 0.9rem;
+  line-height: 1.75;
+  color: rgba(255, 255, 255, 0.82);
+  margin: 10px 0 14px;
+  text-align: justify;
+  text-align-last: left;
+}
+
+/* 3-column body */
+.lp-mentor-detail-body {
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 768px) {
+  .lp-mentor-detail-body {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .lp-mentor-detail-body .lp-mentor-block {
+    border-top: none;
+    border-left: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .lp-mentor-detail-body .lp-mentor-block:first-child {
+    border-left: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .lp-mentor-detail-top {
+    padding: 20px 16px 16px;
+  }
+
+  .lp-mentor-detail-body .lp-mentor-block {
+    padding: 18px 16px;
+  }
+}
+
+/* Mobile: tắt backdrop-filter để tránh tốn GPU */
+@media (max-width: 899px) {
+  .lp-mentor-detail-panel {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: rgba(10, 6, 22, 0.94);
+  }
+}
+

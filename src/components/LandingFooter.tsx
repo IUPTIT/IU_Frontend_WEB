@@ -7,7 +7,7 @@ import "../styles/landing-home.css";
 const CONTACTS = [
   { icon: "phone", label: "098 981 14 24", href: "tel:0989811424" },
   { icon: "mail", label: "iuptitclub@gmail.com", href: "mailto:iuptitclub@gmail.com" },
-  { icon: "globe", label: "https://iuptit.com", href: "https://iuptit.com" },
+  { icon: "globe", label: "https://portal.iuptit.com", href: "https://portal.iuptit.com" },
 ] as const;
 
 const FANPAGE_URL = "https://www.facebook.com/profile.php?id=61564322655289";
@@ -48,10 +48,10 @@ const icons: Record<string, ReactNode> = {
   ),
 };
 
-function Icon({ name, className }: { name: string; className?: string }) {
+function Icon({ name, className = "" }: { name: string; className?: string }) {
   return (
     <svg
-      className={className ?? "h-4 w-4"}
+      className={`h-4 w-4 shrink-0 ${className}`}
       viewBox="0 0 22 22"
       fill="none"
       stroke="currentColor"
@@ -78,21 +78,21 @@ function LandingFooter() {
   };
 
   return (
-    <footer className="relative z-10 border-t border-white/10 bg-[hsl(var(--landing-background)/0.92)]">
+    <footer className="relative z-10 border-t border-white/10 bg-[#070512]/95 text-white backdrop-blur-md">
       <div className="mx-auto grid max-w-6xl gap-10 px-5 py-12 sm:px-8 sm:py-14 md:grid-cols-2 lg:grid-cols-5">
         <div>
           <div className="flex items-center gap-2.5">
             <img src={logo} alt="" className="h-9 w-auto" width={36} height={36} decoding="async" aria-hidden />
             <p className="landing-display text-2xl font-bold text-purple-400">IU CLUB</p>
           </div>
-          <p className="landing-display mt-4 text-sm tracking-[0.14em] text-white/70">SHINE AND THRIVE</p>
-          <p className="mt-2 text-sm text-[hsl(var(--landing-foreground)/0.65)]">
+          <p className="landing-display mt-4 text-sm font-semibold tracking-[0.14em] text-white/80">SHINE AND THRIVE</p>
+          <p className="mt-2 text-sm text-gray-300">
             Cùng nhau tỏa sáng. Cùng nhau trưởng thành.
           </p>
         </div>
 
         <div>
-          <h3 className="landing-headline text-sm font-semibold uppercase tracking-wide">Điều hướng</h3>
+          <h3 className="text-xs font-bold uppercase tracking-wider text-purple-300">Điều hướng</h3>
           <ul className="mt-5 space-y-3">
             {NAV_ITEMS.map((item) => (
               <li key={item.label}>
@@ -102,7 +102,7 @@ function LandingFooter() {
                     event.preventDefault();
                     goTo(item);
                   }}
-                  className="text-sm text-[hsl(var(--landing-foreground)/0.7)] transition-colors hover:text-purple-300"
+                  className="text-sm text-gray-300 transition-colors hover:text-purple-300"
                 >
                   {item.label}
                 </Link>
@@ -112,7 +112,7 @@ function LandingFooter() {
         </div>
 
         <div>
-          <h3 className="landing-headline text-sm font-semibold uppercase tracking-wide">Tuyển thành viên</h3>
+          <h3 className="text-xs font-bold uppercase tracking-wider text-purple-300">Tuyển thành viên</h3>
           <ul className="mt-5 space-y-3">
             {RECRUIT_LINKS.map((link) => (
               <li key={link.label}>
@@ -122,7 +122,7 @@ function LandingFooter() {
                     event.preventDefault();
                     goTo(link);
                   }}
-                  className="text-sm text-[hsl(var(--landing-foreground)/0.7)] transition-colors hover:text-purple-300"
+                  className="text-sm text-gray-300 transition-colors hover:text-purple-300"
                 >
                   {link.label}
                 </Link>
@@ -132,7 +132,7 @@ function LandingFooter() {
         </div>
 
         <div>
-          <h3 className="landing-headline text-sm font-semibold uppercase tracking-wide">Mạng xã hội</h3>
+          <h3 className="text-xs font-bold uppercase tracking-wider text-purple-300">Mạng xã hội</h3>
           <ul className="mt-5 space-y-3">
             {SOCIAL_LINKS.map((social) => (
               <li key={social.name}>
@@ -140,7 +140,7 @@ function LandingFooter() {
                   href={social.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm text-[hsl(var(--landing-foreground)/0.7)] transition-colors hover:text-purple-300"
+                  className="text-sm text-gray-300 transition-colors hover:text-purple-300"
                 >
                   {social.label}
                 </a>
@@ -150,7 +150,7 @@ function LandingFooter() {
         </div>
 
         <div>
-          <h3 className="landing-headline text-sm font-semibold uppercase tracking-wide">Liên hệ</h3>
+          <h3 className="text-xs font-bold uppercase tracking-wider text-purple-300">Liên hệ</h3>
           <ul className="mt-5 space-y-3">
             {CONTACTS.map((contact) => (
               <li key={contact.label}>
@@ -158,9 +158,9 @@ function LandingFooter() {
                   href={contact.href}
                   target={contact.icon === "globe" ? "_blank" : undefined}
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2.5 text-sm text-[hsl(var(--landing-foreground)/0.7)] transition-colors hover:text-[hsl(var(--landing-foreground))]"
+                  className="flex items-center gap-2.5 text-sm text-gray-300 transition-colors hover:text-white"
                 >
-                  <Icon name={contact.icon} />
+                  <Icon name={contact.icon} className="text-purple-400" />
                   {contact.label}
                 </a>
               </li>
@@ -170,7 +170,7 @@ function LandingFooter() {
       </div>
 
       <div className="border-t border-white/10 py-6 text-center">
-        <p className="text-sm text-[hsl(var(--landing-foreground)/0.7)]">©2026 | Bản quyền thuộc IU Club</p>
+        <p className="text-sm text-gray-400">©2026 | Bản quyền thuộc IU Club</p>
         <div className="mt-3 flex justify-center gap-4">
           {SOCIAL_LINKS.map((social) => (
             <a
@@ -179,7 +179,7 @@ function LandingFooter() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label={social.label}
-              className="flex h-11 w-11 items-center justify-center rounded-full text-[hsl(var(--landing-foreground)/0.78)] transition-all duration-300 hover:bg-white/10 hover:text-[hsl(var(--landing-foreground))]"
+              className="flex h-11 w-11 items-center justify-center rounded-full text-gray-300 transition-all duration-300 hover:bg-white/10 hover:text-white"
             >
               <Icon name={social.name} className="h-5 w-5" />
             </a>

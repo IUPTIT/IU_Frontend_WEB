@@ -1,65 +1,60 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 
 const VIDEO_URL =
   "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260328_065045_c44942da-53c6-4804-b734-f9e07fc22e08.mp4";
 
 const FADE_SECONDS = 0.5;
-const REPLAY_DELAY_MS = 100;
-// Tăng delay — chờ LCP image load xong trước, sau đó mới bắt đầu load video
-const START_AFTER_MS = 2800;
+
+function prefersReducedMotion(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
 
 function applyFade(video: HTMLVideoElement) {
   if (!video.duration || video.ended) return;
   const t = video.currentTime;
   const remaining = video.duration - t;
-  let opacity = 1;
-  if (t < FADE_SECONDS) opacity = t / FADE_SECONDS;
-  else if (remaining < FADE_SECONDS) opacity = Math.max(remaining / FADE_SECONDS, 0);
+  let opacity = 0.85;
+  if (t < FADE_SECONDS) opacity = (t / FADE_SECONDS) * 0.85;
+  else if (remaining < FADE_SECONDS) opacity = Math.max((remaining / FADE_SECONDS) * 0.85, 0);
   video.style.opacity = opacity.toFixed(3);
 }
 
 function BackgroundVideo() {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [active, setActive] = useState(false);
-
-  // Không load video trên mobile — tiết kiệm bandwidth + GPU (cải thiện Performance score)
-  const skipVideo =
-    typeof window !== "undefined" &&
-    !window.matchMedia("(min-width: 900px)").matches;
+  const skipVideo = prefersReducedMotion();
 
   useEffect(() => {
     if (skipVideo) return;
-    const timer = window.setTimeout(() => setActive(true), START_AFTER_MS);
-    return () => window.clearTimeout(timer);
-  }, [skipVideo]);
-
-  useEffect(() => {
     const video = videoRef.current;
-    if (!video || !active) return;
+    if (!video) return;
 
-    let replayTimer = 0;
+    const handleLoadedData = () => {
+      void video.play().catch(() => {});
+    };
 
     const handleEnded = () => {
-      video.style.opacity = "0";
-      replayTimer = window.setTimeout(() => {
-        video.currentTime = 0;
-        void video.play().catch(() => {});
-      }, REPLAY_DELAY_MS);
+      video.currentTime = 0;
+      void video.play().catch(() => {});
     };
 
     const onTime = () => applyFade(video);
+
+    video.addEventListener("loadeddata", handleLoadedData);
     video.addEventListener("timeupdate", onTime);
     video.addEventListener("ended", handleEnded);
+
+    // Bắt đầu play ngay
     void video.play().catch(() => {});
 
     return () => {
-      window.clearTimeout(replayTimer);
+      video.removeEventListener("loadeddata", handleLoadedData);
       video.removeEventListener("timeupdate", onTime);
       video.removeEventListener("ended", handleEnded);
     };
-  }, [active]);
+  }, [skipVideo]);
 
-  if (skipVideo || !active) return null;
+  if (skipVideo) return null;
 
   return (
     <video
@@ -68,9 +63,14 @@ function BackgroundVideo() {
       muted
       playsInline
       autoPlay
-      preload="none"
-      className="fixed inset-0 h-full w-full object-cover"
-      style={{ opacity: 0 }}
+      loop
+      preload="auto"
+      className="fixed inset-0 h-full w-full object-cover pointer-events-none transition-opacity duration-700"
+      style={{
+        opacity: 0,
+        zIndex: -1,
+        willChange: "opacity",
+      }}
       aria-hidden
     />
   );

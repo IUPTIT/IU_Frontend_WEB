@@ -59,8 +59,9 @@ function LookupPage() {
   };
 
   return (
-    <div className="landing-theme relative min-h-screen">
+    <div className="landing-theme lp-home relative min-h-screen">
       <BackgroundVideo />
+      <div className="lp-page-veil" />
       <div className="relative z-10">
         <LandingNavBar />
 

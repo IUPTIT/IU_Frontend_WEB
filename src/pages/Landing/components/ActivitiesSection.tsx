@@ -24,7 +24,7 @@ function ActivitiesSection() {
         ))}
       </div>
       <div className="lp-sec-cta">
-        <LpButton href="#activities">{ACTIVITIES.cta}</LpButton>
+        <LpButton to="/ve-iu-club">{ACTIVITIES.cta}</LpButton>
       </div>
     </LpSection>
   );

@@ -42,7 +42,7 @@ function FaqSection() {
             );
           })}
           <div className="lp-sec-cta">
-            <LpButton href="#faq">{FAQ.cta}</LpButton>
+            <LpButton to="/tuyen-thanh-vien">{FAQ.cta}</LpButton>
           </div>
         </div>
       </div>
