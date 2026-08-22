@@ -3,20 +3,27 @@
  */
 
 const ASSET_MODULES = {
+  ...import.meta.glob("../../assets/*.png", { eager: true, import: "default" }),
+  ...import.meta.glob("../../assets/*.jpg", { eager: true, import: "default" }),
+  ...import.meta.glob("../../assets/*.jpeg", { eager: true, import: "default" }),
   ...import.meta.glob("../../assets/*.webp", { eager: true, import: "default" }),
-  ...import.meta.glob("../../assets/logo.png", { eager: true, import: "default" }),
-  ...import.meta.glob("../../assets/logo-v2.jpg", { eager: true, import: "default" }),
 } as Record<string, string>;
 
 export function assetUrl(...fileNames: string[]): string | undefined {
   for (const fileName of fileNames) {
-    const webpName = fileName.replace(/\.(png|jpe?g)$/i, ".webp");
-    for (const needle of [webpName, fileName].map((name) => name.toLowerCase())) {
+    // 1. Ưu tiên tìm đúng tên file gốc (PNG / JPG) để giữ chất lượng cao nhất
+    for (const needle of [fileName].map((name) => name.toLowerCase())) {
       const hit = Object.entries(ASSET_MODULES).find(([path]) =>
         path.replace(/\\/g, "/").toLowerCase().endsWith(`/${needle}`),
       );
       if (hit) return hit[1];
     }
+    // 2. Fallback sang .webp nếu file gốc không có
+    const webpName = fileName.replace(/\.(png|jpe?g)$/i, ".webp").toLowerCase();
+    const hitWebp = Object.entries(ASSET_MODULES).find(([path]) =>
+      path.replace(/\\/g, "/").toLowerCase().endsWith(`/${webpName}`),
+    );
+    if (hitWebp) return hitWebp[1];
   }
   return undefined;
 }
