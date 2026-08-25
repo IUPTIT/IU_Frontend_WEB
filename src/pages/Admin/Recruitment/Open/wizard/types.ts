@@ -81,9 +81,7 @@ export const FIXED_FIELDS: { label: string; hint: string }[] = [
   { label: "Email", hint: "Email — dùng đăng nhập tài khoản Ứng viên" },
   { label: "Số điện thoại", hint: "10 chữ số" },
   { label: "Ngày sinh", hint: "Bắt buộc tuyệt đối — dùng sinh mật khẩu tài khoản Ứng viên" },
-  { label: "Ảnh đại diện", hint: "JPG/PNG, tối đa 2MB" },
-  { label: "CV", hint: "PDF/DOCX, tối đa 5MB" },
-  { label: "Ban nguyện vọng", hint: "Chọn tối đa 3 ban theo thứ tự ưu tiên" },
+  { label: "Ban nguyện vọng", hint: "Chọn tối đa 2 ban theo thứ tự ưu tiên" },
 ];
 
 export function createEmptyDraft(quotas: QuotaDraft[] = []): CampaignDraft {

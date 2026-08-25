@@ -13,7 +13,6 @@ import {
   getDraft,
   saveDraft,
   submitApplication,
-  uploadRecruitmentFile,
 } from "../../services/publicRecruitmentService";
 import type { PublicCampaign } from "../../services/publicRecruitmentService";
 import { EMPTY_APPLICATION } from "./types";
@@ -65,7 +64,7 @@ function RecruitmentPage() {
               wishes: draft.wishes.length ? draft.wishes : f.wishes,
               answers: draft.answers,
             }));
-            setDraftNotice("Đã khôi phục đơn nháp của bạn — điền tiếp và nộp trước hạn nhé. Ảnh và CV cần chọn lại.");
+            setDraftNotice("Đã khôi phục đơn nháp của bạn — điền tiếp và nộp trước hạn nhé.");
           } catch {
             setDraftNotice("Link đơn nháp không hợp lệ hoặc đã hết hạn — bạn có thể điền đơn mới.");
           }
@@ -113,12 +112,6 @@ function RecruitmentPage() {
     setSubmitting(true);
     setSubmitError(null);
     try {
-      // Upload ảnh + CV lên Cloudinary trước, lấy URL thật đính vào hồ sơ
-      const [avatarUrl, cvUrl] = await Promise.all([
-        form.avatar ? uploadRecruitmentFile("avatar", form.avatar) : Promise.resolve(""),
-        form.cv ? uploadRecruitmentFile("cv", form.cv) : Promise.resolve(""),
-      ]);
-
       const application = await submitApplication(
         {
           campaignId: campaign.id,
@@ -129,8 +122,6 @@ function RecruitmentPage() {
           email: form.email,
           phone: form.phone,
           dateOfBirth: form.dateOfBirth,
-          avatarUrl,
-          cvUrl,
           wishes: form.wishes.filter(Boolean),
           answers: form.answers,
         },

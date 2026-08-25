@@ -7,9 +7,7 @@ export type ApplicationForm = {
   email: string;
   phone: string;
   dateOfBirth: string;
-  avatar: File | null;
-  cv: File | null;
-  wishes: string[]; // ban nguyện vọng theo thứ tự ưu tiên, tối đa 3
+  wishes: string[]; // ban nguyện vọng theo thứ tự ưu tiên, tối đa 2
   answers: Record<string, string | string[]>; // key = _id câu hỏi
 };
 
@@ -21,8 +19,6 @@ export const EMPTY_APPLICATION: ApplicationForm = {
   email: "",
   phone: "",
   dateOfBirth: "",
-  avatar: null,
-  cv: null,
   wishes: [""],
   answers: {},
 };

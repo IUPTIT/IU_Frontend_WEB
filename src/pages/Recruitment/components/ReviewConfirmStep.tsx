@@ -41,8 +41,6 @@ function ReviewConfirmStep({ form, campaign, submitting, error, onBack, onConfir
         <Row label="Email" value={form.email} />
         <Row label="Số điện thoại" value={form.phone} />
         <Row label="Ngày sinh" value={form.dateOfBirth} />
-        <Row label="Ảnh đại diện" value={form.avatar?.name ?? ""} />
-        <Row label="CV" value={form.cv?.name ?? ""} />
         <Row label="Ban nguyện vọng" value={form.wishes.map((w, i) => `NV${i + 1}: ${w}`).join(" · ")} />
         {questions.map((q) => {
           const answer = form.answers[q._id];
