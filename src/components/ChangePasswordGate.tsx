@@ -143,12 +143,14 @@ function ChangePasswordGate() {
                   Đổi mật khẩu lần đầu
                 </h1>
                 <p className="mt-2 text-sm leading-relaxed text-[#6B7086]">
-                  Tài khoản dùng mật khẩu mặc định là{" "}
+                  Tài khoản của bạn đang dùng{" "}
                   <strong className="font-semibold text-[#3D4458]">
-                    ngày sinh DDMMYYYY
-                  </strong>{" "}
-                  (ví dụ 15052006). Đặt mật khẩu mới trước khi đặt lịch phỏng
-                  vấn.
+                    mật khẩu tạm thời
+                  </strong>
+                  . Vui lòng đặt mật khẩu mới trước khi sử dụng hệ thống.{" "}
+                  <span className="text-[#9AA0B4]">
+                    (Ứng viên: mật khẩu mặc định là ngày sinh DDMMYYYY)
+                  </span>
                 </p>
               </div>
             </div>
