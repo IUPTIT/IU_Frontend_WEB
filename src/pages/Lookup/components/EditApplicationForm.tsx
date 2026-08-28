@@ -107,7 +107,7 @@ function EditApplicationForm({ application, onSaved, onCancel }: Props) {
       </div>
 
       <div>
-        <label className={labelClass}>Ban nguyện vọng (cách nhau bởi dấu phẩy, tối đa 3)</label>
+        <label className={labelClass}>Ban nguyện vọng (cách nhau bởi dấu phẩy, tối đa 2)</label>
         <input className="landing-input" value={wishes} onChange={(e) => setWishes(e.target.value)} />
       </div>
 
