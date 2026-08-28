@@ -4,7 +4,6 @@ import { ArrowRight, Save } from "lucide-react";
 import LandingSelect from "../../../components/LandingSelect";
 import LandingDatePicker from "../../../components/LandingDatePicker";
 import SectionCard from "./SectionCard";
-import FileDropzone from "./FileDropzone";
 import type { ApplicationForm } from "../types";
 import type { PublicCampaign, PublicQuestion } from "../../../services/publicRecruitmentService";
 import { validatePersonName, validatePhoneVN } from "../../../utils/validateContact";
@@ -17,9 +16,7 @@ type Props = {
   onSaveDraft: (form: ApplicationForm) => Promise<void>;
 };
 
-const MAX_WISHES = 3;
-const MAX_CV_MB = 5;
-const MAX_AVATAR_MB = 2;
+const MAX_WISHES = 2;
 const MIN_AGE = 16;
 
 function validate(form: ApplicationForm, questions: PublicQuestion[]): Record<string, string> {
@@ -48,19 +45,6 @@ function validate(form: ApplicationForm, questions: PublicQuestion[]): Record<st
     }
   }
 
-  if (!form.avatar) {
-    errors.avatar = "Bắt buộc chọn ảnh đại diện";
-  } else {
-    if (!/\.(jpe?g|png)$/i.test(form.avatar.name)) errors.avatar = "Ảnh phải là JPG/PNG";
-    else if (form.avatar.size > MAX_AVATAR_MB * 1024 * 1024) errors.avatar = `Ảnh tối đa ${MAX_AVATAR_MB}MB`;
-  }
-
-  if (!form.cv) {
-    errors.cv = "Bắt buộc nộp CV";
-  } else {
-    if (!/\.(pdf|docx?)$/i.test(form.cv.name)) errors.cv = "CV phải là PDF/DOCX";
-    else if (form.cv.size > MAX_CV_MB * 1024 * 1024) errors.cv = `CV tối đa ${MAX_CV_MB}MB`;
-  }
 
   const wishes = form.wishes.filter(Boolean);
   if (wishes.length === 0) errors.wishes = "Chọn ít nhất 1 ban nguyện vọng";
@@ -167,34 +151,9 @@ function ApplicationFormStep({ campaign, value, onSubmit, onSaveDraft }: Props) 
         </div>
       </SectionCard>
 
-      {/* 2. Hồ sơ đính kèm */}
-      <SectionCard step="02" eyebrow="Minh chứng" title="Hồ sơ đính kèm" delay={0.18}>
-        <div className="grid gap-4 md:grid-cols-2">
-          <div>
-            <FileDropzone
-              label="Ảnh đại diện"
-              hint={`JPG/PNG · tối đa ${MAX_AVATAR_MB}MB`}
-              accept=".jpg,.jpeg,.png"
-              file={form.avatar}
-              onChange={(f) => set("avatar", f)}
-            />
-            <FieldError message={errors.avatar} />
-          </div>
-          <div>
-            <FileDropzone
-              label="CV của bạn"
-              hint={`PDF/DOCX · tối đa ${MAX_CV_MB}MB`}
-              accept=".pdf,.doc,.docx"
-              file={form.cv}
-              onChange={(f) => set("cv", f)}
-            />
-            <FieldError message={errors.cv} />
-          </div>
-        </div>
-      </SectionCard>
 
-      {/* 3. Ban nguyện vọng — options = Ban trong chỉ tiêu đợt tuyển */}
-      <SectionCard step="03" eyebrow="Định hướng" title="Ban nguyện vọng" delay={0.26}>
+      {/* 2. Ban nguyện vọng — options = Ban trong chỉ tiêu đợt tuyển */}
+      <SectionCard step="02" eyebrow="Định hướng" title="Ban nguyện vọng" delay={0.18}>
         <p className="mb-5 -mt-2 text-sm text-[hsl(var(--landing-foreground)/0.78)]">
           Chọn tối đa {MAX_WISHES} ban theo thứ tự ưu tiên — nguyện vọng 1 là ban bạn mong muốn nhất.
           Danh sách ban lấy từ chỉ tiêu đợt tuyển.
@@ -227,9 +186,9 @@ function ApplicationFormStep({ campaign, value, onSubmit, onSaveDraft }: Props) 
         <FieldError message={errors.wishes} />
       </SectionCard>
 
-      {/* 4. Câu hỏi của đợt tuyển */}
+      {/* 3. Câu hỏi của đợt tuyển */}
       {questions.length > 0 && (
-        <SectionCard step="04" eyebrow="Hiểu bạn hơn" title="Câu hỏi của đợt tuyển" delay={0.34}>
+        <SectionCard step="03" eyebrow="Hiểu bạn hơn" title="Câu hỏi của đợt tuyển" delay={0.26}>
           <div className="space-y-5">
             {questions.map((q) => (
               <div key={q._id}>

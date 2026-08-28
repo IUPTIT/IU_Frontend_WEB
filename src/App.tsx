@@ -45,6 +45,7 @@ function App() {
           <Route path="/giang-vien/phan-ly-huynh" element={<MentorDetailPage />} />
           <Route path="/tuyen-thanh-vien" element={<RecruitmentPage />} />
           <Route path="/tra-cuu" element={<LookupPage />} />
+          <Route path="/lookup" element={<Navigate to="/tra-cuu" replace />} />
           <Route path="/login" element={<LoginRoute />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           {/* Khu quản trị — mọi role dùng chung portal, URL phản ánh trang con */}

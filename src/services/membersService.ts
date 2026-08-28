@@ -120,7 +120,7 @@ export async function getClubMembersPage(input: {
   }
 }
 
-export async function createClubMember(input: CreateClubMemberInput): Promise<ClubMember> {
+export async function createClubMember(input: CreateClubMemberInput): Promise<{ member: ClubMember; tempPassword: string }> {
   try {
     const body: Record<string, unknown> = {
       fullName: input.fullName,
@@ -134,11 +134,11 @@ export async function createClubMember(input: CreateClubMemberInput): Promise<Cl
       body.departmentId = input.departmentId;
       body.departmentName = input.departmentName;
     }
-    const { member } = await api.post<{ member: BackendMember }>(
+    const { member, tempPassword } = await api.post<{ member: BackendMember; tempPassword: string }>(
       "/admin/members",
       body,
     );
-    return toClubMember(member);
+    return { member: toClubMember(member), tempPassword };
   } catch (err) {
     mapErr(err, "Không tạo được thành viên");
   }

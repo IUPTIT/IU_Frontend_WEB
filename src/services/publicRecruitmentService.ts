@@ -127,8 +127,6 @@ export type SubmitApplicationPayload = {
   email: string;
   phone: string;
   dateOfBirth: string;
-  avatarUrl?: string;
-  cvUrl?: string;
   wishes: string[];
   answers: Record<string, string | string[]>;
 };
@@ -190,8 +188,6 @@ function toSubmitBody(payload: SubmitApplicationPayload) {
     email: payload.email,
     phone: payload.phone,
     dateOfBirth: payload.dateOfBirth,
-    avatarUrl: payload.avatarUrl,
-    cvUrl: payload.cvUrl,
     departmentPreferences: payload.wishes
       .filter(Boolean)
       .map((department, i) => ({ department, priority: i + 1 })),
@@ -348,8 +344,6 @@ export type EditApplicationPayload = {
   faculty?: string;
   phone?: string;
   dateOfBirth?: string;
-  avatarUrl?: string;
-  cvUrl?: string;
   wishes?: string[];
   answers?: Record<string, string | string[]>;
 };
@@ -366,8 +360,6 @@ export function editApplication(
   if (payload.faculty !== undefined) body.faculty = payload.faculty;
   if (payload.phone !== undefined) body.phone = payload.phone;
   if (payload.dateOfBirth !== undefined) body.dateOfBirth = payload.dateOfBirth;
-  if (payload.avatarUrl) body.avatarUrl = payload.avatarUrl;
-  if (payload.cvUrl) body.cvUrl = payload.cvUrl;
   if (payload.wishes?.length) {
     body.departmentPreferences = payload.wishes
       .filter(Boolean)
